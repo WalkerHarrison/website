@@ -2,7 +2,7 @@
 baseurl = "https://example.com/"
 languageCode = "en"
 
-title = "Title"
+title = ""
 theme = "hyde-hyde"
 
 ## Hugo Built-in Features
@@ -19,7 +19,7 @@ theme = "hyde-hyde"
     author = "Author"
     title = "Title"
     # description = "..."
-    authorimage = "/img/hugo.png"
+    authorimage = "/img/headshot.jpg"
     dateformat = "Jan 2, 2006"
 
     # sidebar, copyright & license
@@ -45,11 +45,11 @@ theme = "hyde-hyde"
 
 ## Social Accounts
 [params.social]
-    github = "<username>"
-    instagram = "<username>"
-    linkedin = "<username>"
+    github = "WalkerHarrison"
+    instagram = "walkwearscrocs"
+    linkedin = "walker-harrison-11a36b6b"
     twitter = "walkwearscrocs"
-    email = "your-email@example.com"
+    email = "walkerharrison1000@gmail.com"
     # gravatar = "your-email@example.com"
     # pgpkey = "<path-to-your-key-in-/static>"
 
