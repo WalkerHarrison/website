@@ -1,0 +1,185 @@
+---
+title: Pushing Google's Autocorrect to the Limit
+author: Walker Harrison
+date: '2020-12-17'
+draft: true
+slug: []
+categories: []
+tags: []
+lastmod: '2020-12-14T15:18:41-05:00'
+layout: post
+type: post
+highlight: no
+---
+
+<link href="index_files/anchor-sections/anchor-sections.css" rel="stylesheet" />
+<script src="index_files/anchor-sections/anchor-sections.js"></script>
+
+
+<p>I only had a vague understanding of the word “endocrinology” when it popped up <a href="https://www.nytimes.com/aponline/2020/05/21/world/europe/ap-virus-outbreak-russia-disparaging-doctors.html">in a recent article</a>, so I Googled it. Or at least, I tried to. Instead I typed “wndicromoly,” and was disappointed by the results, all due respect to Wendy Cromwell:</p>
+<center>
+<img src="C:\Users\wharrison\Desktop\wndicromoly.PNG" height="200px" width="600px"/>
+</center>
+<p>My expectation was that Google would either automatically redirect me to the right results or at least politely ask, “Did I mean: endocrinology?” So spoiled am I by autocorrect features on the web and in my phone that I was actually upset when Google couldn’t decrypt a keyword in which about half of the characters were typos.</p>
+<p>But then I wondered: which of those typos had been the fatal blow? At what point had the word been mutated beyond recognition?</p>
+<p>It helps to understand exactly how Google suggests corrections in the first place, as <a href="https://www.youtube.com/watch?v=syKY8CrHkck#t=22m20s">explained here in a talk given by their VP of Engineering</a>. When users misspell their initial searches and then immediately search again without the typos, Google is able to associate those two inputs as an error and a correction, respectively. In other words, so many users have detoured from their intended search that they’ve worn a path in the ground that Google will now rescue you from going down.</p>
+<details open>
+<p><summary>R Code</summary></p>
+<p>Anyway, we start by defining both the <code>word</code> and the <code>typo</code> and calculating the <a href="https://en.wikipedia.org/wiki/Levenshtein_distance">Levenshtein distance</a> between them, which measures the minimum number of single-character edits (adds, deletions, or substitutions) to get from one string to another:</p>
+<pre class="r"><code>library(tidyverse)
+library(data.tree)
+library(httr)</code></pre>
+<pre class="r"><code>word &lt;- &quot;endocrinology&quot;
+typo &lt;- &quot;wndicromoly&quot;
+distance &lt;- adist(word, typo)</code></pre>
+<p>Next we find a way to simulate typos. We start with a <code>keyboard</code>, which is a projection of the traditional QWERTY keyboard onto a matrix (only letters for now, let’s keep it simple), and a distance matrix <code>d</code> that holds the Euclidean distance between each pair of keys. For example, ‘g’ would be 1 away from ‘f’ but <span class="math inline">\(\sqrt{2}\)</span> away from ‘y’.</p>
+<p>The function <code>fat_finger</code> takes a letter and randomly samples from the rest of the keyboard, with probability weighted by proximity. So, using ‘g’ again as our example, the most likely typos would be ‘f’, ‘t’,’ ‘h’,’ and ‘b’, while very little probability would be given to distant letters like ‘q’ and ‘p’.</p>
+<pre class="r"><code>keyboard &lt;- rbind(
+  c(&#39;q&#39;, &#39;w&#39;, &#39;e&#39;, &#39;r&#39;, &#39;t&#39;, &#39;y&#39;, &#39;u&#39;, &#39;i&#39;, &#39;o&#39;, &#39;p&#39;),
+  c(&#39;a&#39;, &#39;s&#39;, &#39;d&#39;, &#39;f&#39;, &#39;g&#39;, &#39;h&#39;, &#39;j&#39;, &#39;k&#39;, &#39;l&#39;, NA),
+  c(&#39;z&#39;, &#39;x&#39;, &#39;c&#39;, &#39;v&#39;, &#39;b&#39;, &#39;n&#39;, &#39;m&#39;, NA, NA, NA)
+)
+
+d &lt;- as.matrix(dist(expand.grid(1:nrow(keyboard), 
+                                1:ncol(keyboard))))
+
+fat_finger &lt;- function(letter){
+  
+  # determine possible errors
+  idx &lt;- keyboard != letter &amp; !is.na(keyboard)
+  elements &lt;- keyboard[idx]
+  distance &lt;- d[which(keyboard == letter), idx]
+  
+  # sample based on proximity
+  p &lt;- exp(-distance)/sum(exp(-distance))
+  sample(elements, size = 1, prob = p)
+}</code></pre>
+<p>The <code>fat_finger</code> function is then used by the <code>random_edit</code> function to mutate a given word. Words can be modified in the three distinct fashions recognized by Levenshtein:</p>
+<ul>
+<li>deleting a letter</li>
+<li>adding a letter (split into adding before, and adding after)</li>
+<li>swapping one letter in for another</li>
+</ul>
+<pre class="r"><code>random_edit &lt;- function(word){
+  
+  # select where to put error
+  len &lt;- nchar(word)
+  idx &lt;- sample(1:len, 1)
+  
+  # select type of error
+  type &lt;- sample(1:4, 1)
+
+  # delete
+  if(type == 1) return(paste0(substr(word, 1, idx-1), 
+                              substr(word, idx+1, len)))
+  # add before
+  if(type == 2) return(paste0(substr(word, 1, idx-1), 
+                              fat_finger(substr(word, idx, idx)), 
+                              substr(word, idx, len)))
+  # add after
+  if(type == 3) return(paste0(substr(word, 1, idx), 
+                              fat_finger(substr(word, idx, idx)), 
+                              substr(word, idx + 1, len)))
+  # swap
+  if(type == 4) return(paste0(substr(word, 1, idx-1), 
+                              fat_finger(substr(word, idx, idx)),
+                              substr(word, idx+1, nchar(word))))
+}</code></pre>
+<p>Finally, we can string individual mutations into a chain of them with the <code>make_latter</code> function, which recursively modifies a <code>word</code> until it becomes an intended <code>typo</code>. More explicitly, at every iteration the <code>random_edit</code> function is called until it finds a <code>new</code> word that is closer to the ultimate typo, as measured by Levenshtein distance.</p>
+<pre class="r"><code>make_latter &lt;- function(word, typo) {
+  
+  # original distance
+  ldist &lt;- as.vector(adist(word, typo))
+  
+  # escape recursion once word becomes intended typo
+  if (ldist == 0) return(word)
+  
+  # otherwise keep mutating
+  else{
+    while(ldist &gt;= as.vector(adist(word, typo))){
+      new &lt;- random_edit(word)
+      ldist &lt;- as.vector(adist(new, typo))
+    }
+    
+    # chain together mutations
+    return(c(word, make_latter(new, typo)))
+  }
+}</code></pre>
+<p>What does all this get us to? Well we can make a series of latters from our original <code>word</code> to the <code>typo</code>, with each element representing a single character update:</p>
+<pre class="r"><code>set.seed(0)
+n &lt;- 10
+latters &lt;- map(1:n, ~make_latter(word, typo))
+paste(latters[[1]], collapse = &quot; --&gt; &quot;)</code></pre>
+<pre><code>## [1] &quot;endocrinology --&gt; endocrinoloy --&gt; wndocrinoloy --&gt; wndicrinoloy --&gt; wndicrimoloy --&gt; wndicrimoly --&gt; wndicromoly&quot;</code></pre>
+<p>Now we have to search for these misspelled terms. In theory we could try converting each string into a google.com URL and then scraping the relevant information, but that approach comes with the <a href="https://stackoverflow.com/a/22657917/7711632">risk of having your IP address blocked</a> once Google catches on.</p>
+<p>So instead, we use Google’s <a href="https://developers.google.com/custom-search/v1/introduction">Custom Search API</a>. The API is designed to look within specific websites, but <a href="https://stackoverflow.com/questions/4933097/how-can-i-search-the-entire-web-from-google-custom-search">you can set it to search the entire web</a>. Once we have an <code>api_key</code> and a <code>cx</code>, which identifies a specific custom search engine, we can wrap the functionality into a function <code>google</code>.</p>
+<p>Note that this API’s free tier only allows 100 requests per day, and they can’t all be within the same 100 seconds, so a 2-3 second <code>pause</code> is built into the function.</p>
+<pre class="r"><code>google &lt;- function(term, 
+                   api_key = google_search_api_key, 
+                   cx = google_search_cx,
+                   pause = 2){
+  
+  url &lt;- &quot;https://www.googleapis.com/customsearch/v1&quot;
+  request &lt;- GET(url, query = list(key = api_key, cx = cx, q = term))
+  
+  # pause for a moment to stay within API limits
+  Sys.sleep(runif(1, pause, pause + 1))
+  
+  content(request)
+}
+
+# find unique words in list of latters and google them
+terms &lt;- unique(unlist(latters))
+search_results &lt;- map(terms, google)</code></pre>
+<p>Once we’ve (responsibly) retrieved the searches, we can traverse the JSON responses to determine which queries Google tried to amend, and what the suggested fixes actually were.</p>
+<pre class="r"><code># look for suggested fixes in each result
+corrected &lt;- search_results %&gt;%
+  map(&quot;spelling&quot;) %&gt;%
+  map(&quot;correctedQuery&quot;) %&gt;%
+  map(str_detect, word) %&gt;%
+  modify_if(is_empty, ~FALSE) %&gt;%
+  unlist()
+
+corrected_df &lt;- data.frame(term = terms, 
+                           corrected = corrected) %&gt;%
+  mutate(corrected = corrected | term == word)
+
+latters_df &lt;- data.frame(
+  step = rep(1:(distance+1), n),
+  latter = rep(1:n, each = distance+1),
+  word = unlist(latters)) %&gt;%
+  inner_join(corrected_df, by = c(&#39;word&#39; = &#39;term&#39;))</code></pre>
+<pre class="r"><code>latters_df %&gt;%
+  group_by(step, word) %&gt;%
+  mutate(y = max(latter)) %&gt;%
+  ggplot(aes(step, y, group = latter, label = word)) +
+  geom_line() +
+  geom_label(aes(color = corrected)) +
+  theme_void() +
+  theme(legend.position = &#39;none&#39;)</code></pre>
+</details>
+<pre class="r"><code>word &lt;- &quot;youtube&quot;
+
+make_tree &lt;- function(word, depth, n_children){
+  if(depth == 0) return()
+  children &lt;- map(1:n_children, ~random_edit(word))
+  while(n_distinct(children) &lt; n_children){
+    children &lt;- children %&gt;%
+      modify_at(which(duplicated(children)),
+                ~random_edit(word))
+  }
+  return(map(set_names(children), ~make_tree(.x, depth-1, n_children)))
+}
+
+set.seed(1)
+word_tree &lt;- FromListSimple(make_tree(word, 5, 2))
+word_tree$Set(name = modify_at(word_tree$Get(&quot;name&quot;), 1, ~word))
+
+terms &lt;- word_tree$Get(&quot;name&quot;)
+
+SetGraphStyle(word_tree, rankdir = &quot;LR&quot;)
+SetNodeStyle(word_tree, color = function(node){
+  ifelse(str_detect(node$name, &quot;n&quot;), &quot;#F8766D&quot;, &quot;#00BFC4&quot;)
+})
+
+plot(word_tree)</code></pre>
