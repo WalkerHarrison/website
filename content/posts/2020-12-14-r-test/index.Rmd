@@ -1,0 +1,22 @@
+---
+title: R test
+author: Walker Harrison
+date: '2020-12-14'
+slug: []
+categories: []
+tags: []
+lastmod: '2020-12-14T15:49:37-05:00'
+layout: post
+type: post
+highlight: no
+---
+
+**Insert Lead paragraph here.**
+
+```{r}
+2+2
+# what is this
+
+a <- function(b) return(a)
+
+```
