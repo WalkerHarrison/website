@@ -9,23 +9,24 @@ tags: []
 lastmod: '2020-12-14T15:18:41-05:00'
 layout: post
 type: post
-highlight: no
+highlight: yes
 ---
 
-I only had a vague understanding of the word "endocrinology" when it popped up [in a recent article](https://www.nytimes.com/aponline/2020/05/21/world/europe/ap-virus-outbreak-russia-disparaging-doctors.html), so I Googled it. Or at least, I tried to. Instead I typed "wndicromoly," and was disappointed by the results, all due respect to Wendy Cromwell:
+I only had a vague understanding of the word "endocrinology" when it popped up in [a recent article](https://nyti.ms/2Yihgpm){target="_blank"}, so I Googled it. Or at least, I tried to. Instead I typed "wndicromoly," and was disappointed by the results, all due respect to Wendy Cromwell:
 
-<center><img src="C:\Users\wharrison\Desktop\wndicromoly.PNG" height="200px" width="600px"/></center>
+<center><img src="/img/wndicromoly.png"/></center>
 
-My expectation was that Google would either automatically redirect me to the right results or at least politely ask, "Did I mean: endocrinology?" So spoiled am I by autocorrect features on the web and in my phone that I was actually upset when Google couldn't decrypt a keyword in which about half of the characters were typos. 
+My expectation was that Google would either automatically redirect me to the right results or at least politely ask, "Did I mean: endocrinology?" So spoiled am I by autocorrect features on the web and in my phone that I was actually upset that Google couldn't decrypt a keyword in which about half of the characters were typos. 
 
 But then I wondered: which of those typos had been the fatal blow? At what point had the word been mutated beyond recognition?
 
-It helps to understand exactly how Google suggests corrections in the first place, as [explained here in a talk given by their VP of Engineering](https://www.youtube.com/watch?v=syKY8CrHkck#t=22m20s). When users misspell their initial searches and then immediately search again without the typos, Google is able to associate those two inputs as an error and a correction, respectively. In other words, so many users have detoured from their intended search that they've worn a path in the ground that Google will now rescue you from going down. 
+It helps to understand exactly how Google suggests corrections in the first place, as [explained here in a talk given by their VP of Engineering](https://www.youtube.com/watch?v=syKY8CrHkck#t=22m20s){target="_blank"}. When users misspell their initial searches and then immediately search again without the typos, Google is able to associate those two inputs as an error and a correction, respectively. In other words, so many users have detoured from their intended search that they've worn a path in the ground from which Google can now rescue you. 
 
-<details open>
-  <summary>R Code</summary>
+So when I wonder which of my multiple errors doomed the search, I'm effectively asking at what point I'd created a term that nobody -- or at least, not enough people -- had typed before, leaving Google's algorithms without any historical data and therefore no means to recognize my mistake.
 
-Anyway, we start by defining both the `word` and the `typo` and calculating the [Levenshtein distance](https://en.wikipedia.org/wiki/Levenshtein_distance) between them, which measures the minimum number of single-character edits (adds, deletions, or substitutions) to get from one string to another:
+[_**Don't like/know/care about R? Click here to skip to the punchline.**_](#skip)
+
+To answer this question, we begin by defining both the `word` and the `typo` and calculating the [Levenshtein distance](https://en.wikipedia.org/wiki/Levenshtein_distance){target="_blank"} between them, which measures the minimum number of single-character edits (adds, deletions, or substitutions) to get from one string to another:
 
 ```{r, echo = FALSE, include = FALSE, message = FALSE, warning = FALSE}
 library(secret)
@@ -42,9 +43,7 @@ google_search_cx <- get_secret("google_search_cx", key = walkerharrison_private_
 library(tidyverse)
 library(data.tree)
 library(httr)
-```
 
-```{r}
 word <- "endocrinology"
 typo <- "wndicromoly"
 distance <- adist(word, typo)
@@ -52,7 +51,7 @@ distance <- adist(word, typo)
 
 Next we find a way to simulate typos. We start with a `keyboard`, which is a projection of the traditional QWERTY keyboard onto a matrix (only letters for now, let's keep it simple), and a distance matrix `d` that holds the Euclidean distance between each pair of keys. For example, 'g' would be 1 away from 'f' but $\sqrt{2}$ away from 'y'. 
 
-The function `fat_finger` takes a letter and randomly samples from the rest of the keyboard, with probability weighted by proximity. So, using 'g' again as our example, the most likely typos would be 'f', 't',' 'h',' and 'b', while very little probability would be given to distant letters like 'q' and 'p'.
+The function `fat_finger` takes a letter and randomly samples from the rest of the keyboard, with probability weighted by proximity. So, using 'g' again as our example, the most likely typos would be 'f,' 't,' 'h,' and 'b,' while very little probability would be given to distant letters like 'q' and 'p'.
 
 ```{r}
 keyboard <- rbind(
@@ -111,10 +110,10 @@ random_edit <- function(word){
 }
 ```
 
-Finally, we can string individual mutations into a chain of them with the `make_latter` function, which recursively modifies a `word` until it becomes an intended `typo`. More explicitly, at every iteration the `random_edit` function is called until it finds a `new` word that is closer to the ultimate typo, as measured by Levenshtein distance. 
+Finally, we can string individual mutations into a chain of errors with the `make_ladder` function, which recursively modifies a `word` until it becomes an intended `typo`. More explicitly, at every iteration the `random_edit` function is called until it finds a `new` word that is closer to the ultimate typo, as measured by Levenshtein distance. 
 
 ```{r}
-make_latter <- function(word, typo) {
+make_ladder <- function(word, typo) {
   
   # original distance
   ldist <- as.vector(adist(word, typo))
@@ -124,33 +123,35 @@ make_latter <- function(word, typo) {
   
   # otherwise keep mutating
   else{
+    
+    # sample until a closer word is found
     while(ldist >= as.vector(adist(word, typo))){
       new <- random_edit(word)
       ldist <- as.vector(adist(new, typo))
     }
     
     # chain together mutations
-    return(c(word, make_latter(new, typo)))
+    return(c(word, make_ladder(new, typo)))
   }
 }
 ```
 
-What does all this get us to? Well we can make a series of latters from our original `word` to the `typo`, with each element representing a single character update:
+What does all this get us to? Well we can make a series of ladders (ten, for now) from our original `word` to the `typo`, with each element representing a single character update and a step away from my intentional query and toward gibberish I actually entered. One such ladder is printed below:
 
 ```{r}
 set.seed(0)
 n <- 10
-latters <- map(1:n, ~make_latter(word, typo))
-paste(latters[[1]], collapse = " --> ")
+ladders <- map(1:n, ~make_ladder(word, typo))
+paste(ladders[[1]], collapse = " -> ")
 ```
 
-Now we have to search for these misspelled terms. In theory we could try converting each string into a google.com URL and then scraping the relevant information, but that approach comes with the [risk of having your IP address blocked](https://stackoverflow.com/a/22657917/7711632) once Google catches on.
+Now we have to search for these misspelled terms to see which ones Google still associates with "endocrinology." In theory we could try converting each string into a google.com URL and then scraping the relevant information, but that approach comes with the [risk of having your IP address blocked](https://stackoverflow.com/a/22657917/7711632){target="_blank"} once Google catches on.
 
-So instead, we use Google's [Custom Search API](https://developers.google.com/custom-search/v1/introduction). The API is designed to look within specific websites, but [you can set it to search the entire web](https://stackoverflow.com/questions/4933097/how-can-i-search-the-entire-web-from-google-custom-search). Once we have an `api_key` and a `cx`, which identifies a specific custom search engine, we can wrap the functionality into a function `google`. 
+So instead, we use Google's [Custom Search API](https://developers.google.com/custom-search/v1/introduction){target="_blank"}. The API is designed to look within specific websites, but [you can set it to search the entire web](https://stackoverflow.com/questions/4933097/how-can-i-search-the-entire-web-from-google-custom-search){target="_blank"}. Once we have an `api_key` and a `cx`, which identifies a specific custom search engine, we can wrap the functionality into a function `google`. 
 
 Note that this API's free tier only allows 100 requests per day, and they can't all be within the same 100 seconds, so a 2-3 second `pause` is built into the function.
 
-```{r, cache = TRUE, eval = FALSE}
+```{r, cache = TRUE}
 google <- function(term, 
                    api_key = google_search_api_key, 
                    cx = google_search_cx,
@@ -165,15 +166,16 @@ google <- function(term,
   content(request)
 }
 
-# find unique words in list of latters and google them
-terms <- unique(unlist(latters))
-search_results <- map(terms, google)
+# find unique words in list of ladders and google them
+terms <- unique(unlist(ladders))
+#search_results <- map(terms, google)
+load("/Users/walkerharrison/Desktop/website/content/posts/2020-12-17-pushing-google-s-autocorrect-to-the-limit/search_results_ladders.Rdata")
 
 ```
 
 Once we've (responsibly) retrieved the searches, we can traverse the JSON responses to determine which queries Google tried to amend, and what the suggested fixes actually were.
 
-```{r, eval = FALSE}
+```{r}
 # look for suggested fixes in each result
 corrected <- search_results %>%
   map("spelling") %>%
@@ -186,31 +188,62 @@ corrected_df <- data.frame(term = terms,
                            corrected = corrected) %>%
   mutate(corrected = corrected | term == word)
 
-latters_df <- data.frame(
+ladders_df <- data.frame(
   step = rep(1:(distance+1), n),
-  latter = rep(1:n, each = distance+1),
-  word = unlist(latters)) %>%
+  ladder = rep(1:n, each = distance+1),
+  word = unlist(ladders)) %>%
   inner_join(corrected_df, by = c('word' = 'term'))
 ```
 
-```{r, eval = FALSE}
-latters_df %>%
-  group_by(step, word) %>%
-  mutate(y = max(latter)) %>%
-  ggplot(aes(step, y, group = latter, label = word)) +
-  geom_line() +
-  geom_label(aes(color = corrected)) +
-  theme_void() +
-  theme(legend.position = 'none')
+```{r, echo = FALSE, include = FALSE, warning = FALSE, message = FALSE}
+library(grid)
+
+GeomLabel$draw_key <- function (data, params, size
+) {
+  
+  txt <- ifelse(data$colour == "#F8766D", "uncorrected", "corrected")
+  
+  gr <- roundrectGrob(0.5, 0.5, width = 4, height = 0.9,
+                      just = "center",
+                      gp = gpar(col = data$colour, fill = "#00000000"))
+  gt <- textGrob(txt, 0.5, 0.5,
+                 just="center",
+                 gp = gpar(col = alpha(data$colour, data$alpha),
+                           fontfamily = data$family,
+                           fontface = data$fontface,
+                           fontsize = data$size * .pt))
+  grobTree(gr, gt)
+}
+
 ```
 
-</details> 
+<div id = "skip"> </div>
 
-```{r, eval = FALSE}
-word <- "youtube"
+The graph below moves from left to right and determines when each ladder went from a salvageable typo to an unrecognizable one. There's a fair amount of overlap in the paths since there are only so many high-probability mutations these terms can go through. 
 
+My instinct was that the 'w' in 'wndicromoly' was the culprit, although that thought is motivated from a linguistic standpoint, as I perceive 'w' to be a very different letter than 'e'. But Google doesn't really have trouble handling this error, probably since 'wnd' is a dead-end that no one ever really intends to type.
+
+It appears, however, that turning the 'logy' at the end of the word into 'mogy' was the death knell for many of these ladders, as that's where the cells turn red, indicating a lack of suggested fixes from Google.
+
+```{r, echo = FALSE}
+ladders_df %>%
+  group_by(step, word) %>%
+  mutate(y = max(ladder)) %>%
+  ggplot(aes(step, y, group = ladder, label = word)) +
+  geom_line() +
+  geom_label(aes(col = corrected)) +
+  scale_x_continuous(limits = c(0.5, max(ladders_df$step) + 0.5)) +
+  theme_void() +
+  theme(legend.title = element_blank()) +
+  theme(legend.text=element_text(size=0)) +
+  theme(legend.position = c(0.1, 0.15))
+```
+
+Before we finish, let's pretend we don't know what typo we're going to end up with and instead just start with an intended term. The function `make_tree` will recursively mutate a term `n_children` times until a given `depth` is reached. Let's use the word "youtube" as our original word.
+
+```{r}
 make_tree <- function(word, depth, n_children){
-  if(depth == 0) return()
+  if(depth == 1) return()
   children <- map(1:n_children, ~random_edit(word))
   while(n_distinct(children) < n_children){
     children <- children %>%
@@ -220,16 +253,93 @@ make_tree <- function(word, depth, n_children){
   return(map(set_names(children), ~make_tree(.x, depth-1, n_children)))
 }
 
+word <- "youtube"
+depth <- 5
+n_children <- 2
+
 set.seed(1)
-word_tree <- FromListSimple(make_tree(word, 5, 2))
-word_tree$Set(name = modify_at(word_tree$Get("name"), 1, ~word))
-
-terms <- word_tree$Get("name")
-
-SetGraphStyle(word_tree, rankdir = "LR")
-SetNodeStyle(word_tree, color = function(node){
-  ifelse(str_detect(node$name, "n"), "#F8766D", "#00BFC4")
-})
-
-plot(word_tree)
+tree <- make_tree(word, depth, n_children)
 ```
+
+We implement the same general process that was applied to the ladders, extracting the terms from the tree and using the API to see whether Google will suggest the intended queryios.
+
+```{r, cache = TRUE}
+# transform tree structure into dataframe of edges
+edges <- map_df(0:(depth-2), ~{
+
+  # get parents at each depth
+  parent <- tree %>% 
+    modify_depth(.x-1, names) %>% 
+    unlist() %>%
+    rep(each = n_children) %>%
+    unlist() %>%
+    unname()
+  
+  if(.x == 0) parent <- rep(word, n_children)
+  
+  # get children at each depth
+  word <- unname(unlist(tree %>% modify_depth(.x, names)))
+  
+  data.frame(
+    parent = parent,
+    word = word,
+    depth = .x + 2
+  )}
+  ) %>%
+  add_row(parent = NA, word = word, depth = 1)
+
+# find unique words within the tree and google them
+terms <- unique(edges$word)
+#search_results <- map(terms, google)
+load("/Users/walkerharrison/Desktop/website/content/posts/2020-12-17-pushing-google-s-autocorrect-to-the-limit/search_results_tree.Rdata")
+
+# look for suggested fixes in each result
+corrected <- search_results %>%
+  map("spelling") %>%
+  map("correctedQuery") %>%
+  map(str_detect, word) %>%
+  modify_if(is_empty, ~FALSE) %>%
+  unlist()
+
+corrected_df <- data.frame(term = terms, 
+                           corrected = corrected) %>%
+  mutate(corrected = corrected | term == word)
+```
+
+The results are BLAH
+
+```{r, echo = FALSE}
+tree_df <- edges %>%
+  inner_join(corrected_df, by = c('word' = 'term')) %>%
+  group_by(depth) %>%
+  arrange(depth) %>%
+  mutate(elements = n()) %>%
+  mutate(y = ifelse(is.na(parent), 0, 0.5*row_number())) %>%
+  mutate(y = y - mean(y)) %>%
+  ungroup()
+
+g <- tree_df %>%
+  ggplot(aes(depth, y)) +
+  geom_point() +
+  geom_label(aes(label = word, col = corrected)) +
+  scale_x_continuous(limits = c(0, depth+1))
+
+link_dfs <- terms %>%
+  map(function(term) tree_df %>%
+        filter(parent == term) %>%
+        split(.$word) %>%
+        map(~rbind(.x, tree_df %>% filter(word == term)))) %>%
+  unlist(recursive = FALSE)
+
+walk(link_dfs, function(df) g <<- g + geom_line(aes(depth, y), data = df))
+
+g <- gginnards::move_layers(g, "GeomLabel", position = "top")
+
+g +
+  theme_void() +
+  theme(legend.title = element_blank()) +
+  theme(legend.text=element_text(size=0)) +
+  theme(legend.position = c(0.3, 0.2))
+```
+
+And that's all for this post. Thanks for reading!
