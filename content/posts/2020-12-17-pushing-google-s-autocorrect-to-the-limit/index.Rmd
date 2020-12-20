@@ -24,7 +24,7 @@ It helps to understand exactly how Google suggests corrections in the first plac
 
 So when I wonder which of my multiple errors doomed the search, I'm effectively asking at what point I'd created a term that nobody -- or at least, not enough people -- had typed before, leaving Google's algorithms without any historical data and therefore no means to recognize my mistake.
 
-[_**Don't like/know/care about R? Click here to skip to the punchline.**_](#skip)
+[_**Don't like/know/care about R? Click here to skip to the punchline.**_](#skip1)
 
 To answer this question, we begin by defining both the `word` and the `typo` and calculating the [Levenshtein distance](https://en.wikipedia.org/wiki/Levenshtein_distance){target="_blank"} between them, which measures the minimum number of single-character edits (adds, deletions, or substitutions) to get from one string to another:
 
@@ -91,7 +91,7 @@ random_edit <- function(word){
   
   # select type of error
   type <- sample(1:4, 1)
-
+  
   # delete
   if(type == 1) return(paste0(substr(word, 1, idx-1), 
                               substr(word, idx+1, len)))
@@ -121,18 +121,14 @@ make_ladder <- function(word, typo) {
   # escape recursion once word becomes intended typo
   if (ldist == 0) return(word)
   
-  # otherwise keep mutating
-  else{
-    
-    # sample until a closer word is found
-    while(ldist >= as.vector(adist(word, typo))){
-      new <- random_edit(word)
-      ldist <- as.vector(adist(new, typo))
-    }
-    
-    # chain together mutations
-    return(c(word, make_ladder(new, typo)))
+  # otherwise sample until a closer word is found
+  while(ldist >= as.vector(adist(word, typo))){
+    new <- random_edit(word)
+    ldist <- as.vector(adist(new, typo))
   }
+  
+  # chain together mutations
+  return(c(word, make_ladder(new, typo)))
 }
 ```
 
@@ -217,13 +213,15 @@ GeomLabel$draw_key <- function (data, params, size
 
 ```
 
-<div id = "skip"> </div>
+<div id = "skip1"> </div>
 
 The graph below moves from left to right and determines when each ladder went from a salvageable typo to an unrecognizable one. There's a fair amount of overlap in the paths since there are only so many high-probability mutations these terms can go through. 
 
 My instinct was that the 'w' in 'wndicromoly' was the culprit, although that thought is motivated from a linguistic standpoint, as I perceive 'w' to be a very different letter than 'e'. But Google doesn't really have trouble handling this error, probably since 'wnd' is a dead-end that no one ever really intends to type.
 
-It appears, however, that turning the 'logy' at the end of the word into 'mogy' was the death knell for many of these ladders, as that's where the cells turn red, indicating a lack of suggested fixes from Google.
+It appears, however, that turning the 'logy' at the end of the word into 'mogy' was the mortal wound for many of these ladders, as that's where the cells turn red, indicating a lack of suggested fixes from Google.
+
+(Note that the code to produce the graph is lengthy but not particularly interesting so I've hidden it, although it is available in [the original .Rmd](https://github.com/WalkerHarrison/website/blob/main/content/posts/2020-12-17-pushing-google-s-autocorrect-to-the-limit/index.Rmd){target="_blank"}.)
 
 ```{r, echo = FALSE}
 ladders_df %>%
@@ -231,42 +229,53 @@ ladders_df %>%
   mutate(y = max(ladder)) %>%
   ggplot(aes(step, y, group = ladder, label = word)) +
   geom_line() +
-  geom_label(aes(col = corrected)) +
+  geom_label(aes(col = corrected), size = 3) +
   scale_x_continuous(limits = c(0.5, max(ladders_df$step) + 0.5)) +
+  scale_color_discrete(guide = guide_legend(reverse = TRUE)) +
   theme_void() +
   theme(legend.title = element_blank()) +
-  theme(legend.text=element_text(size=0)) +
+  theme(legend.text = element_text(size = 0)) +
   theme(legend.position = c(0.1, 0.15))
 ```
 
 Before we finish, let's pretend we don't know what typo we're going to end up with and instead just start with an intended term. The function `make_tree` will recursively mutate a term `n_children` times until a given `depth` is reached. Let's use the word "youtube" as our original word.
 
+[_**Still don't like/know/care about R? Click here to skip to the (next) punchline.**_](#skip2)
+
 ```{r}
 make_tree <- function(word, depth, n_children){
+  
+  # escape recursion once full depth is reached
   if(depth == 1) return()
+  
+  # otherwise create child mutations
   children <- map(1:n_children, ~random_edit(word))
+  
+  # ensure there are no duplicates
   while(n_distinct(children) < n_children){
     children <- children %>%
       modify_at(which(duplicated(children)),
                 ~random_edit(word))
   }
+  
+  # link nodes together
   return(map(set_names(children), ~make_tree(.x, depth-1, n_children)))
 }
 
 word <- "youtube"
-depth <- 5
+depth <- 6
 n_children <- 2
 
-set.seed(1)
+set.seed(0)
 tree <- make_tree(word, depth, n_children)
 ```
 
-We implement the same general process that was applied to the ladders, extracting the terms from the tree and using the API to see whether Google will suggest the intended queryios.
+We implement the same general process that was applied to the ladders, extracting the terms from the tree and using the API to see whether Google will suggest the intended query.
 
 ```{r, cache = TRUE}
 # transform tree structure into dataframe of edges
 edges <- map_df(0:(depth-2), ~{
-
+  
   # get parents at each depth
   parent <- tree %>% 
     modify_depth(.x-1, names) %>% 
@@ -285,13 +294,13 @@ edges <- map_df(0:(depth-2), ~{
     word = word,
     depth = .x + 2
   )}
-  ) %>%
+) %>%
   add_row(parent = NA, word = word, depth = 1)
 
 # find unique words within the tree and google them
 terms <- unique(edges$word)
 #search_results <- map(terms, google)
-load("/Users/walkerharrison/Desktop/website/content/posts/2020-12-17-pushing-google-s-autocorrect-to-the-limit/search_results_tree.Rdata")
+load("/Users/walkerharrison/Desktop/website/content/posts/2020-12-17-pushing-google-s-autocorrect-to-the-limit/search_results_tree2.Rdata")
 
 # look for suggested fixes in each result
 corrected <- search_results %>%
@@ -306,7 +315,13 @@ corrected_df <- data.frame(term = terms,
   mutate(corrected = corrected | term == word)
 ```
 
-The results are BLAH
+<div id = "skip2"> </div>
+
+The results are somewhat surprising, at least for me. Through four rounds of typos, all but two of the 16 mutated terms are still recognized as "youtube" by Google. One final iteration is enough to break the algorithm's back in many cases, but queries like "oktiebe" and "hyurtuue" are still not beyond repair for the omnipotent search engine.
+
+Of course, the cynic in you might argue that the engineers behind the algorithm have reason to tip the scales for terms that are in the neighborhood of YouTube, which was bought by Google in 2006. Is it possible that Google is a little overly helpful in nudging astray searches toward their own products?
+
+(Again the graphing code is hidden. Again it is available in [the original .Rmd](https://github.com/WalkerHarrison/website/blob/main/content/posts/2020-12-17-pushing-google-s-autocorrect-to-the-limit/index.Rmd){target="_blank"}.)
 
 ```{r, echo = FALSE}
 tree_df <- edges %>%
@@ -321,8 +336,9 @@ tree_df <- edges %>%
 g <- tree_df %>%
   ggplot(aes(depth, y)) +
   geom_point() +
-  geom_label(aes(label = word, col = corrected)) +
-  scale_x_continuous(limits = c(0, depth+1))
+  geom_label(aes(label = word, col = corrected), size = 3) +
+  scale_x_continuous(limits = c(0, depth+1)) +
+  scale_color_discrete(guide = guide_legend(reverse = TRUE))
 
 link_dfs <- terms %>%
   map(function(term) tree_df %>%

@@ -57,16 +57,21 @@ theme = "hyde-hyde"
 ## Main Menu
 [[menu.main]]
     name = "Posts"
-    weight = 100
+    weight = 200
     identifier = "posts"
     url = "/posts/"
+##[[menu.main]]
+    ##name = "Portfolio"
+    ##identifier = "portfolio"
+    ##weight = 300
+    ##url = "/portfolio/"
 [[menu.main]]
-    name = "Portfolio"
-    identifier = "portfolio"
-    weight = 200
-    url = "/portfolio/"
+    name = "Consulting"
+    identifier = "consulting"
+    weight = 300
+    url = "/consulting/"
 [[menu.main]]
     name = "About"
     identifier = "about"
-    weight = 300
+    weight = 100
     url = "/about/"
