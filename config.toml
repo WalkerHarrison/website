@@ -44,6 +44,7 @@ theme = "hyde-hyde"
     # Table of contents
     #toc = none, "hugo", or "tocbot"
     hideReadingTime = true
+    mainSections = ["posts"]
 
 ## Social Accounts
 [params.social]
