@@ -6,16 +6,7 @@
   <div class="post-list">
     {{ $paginator := .Paginator }}
     {{ range $paginator.Pages}}
-      {{ if .Draft }}
-        {{ .Scratch.Set "draftPage" true }}
-      {{ else }}
-        {{ .Scratch.Set "draftPage" false }}
-      {{ end }}
-      {{ if eq .Type "perma"}}
-        {{ .Scratch.Set "draftPage" true }}
-      {{ else }}
-        {{ .Scratch.Set "draftPage" false }}
-      {{ end }}
+      {{ if eq .Type "post"}}
       <div class="post-list__item">
         <span class="item__title--big">
           <a href="{{ .RelPermalink }}" {{if .Scratch.Get "draftPage" }}class="draft"{{end}}>{{ .Title }}</a>
@@ -35,6 +26,7 @@
         {{ end }}
         </div>
         {{ .Scratch.Delete "draftPage" }}
+     {{ end }}
      {{ end }}
   </div>
   {{ partial "pagination.html" . }}
