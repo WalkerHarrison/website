@@ -1,5 +1,6 @@
 ---
 title: About Me!
+type: perma
 ---
 
 Hello! My name is Walker Harrison and I'm a data scientist. 

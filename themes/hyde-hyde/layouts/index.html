@@ -5,11 +5,16 @@
 {{ define "content" }}
   <div class="post-list">
     {{ $paginator := .Paginator }}
-    {{ range $paginator.Pages }}
-      {{ if .Date }}
-        {{ .Scratch.Set "draftPage" false }}
-      {{ else }}
+    {{ range $paginator.Pages}}
+      {{ if .Draft }}
         {{ .Scratch.Set "draftPage" true }}
+      {{ else }}
+        {{ .Scratch.Set "draftPage" false }}
+      {{ end }}
+      {{ if eq .Type "perma"}}
+        {{ .Scratch.Set "draftPage" true }}
+      {{ else }}
+        {{ .Scratch.Set "draftPage" false }}
       {{ end }}
       <div class="post-list__item">
         <span class="item__title--big">
