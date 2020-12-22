@@ -1,3 +1,3 @@
 ---
-title: Postos
+title: All Posts
 ---

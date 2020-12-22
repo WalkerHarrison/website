@@ -24,7 +24,7 @@ highlight: yes
 <p>But then I wondered: which of those typos had been the fatal blow? At what point had the word been mutated beyond recognition?</p>
 <p>It helps to understand exactly how Google suggests corrections in the first place, as <a href="https://www.youtube.com/watch?v=syKY8CrHkck#t=22m20s" target="_blank">explained here in a talk given by their VP of Engineering</a>. When users misspell their initial searches and then immediately search again without the typos, Google is able to associate those two inputs as an error and a correction, respectively. In other words, so many users have detoured from their intended search that they’ve worn a path in the ground from which Google can now rescue you.</p>
 <p>So when I wonder which of my multiple errors doomed the search, I’m effectively asking at what point I’d created a term that nobody – or at least, not enough people – had typed before, leaving Google’s algorithms without any historical data and therefore no means to recognize my mistake.</p>
-<p><a href="#skip1"><em><strong>Don’t like/know/care about R? Click here to skip to the punchline.</strong></em></a></p>
+<p><a href="#skip1"><em><strong>Don’t like/know/care about R? Click here to skip to the results.</strong></em></a></p>
 <p>To answer this question, we begin by defining both the <code>word</code> and the <code>typo</code> and calculating the <a href="https://en.wikipedia.org/wiki/Levenshtein_distance" target="_blank">Levenshtein distance</a> between them, which measures the minimum number of single-character edits (adds, deletions, or substitutions) to get from one string to another:</p>
 <pre class="r"><code>library(tidyverse)
 library(data.tree)
@@ -129,8 +129,7 @@ paste(ladders[[1]], collapse = &quot; -&gt; &quot;)</code></pre>
 
 # find unique words in list of ladders and google them
 terms &lt;- unique(unlist(ladders))
-#search_results &lt;- map(terms, google)
-load(&quot;/Users/walkerharrison/Desktop/website/content/posts/2020-12-17-pushing-google-s-autocorrect-to-the-limit/search_results_ladders.Rdata&quot;)</code></pre>
+search_results &lt;- map(terms, google)</code></pre>
 <p>Once we’ve (responsibly) retrieved the searches, we can traverse the JSON responses to determine which queries Google tried to amend, and what the suggested fixes actually were.</p>
 <pre class="r"><code># look for suggested fixes in each result
 corrected &lt;- search_results %&gt;%
@@ -156,9 +155,9 @@ ladders_df &lt;- data.frame(
 <p>My instinct was that the ‘w’ in ‘wndicromoly’ was the culprit, although that thought is motivated from a linguistic standpoint, as I perceive ‘w’ to be a very different letter than ‘e’. But Google doesn’t really have trouble handling this error, probably since ‘wnd’ is a dead-end that no one ever really intends to type.</p>
 <p>It appears, however, that turning the ‘logy’ at the end of the word into ‘mogy’ was the mortal wound for many of these ladders, as that’s where the cells turn red, indicating a lack of suggested fixes from Google.</p>
 <p>(Note that the code to produce the graph is lengthy but not particularly interesting so I’ve hidden it, although it is available in <a href="https://github.com/WalkerHarrison/website/blob/main/content/posts/2020-12-17-pushing-google-s-autocorrect-to-the-limit/index.Rmd" target="_blank">the original .Rmd</a>.)</p>
-<p><img src="index_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<p><img src="index_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
 <p>Before we finish, let’s pretend we don’t know what typo we’re going to end up with and instead just start with an intended term. The function <code>make_tree</code> will recursively mutate a term <code>n_children</code> times until a given <code>depth</code> is reached. Let’s use the word “youtube” as our original word.</p>
-<p><a href="#skip2"><em><strong>Still don’t like/know/care about R? Click here to skip to the (next) punchline.</strong></em></a></p>
+<p><a href="#skip2"><em><strong>Still don’t like/know/care about R? Click here to skip to the (other) results.</strong></em></a></p>
 <pre class="r"><code>make_tree &lt;- function(word, depth, n_children){
   
   # escape recursion once full depth is reached
@@ -231,5 +230,5 @@ corrected_df &lt;- data.frame(term = terms,
 <p>The results are somewhat surprising, at least for me. Through four rounds of typos, all but two of the 16 mutated terms are still recognized as “youtube” by Google. One final iteration is enough to break the algorithm’s back in many cases, but queries like “oktiebe” and “hyurtuue” are still not beyond repair for the omnipotent search engine.</p>
 <p>Of course, the cynic in you might argue that the engineers behind the algorithm have reason to tip the scales for terms that are in the neighborhood of YouTube, which was bought by Google in 2006. Is it possible that Google is a little overly helpful in nudging astray searches toward their own products?</p>
 <p>(Again the graphing code is hidden. Again it is available in <a href="https://github.com/WalkerHarrison/website/blob/main/content/posts/2020-12-17-pushing-google-s-autocorrect-to-the-limit/index.Rmd" target="_blank">the original .Rmd</a>.)</p>
-<p><img src="index_files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
+<p><img src="index_files/figure-html/unnamed-chunk-14-1.png" width="672" /></p>
 <p>And that’s all for this post. Thanks for reading!</p>

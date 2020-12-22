@@ -7,6 +7,10 @@
     {{ partial "page-single/content.html" . }}
 {{ end }}
 
+{{ define "comments" }}
+    {{ partial "page-single/comment/disqus.html" . }}
+{{ end }}
+
 {{ define "footer" }}
     {{ partial "page-single/footer.html" . }}
     {{ partial "page-single/variables-deinit.html" . }}

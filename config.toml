@@ -6,7 +6,7 @@ title = ""
 theme = "hyde-hyde"
 
 ## Hugo Built-in Features
-# disqusShortname = "your-disqus-shortname"
+disqusShortname = "walker-harrison"
 # googleAnalytics = "your-google-analytics-id"
 # enableRobotsTXT = true
 
