@@ -2,17 +2,17 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title></title>
-    <link>/</link>
+    <link>https://walker-harrison.com/</link>
     <description>Recent content on </description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Sat, 19 Dec 2020 00:00:00 +0000</lastBuildDate><atom:link href="/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 19 Dec 2020 00:00:00 +0000</lastBuildDate><atom:link href="https://walker-harrison.com/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>please</title>
-      <link>/posts/2020-12-19-please/</link>
+      <link>https://walker-harrison.com/posts/2020-12-19-please/</link>
       <pubDate>Sat, 19 Dec 2020 00:00:00 +0000</pubDate>
       
-      <guid>/posts/2020-12-19-please/</guid>
+      <guid>https://walker-harrison.com/posts/2020-12-19-please/</guid>
       <description>Insert Lead paragraph here.
 A augue nunc lacus auctor efficitur tempor placerat, dictum volutpat mi vitae viverra porta non sem, himenaeos senectus vivamus potenti cubilia sollicitudin. Curae cursus inceptos tincidunt magna mi nibh ad enim etiam, molestie eu quis primis hendrerit taciti phasellus. Feugiat ultricies dictumst iaculis potenti odio laoreet urna at, ultrices curae leo accumsan proin sem lobortis.
 Heading 2 Sollicitudin ornare odio blandit aenean enim lacus accumsan elementum vestibulum porta mauris lorem, ullamcorper class fermentum sem hendrerit ante augue penatibus scelerisque felis leo proin,ad nascetur venenatis sodales dignissim viverra suspendisse turpis convallis condimentum sapien.</description>
@@ -20,31 +20,21 @@ Heading 2 Sollicitudin ornare odio blandit aenean enim lacus accumsan elementum 
     
     <item>
       <title>testing</title>
-      <link>/posts/2020-12-19-testing/</link>
+      <link>https://walker-harrison.com/posts/2020-12-19-testing/</link>
       <pubDate>Sat, 19 Dec 2020 00:00:00 +0000</pubDate>
       
-      <guid>/posts/2020-12-19-testing/</guid>
+      <guid>https://walker-harrison.com/posts/2020-12-19-testing/</guid>
       <description>Insert Lead paragraph here.
 A augue nunc lacus auctor efficitur tempor placerat, dictum volutpat mi vitae viverra porta non sem, himenaeos senectus vivamus potenti cubilia sollicitudin. Curae cursus inceptos tincidunt magna mi nibh ad enim etiam, molestie eu quis primis hendrerit taciti phasellus. Feugiat ultricies dictumst iaculis potenti odio laoreet urna at, ultrices curae leo accumsan proin sem lobortis.
 Heading 2 Sollicitudin ornare odio blandit aenean enim lacus accumsan elementum vestibulum porta mauris lorem, ullamcorper class fermentum sem hendrerit ante augue penatibus scelerisque felis leo proin,ad nascetur venenatis sodales dignissim viverra suspendisse turpis convallis condimentum sapien.</description>
     </item>
     
     <item>
-      <title>Pushing Google&#39;s Autocorrect to the Limit</title>
-      <link>/posts/2020-12-17-pushing-google-s-autocorrect-to-the-limit/</link>
-      <pubDate>Thu, 17 Dec 2020 00:00:00 +0000</pubDate>
-      
-      <guid>/posts/2020-12-17-pushing-google-s-autocorrect-to-the-limit/</guid>
-      <description>I only had a vague understanding of the word “endocrinology” when it popped up in a recent article, so I Googled it. Or at least, I tried to. Instead I typed “wndicromoly,” and was disappointed by the results, all due respect to Wendy Cromwell:
-  My expectation was that Google would either automatically redirect me to the right results or at least politely ask, “Did I mean: endocrinology?</description>
-    </item>
-    
-    <item>
       <title>About Me!</title>
-      <link>/about/</link>
+      <link>https://walker-harrison.com/about/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/about/</guid>
+      <guid>https://walker-harrison.com/about/</guid>
       <description>Hello! My name is Walker Harrison and I&amp;rsquo;m a data scientist.
 I graduated from Columbia University in 2014 with a double major in mathematics and creative writing. After working in marketing and business development roles for several years at IBM and The Practical Dev, I got my Master&amp;rsquo;s degree in statistics from Duke University. Since 2018 I have been working as a quantitative analyst for the New York Yankees.
 This website will be used primarily to publish blogposts that explore some of the ways statistics intersect with our everyday lives.</description>
@@ -52,12 +42,12 @@ This website will be used primarily to publish blogposts that explore some of th
     
     <item>
       <title>Consulting</title>
-      <link>/consulting/</link>
+      <link>https://walker-harrison.com/consulting/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/consulting/</guid>
-      <description>If you or your company need assistance &amp;hellip;
-BLARG</description>
+      <guid>https://walker-harrison.com/consulting/</guid>
+      <description>If you or your company need assistance somewhere along the data analysis pipeline, I may be a good fit.
+I have experience in data extraction and retrieval, including web scraping of both static and dynamic content. I am well versed in SQL and have set up relational databases for various personal projects, including ones that required &amp;ldquo;big data.&amp;rdquo; I do most of my data cleaning and manipulation in R, and enjoy helping others wrangle their data via Stack Overflow questions.</description>
     </item>
     
   </channel>

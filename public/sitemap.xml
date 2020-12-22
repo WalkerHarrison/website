@@ -3,44 +3,39 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
-    <loc>/</loc>
+    <loc>https://walker-harrison.com/</loc>
     <lastmod>2020-12-19T23:55:44-05:00</lastmod>
   </url>
   
   <url>
-    <loc>/posts/2020-12-19-please/</loc>
+    <loc>https://walker-harrison.com/posts/</loc>
+    <lastmod>2020-12-19T23:55:44-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://walker-harrison.com/posts/2020-12-19-please/</loc>
     <lastmod>2020-12-19T21:15:23-05:00</lastmod>
   </url>
   
   <url>
-    <loc>/posts/</loc>
+    <loc>https://walker-harrison.com/posts/2020-12-19-testing/</loc>
     <lastmod>2020-12-19T23:55:44-05:00</lastmod>
   </url>
   
   <url>
-    <loc>/posts/2020-12-19-testing/</loc>
-    <lastmod>2020-12-19T23:55:44-05:00</lastmod>
+    <loc>https://walker-harrison.com/about/</loc>
   </url>
   
   <url>
-    <loc>/posts/2020-12-17-pushing-google-s-autocorrect-to-the-limit/</loc>
-    <lastmod>2020-12-14T15:18:41-05:00</lastmod>
+    <loc>https://walker-harrison.com/categories/</loc>
   </url>
   
   <url>
-    <loc>/about/</loc>
+    <loc>https://walker-harrison.com/consulting/</loc>
   </url>
   
   <url>
-    <loc>/categories/</loc>
-  </url>
-  
-  <url>
-    <loc>/consulting/</loc>
-  </url>
-  
-  <url>
-    <loc>/tags/</loc>
+    <loc>https://walker-harrison.com/tags/</loc>
   </url>
   
 </urlset>
