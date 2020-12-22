@@ -2,7 +2,7 @@
 baseurl = "https://walker-harrison.com/"
 languageCode = "en"
 
-title = ""
+title = "Walker Harrison"
 theme = "hyde-hyde"
 
 ## Hugo Built-in Features
