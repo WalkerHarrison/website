@@ -104,7 +104,7 @@ fat_finger &lt;- function(letter){
   # chain together mutations
   return(c(word, make_ladder(new, typo)))
 }</code></pre>
-<p>What does all this get us to? Well we can make a series of ladders (ten, for now) from our original <code>word</code> to the <code>typo</code>, with each element representing a single character update and a step away from my intentional query and toward gibberish I actually entered. One such ladder is printed below:</p>
+<p>What does all this get us to? Well we can make a series of ladders (ten, for now) from our original <code>word</code> to the <code>typo</code>, with each element representing a single character update and a step away from my intentional query and toward the gibberish I actually entered. One such ladder is printed below:</p>
 <pre class="r"><code>set.seed(0)
 n &lt;- 10
 ladders &lt;- map(1:n, ~make_ladder(word, typo))
@@ -210,8 +210,7 @@ edges &lt;- map_df(0:(depth-2), ~{
 
 # find unique words within the tree and google them
 terms &lt;- unique(edges$word)
-#search_results &lt;- map(terms, google)
-load(&quot;/Users/walkerharrison/Desktop/website/content/posts/2020-12-17-pushing-google-s-autocorrect-to-the-limit/search_results_tree2.Rdata&quot;)
+search_results &lt;- map(terms, google)
 
 # look for suggested fixes in each result
 corrected &lt;- search_results %&gt;%
@@ -230,5 +229,5 @@ corrected_df &lt;- data.frame(term = terms,
 <p>The results are somewhat surprising, at least for me. Through four rounds of typos, all but two of the 16 mutated terms are still recognized as “youtube” by Google. One final iteration is enough to break the algorithm’s back in many cases, but queries like “oktiebe” and “hyurtuue” are still not beyond repair for the omnipotent search engine.</p>
 <p>Of course, the cynic in you might argue that the engineers behind the algorithm have reason to tip the scales for terms that are in the neighborhood of YouTube, which was bought by Google in 2006. Is it possible that Google is a little overly helpful in nudging astray searches toward their own products?</p>
 <p>(Again the graphing code is hidden. Again it is available in <a href="https://github.com/WalkerHarrison/website/blob/main/content/posts/2020-12-17-pushing-google-s-autocorrect-to-the-limit/index.Rmd" target="_blank">the original .Rmd</a>.)</p>
-<p><img src="index_files/figure-html/unnamed-chunk-14-1.png" width="672" /></p>
+<p><img src="index_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
 <p>And that’s all for this post. Thanks for reading!</p>

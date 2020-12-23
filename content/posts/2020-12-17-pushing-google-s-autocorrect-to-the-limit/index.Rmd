@@ -132,7 +132,7 @@ make_ladder <- function(word, typo) {
 }
 ```
 
-What does all this get us to? Well we can make a series of ladders (ten, for now) from our original `word` to the `typo`, with each element representing a single character update and a step away from my intentional query and toward gibberish I actually entered. One such ladder is printed below:
+What does all this get us to? Well we can make a series of ladders (ten, for now) from our original `word` to the `typo`, with each element representing a single character update and a step away from my intentional query and toward the gibberish I actually entered. One such ladder is printed below:
 
 ```{r}
 set.seed(0)
@@ -301,8 +301,7 @@ edges <- map_df(0:(depth-2), ~{
 
 # find unique words within the tree and google them
 terms <- unique(edges$word)
-#search_results <- map(terms, google)
-load("/Users/walkerharrison/Desktop/website/content/posts/2020-12-17-pushing-google-s-autocorrect-to-the-limit/search_results_tree2.Rdata")
+search_results <- map(terms, google)
 
 # look for suggested fixes in each result
 corrected <- search_results %>%
@@ -315,6 +314,10 @@ corrected <- search_results %>%
 corrected_df <- data.frame(term = terms, 
                            corrected = corrected) %>%
   mutate(corrected = corrected | term == word)
+```
+
+```{r, eval = FALSE, echo = FALSE, include = FALSE}
+# load("/Users/walkerharrison/Desktop/website/content/posts/2020-12-17-pushing-google-s-autocorrect-to-the-limit/search_results_tree2.Rdata")
 ```
 
 <div id = "skip2"> </div>
