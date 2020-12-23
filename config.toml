@@ -21,7 +21,7 @@ theme = "hyde-hyde"
     # description = "..."
     authorimage = "/img/headshot.jpg"
     dateformat = "Jan 2, 2006"
-    images = ["site-feature-image.jpg"]
+    images = ["/img/site-feature-image.jpg"]
 
     # sidebar, copyright & license
     #logoimage = "/img/hugo.png"
