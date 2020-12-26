@@ -224,7 +224,7 @@ My instinct was that the 'w' in 'wndicromoly' was the culprit, although that tho
 
 It appears, however, that turning the 'logy' at the end of the word into 'mogy' was the mortal wound for many of these ladders, as that's where the cells turn red, indicating a lack of suggested fixes from Google.
 
-(Note that the code to produce the graph is lengthy but not particularly interesting so I've hidden it, although it is available in [the original .Rmd](https://github.com/WalkerHarrison/website/blob/main/content/posts/2020-12-17-pushing-google-s-autocorrect-to-the-limit/index.Rmd){target="_blank"}.)
+(Note that the code to produce the graph is lengthy but not particularly interesting so I've hidden it, although it is available in [the original .Rmd](https://github.com/WalkerHarrison/blogposts/blob/main/index.Rmd){target="_blank"}.)
 
 ```{r, echo = FALSE}
 ladders_df %>%
@@ -327,7 +327,7 @@ The results are somewhat surprising, at least for me. Through four rounds of typ
 
 Of course, the cynic in you might argue that the engineers behind the algorithm have reason to tip the scales for terms that are in the neighborhood of YouTube, which was bought by Google in 2006. Is it possible that Google is a little overly helpful in nudging astray searches toward their own products?
 
-(Again the graphing code is hidden. Again it is available in [the original .Rmd](https://github.com/WalkerHarrison/website/blob/main/content/posts/2020-12-17-pushing-google-s-autocorrect-to-the-limit/index.Rmd){target="_blank"}.)
+(Again the graphing code is hidden. Again it is available in [the original .Rmd](https://github.com/WalkerHarrison/blogposts/blob/main/index.Rmd){target="_blank"}.)
 
 ```{r, echo = FALSE}
 tree_df <- edges %>%
