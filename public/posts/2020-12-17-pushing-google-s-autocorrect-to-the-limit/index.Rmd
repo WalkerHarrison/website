@@ -10,6 +10,7 @@ lastmod: '2020-12-14T15:18:41-05:00'
 layout: post
 type: post
 highlight: yes
+summary: Everyone makes errors sometimes when hastily typing a query into a search bar, and most of the time Google is able to recognize your mistake and offer a suggestion. But what is this algorithm's breaking point? How badly can you mis-type a word before even Google doesn't know what you mean anymore?
 ---
 
 I only had a vague understanding of the word "endocrinology" when it popped up in [a recent article](https://nyti.ms/2Yihgpm){target="_blank"}, so I Googled it. Or at least, I tried to. Instead I typed "wndicromoly," and was disappointed by the results, all due respect to Wendy Cromwell:
