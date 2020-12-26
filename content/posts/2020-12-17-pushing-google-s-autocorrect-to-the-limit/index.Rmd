@@ -8,7 +8,7 @@ categories: []
 tags: []
 lastmod: '2020-12-14T15:18:41-05:00'
 layout: post
-type: draft
+type: post
 highlight: yes
 ---
 
