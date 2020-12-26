@@ -1,9 +1,3 @@
-#commento-submit-button-root{
-  font-size: 6px !important;
-}
-.commento-button{
-  font-size: 6px !important;
-}
-.commento-submit-button{
-  font-size: 6px !important;
+.commento-root .commento-submit-button {
+    font-size: 6px !important;
 }
