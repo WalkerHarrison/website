@@ -19,7 +19,7 @@ theme = "hyde-hyde"
     author = "Author"
     title = "Title"
     # description = "..."
-    authorimage = "/img/headshot.jpg"
+    authorimage = "/img/headshot2020square.jpeg"
     dateformat = "Jan 2, 2006"
     images = ["/img/site-feature-image.jpg"]
 
