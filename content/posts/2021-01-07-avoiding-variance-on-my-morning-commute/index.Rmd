@@ -1,0 +1,21 @@
+---
+title: Avoiding Variance on my Morning Commute
+author: Walker Harrison
+date: '2021-01-07'
+draft: true
+slug: []
+categories: []
+tags: []
+lastmod: '2020-12-29T12:28:19-05:00'
+layout: post
+type: draft
+highlight: yes
+summary: coolio jones
+---
+
+Many moons ago, when people actually physically went to work everyday, I had a pretty lengthy commute by New York City standards. There are a handful of ways to get from Park Slope, Brooklyn to my office in Yankee Stadium, but I chose to take the 2/3 train from Grand Army Plaza and then transfer to the 4 train at Nevins Street for the remainder of the trip, typically clocking in at around an hour in travel time.
+
+At some point though I started simply walking the first leg from my home to the Nevins Street station. That seems a little crazy, since I was substituting a few stops on the 2/3 for a mile-long march, but I enjoyed the exercise — and I also felt a little more relaxed once I got on the 4-train after my stroll.
+
+Why did I find peace by walking the first ___. Perhaps the exercise-induced endorphins were rushing through me as I sat on the 4-train. But I also wonder if I had accidentally decreased the variance in my commute time and with it some of the stress I feel wondering how long the my trip will take.
+
