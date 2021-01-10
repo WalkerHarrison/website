@@ -1,8 +1,8 @@
 .Rproj.user
 .Rhistory
-.RData
+*.RData
 .Ruserdata
-.rdb
-.rdx
+*.rdb
+*.rdx
 static/data/secret-keys.R
 static/data/secret-vault.vault
