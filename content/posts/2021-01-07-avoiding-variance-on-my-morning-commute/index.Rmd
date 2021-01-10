@@ -234,14 +234,22 @@ full_trip <- rbind(first_leg, second_leg)
 
 full_trip %>%
   filter(month(arrival_time) == 1, day(arrival_time) == 2) %>%
+  arrange(desc(route)) %>%
+  mutate(route = factor(route, levels = unique(.$route))) %>%
   ggplot(aes(arrival_time, stop_idx, group = trip_id)) +
   geom_line(aes(col = route)) +
   geom_point(aes(col = route), alpha = 0.5, size = 2) +
   scale_y_continuous(breaks = 1:max(full_trip$stop_idx),
                      labels = unique(c(levels(first_leg$stop_name), levels(second_leg$stop_name)))) +
+  labs(x = "time", y = "") +
+  facet_wrap(~date(arrival_time), scales = "free_x", nrow = 1) +
   theme_bw() +
-  labs(x = "time", y = "", color = "") +
-  facet_wrap(~date(arrival_time), scales = "free_x", nrow = 1)
+  theme(legend.title = element_blank(),
+        legend.position = c(1, 0), 
+        legend.justification = c(1, 0),
+        legend.background = element_rect(fill = alpha("white", 0)),
+        legend.key = element_rect(fill = alpha("white", 0)),
+        legend.margin=margin(r = 10, b = 15))
 ```
 <div id = "skip1"> </div>
 
@@ -250,14 +258,22 @@ full_trip <- rbind(first_leg, second_leg)
 
 full_trip %>%
   filter(month(arrival_time) == 1, day(arrival_time) == 2) %>%
+  arrange(desc(route)) %>%
+  mutate(route = factor(route, levels = unique(.$route))) %>%
   ggplot(aes(arrival_time, stop_idx, group = trip_id)) +
   geom_line(aes(col = route)) +
   geom_point(aes(col = route), alpha = 0.5, size = 2) +
   scale_y_continuous(breaks = 1:max(full_trip$stop_idx),
                      labels = unique(c(levels(first_leg$stop_name), levels(second_leg$stop_name)))) +
+  labs(x = "time", y = "") +
+  facet_wrap(~date(arrival_time), scales = "free_x", nrow = 1) +
   theme_bw() +
-  labs(x = "time", y = "", color = "") +
-  facet_wrap(~date(arrival_time), scales = "free_x", nrow = 1)
+  theme(legend.title = element_blank(),
+        legend.position = c(1, 0), 
+        legend.justification = c(1, 0),
+        legend.background = element_rect(fill = alpha("white", 0)),
+        legend.key = element_rect(fill = alpha("white", 0)),
+        legend.margin=margin(r = 10, b = 15))
 ```
 
 [_**Don't like/know/care about R? Click here to skip to the (other) results.**_](#skip2)
@@ -336,7 +352,7 @@ full_trip_walking <- first_leg_walking %>%
 Finally we can graph the distribution of simulated first leg and full commute durations under both conditions. As we guaranteed by assuming a relatively consistent walking time, the variance of the first leg is much wider when taking the train despite also having a much smaller mean. This discrepancy is passed along to the full commute durations, as there's also less overall variance when walking the first leg:
 
 ```{r, eval = FALSE}
-rbind(
+commute_times <- rbind(
   full_trip_subway %>%
     ungroup() %>%
     select(duration_leg1, duration_full) %>%
@@ -348,13 +364,28 @@ rbind(
 ) %>% 
   mutate(idx = row_number()) %>%
   gather(interval, duration, -idx, -type) %>%
-  mutate(interval = ifelse(interval == "duration_leg1", "first leg", "full commute")) %>%
-  ggplot(aes(duration, fill = type)) +
-  geom_histogram(col = "black") +
+  mutate(interval = ifelse(interval == "duration_leg1", "first leg", "full commute"))
+
+commute_stats <- commute_times %>%
+  group_by(type, interval) %>%
+  summarize(mean = mean(duration), variance = var(duration)) %>%
+  mutate(text = paste0("mean: ", round(mean, 2), "\n", "variance: ", round(variance, 2)))
+
+commute_times %>%
+  ggplot(aes(duration)) +
+  geom_histogram(aes(fill = type), col = "black") +
+  geom_label(
+    data = commute_stats,
+    size = 3,
+    fill = "#F6F6F6",
+    mapping = aes(x = c(40, 110, 40, 110), y = 6000, label = text),
+    hjust = 1,
+    fontface = "italic") +
   facet_grid(type~interval, scales = "free_x") +
+  labs(x = "duration (minutes)") +
   theme_bw() +
-  theme(strip.text.y = element_blank()) +
-  labs(fill = "")
+  theme(legend.title = element_blank(),
+        strip.text.y = element_blank())
 
 ```
 
@@ -391,9 +422,10 @@ commute_times %>%
     hjust = 1,
     fontface = "italic") +
   facet_grid(type~interval, scales = "free_x") +
+  labs(x = "duration (minutes)") +
   theme_bw() +
-  theme(strip.text.y = element_blank()) +
-  labs(x = "duration (minutes)", fill = "")
+  theme(legend.title = element_blank(),
+        strip.text.y = element_blank())
 
 ```
 

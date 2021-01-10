@@ -197,14 +197,22 @@ second_leg &lt;- trip_updates %&gt;%
 
 full_trip %&gt;%
   filter(month(arrival_time) == 1, day(arrival_time) == 2) %&gt;%
+  arrange(desc(route)) %&gt;%
+  mutate(route = factor(route, levels = unique(.$route))) %&gt;%
   ggplot(aes(arrival_time, stop_idx, group = trip_id)) +
   geom_line(aes(col = route)) +
   geom_point(aes(col = route), alpha = 0.5, size = 2) +
   scale_y_continuous(breaks = 1:max(full_trip$stop_idx),
                      labels = unique(c(levels(first_leg$stop_name), levels(second_leg$stop_name)))) +
+  labs(x = &quot;time&quot;, y = &quot;&quot;) +
+  facet_wrap(~date(arrival_time), scales = &quot;free_x&quot;, nrow = 1) +
   theme_bw() +
-  labs(x = &quot;time&quot;, y = &quot;&quot;, color = &quot;&quot;) +
-  facet_wrap(~date(arrival_time), scales = &quot;free_x&quot;, nrow = 1)</code></pre>
+  theme(legend.title = element_blank(),
+        legend.position = c(1, 0), 
+        legend.justification = c(1, 0),
+        legend.background = element_rect(fill = alpha(&quot;white&quot;, 0)),
+        legend.key = element_rect(fill = alpha(&quot;white&quot;, 0)),
+        legend.margin=margin(r = 10, b = 15))</code></pre>
 <div id="skip1">
 
 </div>
@@ -270,7 +278,7 @@ full_trip_walking &lt;- first_leg_walking %&gt;%
   filter((start) == min(start)) %&gt;%
   mutate(duration_full = as.numeric(difftime(end_leg2, end_leg1, units = &#39;mins&#39;)) + duration_leg1)</code></pre>
 <p>Finally we can graph the distribution of simulated first leg and full commute durations under both conditions. As we guaranteed by assuming a relatively consistent walking time, the variance of the first leg is much wider when taking the train despite also having a much smaller mean. This discrepancy is passed along to the full commute durations, as there’s also less overall variance when walking the first leg:</p>
-<pre class="r"><code>rbind(
+<pre class="r"><code>commute_times &lt;- rbind(
   full_trip_subway %&gt;%
     ungroup() %&gt;%
     select(duration_leg1, duration_full) %&gt;%
@@ -282,13 +290,28 @@ full_trip_walking &lt;- first_leg_walking %&gt;%
 ) %&gt;% 
   mutate(idx = row_number()) %&gt;%
   gather(interval, duration, -idx, -type) %&gt;%
-  mutate(interval = ifelse(interval == &quot;duration_leg1&quot;, &quot;first leg&quot;, &quot;full commute&quot;)) %&gt;%
-  ggplot(aes(duration, fill = type)) +
-  geom_histogram(col = &quot;black&quot;) +
+  mutate(interval = ifelse(interval == &quot;duration_leg1&quot;, &quot;first leg&quot;, &quot;full commute&quot;))
+
+commute_stats &lt;- commute_times %&gt;%
+  group_by(type, interval) %&gt;%
+  summarize(mean = mean(duration), variance = var(duration)) %&gt;%
+  mutate(text = paste0(&quot;mean: &quot;, round(mean, 2), &quot;\n&quot;, &quot;variance: &quot;, round(variance, 2)))
+
+commute_times %&gt;%
+  ggplot(aes(duration)) +
+  geom_histogram(aes(fill = type), col = &quot;black&quot;) +
+  geom_label(
+    data = commute_stats,
+    size = 3,
+    fill = &quot;#F6F6F6&quot;,
+    mapping = aes(x = c(40, 110, 40, 110), y = 6000, label = text),
+    hjust = 1,
+    fontface = &quot;italic&quot;) +
   facet_grid(type~interval, scales = &quot;free_x&quot;) +
+  labs(x = &quot;duration (minutes)&quot;) +
   theme_bw() +
-  theme(strip.text.y = element_blank()) +
-  labs(fill = &quot;&quot;)</code></pre>
+  theme(legend.title = element_blank(),
+        strip.text.y = element_blank())</code></pre>
 <div id="skip2">
 
 </div>

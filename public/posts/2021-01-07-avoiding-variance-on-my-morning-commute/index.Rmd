@@ -1,7 +1,7 @@
 ---
 title: Avoiding Variance on my Morning Commute
 author: Walker Harrison
-date: '2021-01-07'
+date: '2021-01-10'
 draft: false
 slug: []
 categories: []
@@ -40,9 +40,9 @@ As a result, as long as my walks had less variance than the time spent waiting f
 
 [_**Don't like/know/care about R? Click here to skip to the results.**_](#skip1)
 
-The MTA publishes the [historical timestamp data](http://web.mta.info/developers/MTA-Subway-Time-historical-data.html) of its subway routes, although there are some caveats. I was unable to successfully retrieve the "daily roll-up" files, which meant I had to grab the individual reports that correspond to 5-minute intervals. It also appears that the MTA stopped making these files available at some point in late 2018.
+The MTA publishes the [historical timestamp data](http://web.mta.info/developers/MTA-Subway-Time-historical-data.html){target="_blank"} of its subway routes, although there are some caveats. I was unable to successfully retrieve the "daily roll-up" files, which meant I had to grab the individual reports that correspond to 5-minute intervals. It also appears that the MTA stopped making these files available at some point in late 2018.
 
-Either way, I'm able to fetch approximately 200 mornings worth of weekday data from 2018, which should suffice:
+Either way, I'm able to fetch approximately 200 mornings' worth of weekday data from 2018, which should suffice:
 
 ```{r, message = FALSE, warning = FALSE}
 library(gtfsway)
@@ -95,7 +95,7 @@ good_requests <- requests %>%
   keep(function(request) !is.null(request$result$status_code) && request$result$status_code == 200)
 ```
 
-The `gtfsway` package is a life-saver here since it converts the [Google transit feed](https://developers.google.com/transit/gtfs-realtime) into comprehensible R objects, although I did rewrite the `gtfs_tripUpdates` function to drill down on specific routes in the interest of speed:
+The `gtfsway` package is a life-saver here since it converts the [Google transit feed](https://developers.google.com/transit/gtfs-realtime){target="_blank"} into comprehensible R objects, although I did [rewrite the `gtfs_tripUpdates` function](https://github.com/WalkerHarrison/blogposts/blob/main/2021-01-07-avoiding-variance-on-my-morning-commute/faster_trip_updates.R){target="_blank"} to drill down on specific routes in the interest of speed:
 
 ```{r, eval = FALSE, cache = TRUE}
 # slight re-write of gtfs_tripUpdates that runs faster
@@ -186,7 +186,7 @@ first_leg <- trip_updates %>%
   mutate(route = "first leg (2/3)")
 ```
 
-The logic for the second leg is similar, although now we have to record the when exactly the first leg is finishing up each day, since these `transfers` will determine the window during which our second leg can actually start.
+The logic for the second leg is similar, although now we have to record when exactly the first leg is finishing up each day, since these `transfers` will determine the window during which our second leg can actually start.
 
 ```{r, cache = TRUE, message = FALSE, warning = FALSE}
 # find earliest and latest times when first leg is ending
@@ -234,14 +234,22 @@ full_trip <- rbind(first_leg, second_leg)
 
 full_trip %>%
   filter(month(arrival_time) == 1, day(arrival_time) == 2) %>%
+  arrange(desc(route)) %>%
+  mutate(route = factor(route, levels = unique(.$route))) %>%
   ggplot(aes(arrival_time, stop_idx, group = trip_id)) +
   geom_line(aes(col = route)) +
   geom_point(aes(col = route), alpha = 0.5, size = 2) +
   scale_y_continuous(breaks = 1:max(full_trip$stop_idx),
                      labels = unique(c(levels(first_leg$stop_name), levels(second_leg$stop_name)))) +
+  labs(x = "time", y = "") +
+  facet_wrap(~date(arrival_time), scales = "free_x", nrow = 1) +
   theme_bw() +
-  labs(x = "time", y = "", color = "") +
-  facet_wrap(~date(arrival_time), scales = "free_x", nrow = 1)
+  theme(legend.title = element_blank(),
+        legend.position = c(1, 0), 
+        legend.justification = c(1, 0),
+        legend.background = element_rect(fill = alpha("white", 0)),
+        legend.key = element_rect(fill = alpha("white", 0)),
+        legend.margin=margin(r = 10, b = 15))
 ```
 <div id = "skip1"> </div>
 
@@ -250,14 +258,22 @@ full_trip <- rbind(first_leg, second_leg)
 
 full_trip %>%
   filter(month(arrival_time) == 1, day(arrival_time) == 2) %>%
+  arrange(desc(route)) %>%
+  mutate(route = factor(route, levels = unique(.$route))) %>%
   ggplot(aes(arrival_time, stop_idx, group = trip_id)) +
   geom_line(aes(col = route)) +
   geom_point(aes(col = route), alpha = 0.5, size = 2) +
   scale_y_continuous(breaks = 1:max(full_trip$stop_idx),
                      labels = unique(c(levels(first_leg$stop_name), levels(second_leg$stop_name)))) +
+  labs(x = "time", y = "") +
+  facet_wrap(~date(arrival_time), scales = "free_x", nrow = 1) +
   theme_bw() +
-  labs(x = "time", y = "", color = "") +
-  facet_wrap(~date(arrival_time), scales = "free_x", nrow = 1)
+  theme(legend.title = element_blank(),
+        legend.position = c(1, 0), 
+        legend.justification = c(1, 0),
+        legend.background = element_rect(fill = alpha("white", 0)),
+        legend.key = element_rect(fill = alpha("white", 0)),
+        legend.margin=margin(r = 10, b = 15))
 ```
 
 [_**Don't like/know/care about R? Click here to skip to the (other) results.**_](#skip2)
@@ -336,7 +352,7 @@ full_trip_walking <- first_leg_walking %>%
 Finally we can graph the distribution of simulated first leg and full commute durations under both conditions. As we guaranteed by assuming a relatively consistent walking time, the variance of the first leg is much wider when taking the train despite also having a much smaller mean. This discrepancy is passed along to the full commute durations, as there's also less overall variance when walking the first leg:
 
 ```{r, eval = FALSE}
-rbind(
+commute_times <- rbind(
   full_trip_subway %>%
     ungroup() %>%
     select(duration_leg1, duration_full) %>%
@@ -348,20 +364,35 @@ rbind(
 ) %>% 
   mutate(idx = row_number()) %>%
   gather(interval, duration, -idx, -type) %>%
-  mutate(interval = ifelse(interval == "duration_leg1", "first leg", "full commute")) %>%
-  ggplot(aes(duration, fill = type)) +
-  geom_histogram(col = "black") +
+  mutate(interval = ifelse(interval == "duration_leg1", "first leg", "full commute"))
+
+commute_stats <- commute_times %>%
+  group_by(type, interval) %>%
+  summarize(mean = mean(duration), variance = var(duration)) %>%
+  mutate(text = paste0("mean: ", round(mean, 2), "\n", "variance: ", round(variance, 2)))
+
+commute_times %>%
+  ggplot(aes(duration)) +
+  geom_histogram(aes(fill = type), col = "black") +
+  geom_label(
+    data = commute_stats,
+    size = 3,
+    fill = "#F6F6F6",
+    mapping = aes(x = c(40, 110, 40, 110), y = 6000, label = text),
+    hjust = 1,
+    fontface = "italic") +
   facet_grid(type~interval, scales = "free_x") +
+  labs(x = "duration (minutes)") +
   theme_bw() +
-  theme(strip.text.y = element_blank()) +
-  labs(fill = "")
+  theme(legend.title = element_blank(),
+        strip.text.y = element_blank())
 
 ```
 
 <div id = "skip2"> </div>
 
-```{r, echo = FALSE}
-rbind(
+```{r, echo = FALSE, message = FALSE}
+commute_times <- rbind(
   full_trip_subway %>%
     ungroup() %>%
     select(duration_leg1, duration_full) %>%
@@ -373,16 +404,31 @@ rbind(
 ) %>% 
   mutate(idx = row_number()) %>%
   gather(interval, duration, -idx, -type) %>%
-  mutate(interval = ifelse(interval == "duration_leg1", "first leg", "full commute")) %>%
-  ggplot(aes(duration, fill = type)) +
-  geom_histogram(col = "black") +
+  mutate(interval = ifelse(interval == "duration_leg1", "first leg", "full commute"))
+
+commute_stats <- commute_times %>%
+  group_by(type, interval) %>%
+  summarize(mean = mean(duration), variance = var(duration)) %>%
+  mutate(text = paste0("mean: ", round(mean, 2), "\n", "variance: ", round(variance, 2)))
+
+commute_times %>%
+  ggplot(aes(duration)) +
+  geom_histogram(aes(fill = type), col = "black") +
+  geom_label(
+    data = commute_stats,
+    size = 3,
+    fill = "#F6F6F6",
+    mapping = aes(x = c(40, 110, 40, 110), y = 6000, label = text),
+    hjust = 1,
+    fontface = "italic") +
   facet_grid(type~interval, scales = "free_x") +
+  labs(x = "duration (minutes)") +
   theme_bw() +
-  theme(strip.text.y = element_blank()) +
-  labs(fill = "")
+  theme(legend.title = element_blank(),
+        strip.text.y = element_blank())
 
 ```
 
-Of course, the two distributions describing the full journey are very similar, and the difference in spread is mostly washed away against the backdrop of lengthy commutes in general. By walking I wasn't really saving that much uncertainty or avoiding particularly long trips caused by 4-train delays. But the study is still a decent example of a tradeoff between expected value and variance, which perhaps can explain why I found those walks a little more relaxing than waiting for a train.
+Of course, the two distributions describing the full journey are very similar, and the difference in spread is mostly washed away against the backdrop of lengthy commutes in general. By walking I wasn't really saving that much uncertainty or avoiding particularly long trips that are usually caused by 4-train delays. But the study is still a decent example of a tradeoff between expected value and variance, which perhaps can explain why I found those walks a little more relaxing than waiting for a train.
 
 

@@ -1,7 +1,7 @@
 ---
 title: Avoiding Variance on my Morning Commute
 author: Walker Harrison
-date: '2021-01-07'
+date: '2021-01-10'
 draft: false
 slug: []
 categories: []
@@ -35,8 +35,8 @@ X = Y_1 + Y_2; \ \ \ Y_1 \perp Y_2
 \]</span></p>
 <p>As a result, as long as my walks had less variance than the time spent waiting for and riding the 2/3 train until Nevins Street, then the overall variance would also be decreased, since the second leg is identical in both cases. Lucky for us, we can actually test this thought using some historical subway data.</p>
 <p><a href="#skip1"><em><strong>Don’t like/know/care about R? Click here to skip to the results.</strong></em></a></p>
-<p>The MTA publishes the <a href="http://web.mta.info/developers/MTA-Subway-Time-historical-data.html">historical timestamp data</a> of its subway routes, although there are some caveats. I was unable to successfully retrieve the “daily roll-up” files, which meant I had to grab the individual reports that correspond to 5-minute intervals. It also appears that the MTA stopped making these files available at some point in late 2018.</p>
-<p>Either way, I’m able to fetch approximately 200 mornings worth of weekday data from 2018, which should suffice:</p>
+<p>The MTA publishes the <a href="http://web.mta.info/developers/MTA-Subway-Time-historical-data.html" target="_blank">historical timestamp data</a> of its subway routes, although there are some caveats. I was unable to successfully retrieve the “daily roll-up” files, which meant I had to grab the individual reports that correspond to 5-minute intervals. It also appears that the MTA stopped making these files available at some point in late 2018.</p>
+<p>Either way, I’m able to fetch approximately 200 mornings’ worth of weekday data from 2018, which should suffice:</p>
 <pre class="r"><code>library(gtfsway)
 library(httr)
 library(tidyverse)
@@ -74,7 +74,7 @@ for(i in 1:length(urls)){
 # only keep the successful queries
 good_requests &lt;- requests %&gt;%
   keep(function(request) !is.null(request$result$status_code) &amp;&amp; request$result$status_code == 200)</code></pre>
-<p>The <code>gtfsway</code> package is a life-saver here since it converts the <a href="https://developers.google.com/transit/gtfs-realtime">Google transit feed</a> into comprehensible R objects, although I did rewrite the <code>gtfs_tripUpdates</code> function to drill down on specific routes in the interest of speed:</p>
+<p>The <code>gtfsway</code> package is a life-saver here since it converts the <a href="https://developers.google.com/transit/gtfs-realtime" target="_blank">Google transit feed</a> into comprehensible R objects, although I did <a href="https://github.com/WalkerHarrison/blogposts/blob/main/2021-01-07-avoiding-variance-on-my-morning-commute/faster_trip_updates.R" target="_blank">rewrite the <code>gtfs_tripUpdates</code> function</a> to drill down on specific routes in the interest of speed:</p>
 <pre class="r"><code># slight re-write of gtfs_tripUpdates that runs faster
 source(&quot;faster_trip_updates.R&quot;)
 
@@ -155,7 +155,7 @@ first_leg &lt;- trip_updates %&gt;%
   filter(hour(start_time) &lt; 10 | diff == min(diff)) %&gt;%
   select(-diff) %&gt;%
   mutate(route = &quot;first leg (2/3)&quot;)</code></pre>
-<p>The logic for the second leg is similar, although now we have to record the when exactly the first leg is finishing up each day, since these <code>transfers</code> will determine the window during which our second leg can actually start.</p>
+<p>The logic for the second leg is similar, although now we have to record when exactly the first leg is finishing up each day, since these <code>transfers</code> will determine the window during which our second leg can actually start.</p>
 <pre class="r"><code># find earliest and latest times when first leg is ending
 transfers &lt;- first_leg %&gt;%
   filter(stop_idx == max(stop_idx)) %&gt;%
@@ -197,14 +197,22 @@ second_leg &lt;- trip_updates %&gt;%
 
 full_trip %&gt;%
   filter(month(arrival_time) == 1, day(arrival_time) == 2) %&gt;%
+  arrange(desc(route)) %&gt;%
+  mutate(route = factor(route, levels = unique(.$route))) %&gt;%
   ggplot(aes(arrival_time, stop_idx, group = trip_id)) +
   geom_line(aes(col = route)) +
   geom_point(aes(col = route), alpha = 0.5, size = 2) +
   scale_y_continuous(breaks = 1:max(full_trip$stop_idx),
                      labels = unique(c(levels(first_leg$stop_name), levels(second_leg$stop_name)))) +
+  labs(x = &quot;time&quot;, y = &quot;&quot;) +
+  facet_wrap(~date(arrival_time), scales = &quot;free_x&quot;, nrow = 1) +
   theme_bw() +
-  labs(x = &quot;time&quot;, y = &quot;&quot;, color = &quot;&quot;) +
-  facet_wrap(~date(arrival_time), scales = &quot;free_x&quot;, nrow = 1)</code></pre>
+  theme(legend.title = element_blank(),
+        legend.position = c(1, 0), 
+        legend.justification = c(1, 0),
+        legend.background = element_rect(fill = alpha(&quot;white&quot;, 0)),
+        legend.key = element_rect(fill = alpha(&quot;white&quot;, 0)),
+        legend.margin=margin(r = 10, b = 15))</code></pre>
 <div id="skip1">
 
 </div>
@@ -270,7 +278,7 @@ full_trip_walking &lt;- first_leg_walking %&gt;%
   filter((start) == min(start)) %&gt;%
   mutate(duration_full = as.numeric(difftime(end_leg2, end_leg1, units = &#39;mins&#39;)) + duration_leg1)</code></pre>
 <p>Finally we can graph the distribution of simulated first leg and full commute durations under both conditions. As we guaranteed by assuming a relatively consistent walking time, the variance of the first leg is much wider when taking the train despite also having a much smaller mean. This discrepancy is passed along to the full commute durations, as there’s also less overall variance when walking the first leg:</p>
-<pre class="r"><code>rbind(
+<pre class="r"><code>commute_times &lt;- rbind(
   full_trip_subway %&gt;%
     ungroup() %&gt;%
     select(duration_leg1, duration_full) %&gt;%
@@ -282,16 +290,30 @@ full_trip_walking &lt;- first_leg_walking %&gt;%
 ) %&gt;% 
   mutate(idx = row_number()) %&gt;%
   gather(interval, duration, -idx, -type) %&gt;%
-  mutate(interval = ifelse(interval == &quot;duration_leg1&quot;, &quot;first leg&quot;, &quot;full commute&quot;)) %&gt;%
-  ggplot(aes(duration, fill = type)) +
-  geom_histogram(col = &quot;black&quot;) +
+  mutate(interval = ifelse(interval == &quot;duration_leg1&quot;, &quot;first leg&quot;, &quot;full commute&quot;))
+
+commute_stats &lt;- commute_times %&gt;%
+  group_by(type, interval) %&gt;%
+  summarize(mean = mean(duration), variance = var(duration)) %&gt;%
+  mutate(text = paste0(&quot;mean: &quot;, round(mean, 2), &quot;\n&quot;, &quot;variance: &quot;, round(variance, 2)))
+
+commute_times %&gt;%
+  ggplot(aes(duration)) +
+  geom_histogram(aes(fill = type), col = &quot;black&quot;) +
+  geom_label(
+    data = commute_stats,
+    size = 3,
+    fill = &quot;#F6F6F6&quot;,
+    mapping = aes(x = c(40, 110, 40, 110), y = 6000, label = text),
+    hjust = 1,
+    fontface = &quot;italic&quot;) +
   facet_grid(type~interval, scales = &quot;free_x&quot;) +
+  labs(x = &quot;duration (minutes)&quot;) +
   theme_bw() +
-  theme(strip.text.y = element_blank()) +
-  labs(fill = &quot;&quot;)</code></pre>
+  theme(legend.title = element_blank(),
+        strip.text.y = element_blank())</code></pre>
 <div id="skip2">
 
 </div>
-<pre><code>## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</code></pre>
 <p><img src="index_files/figure-html/unnamed-chunk-16-1.png" width="672" /></p>
-<p>Of course, the two distributions describing the full journey are very similar, and the difference in spread is mostly washed away against the backdrop of lengthy commutes in general. By walking I wasn’t really saving that much uncertainty or avoiding particularly long trips caused by 4-train delays. But the study is still a decent example of a tradeoff between expected value and variance, which perhaps can explain why I found those walks a little more relaxing than waiting for a train.</p>
+<p>Of course, the two distributions describing the full journey are very similar, and the difference in spread is mostly washed away against the backdrop of lengthy commutes in general. By walking I wasn’t really saving that much uncertainty or avoiding particularly long trips that are usually caused by 4-train delays. But the study is still a decent example of a tradeoff between expected value and variance, which perhaps can explain why I found those walks a little more relaxing than waiting for a train.</p>
