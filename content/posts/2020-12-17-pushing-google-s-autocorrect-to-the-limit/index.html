@@ -13,8 +13,6 @@ highlight: yes
 summary: Everyone makes errors sometimes when hastily typing a query into a search bar, and most of the time Google is able to recognize your mistake and offer a suggestion. But what is this algorithm's breaking point? How badly can you mis-type a word before even Google doesn't know what you mean anymore?
 ---
 
-<link href="index_files/anchor-sections/anchor-sections.css" rel="stylesheet" />
-<script src="index_files/anchor-sections/anchor-sections.js"></script>
 
 
 <p>I only had a vague understanding of the word “endocrinology” when it popped up in <a href="https://nyti.ms/2Yihgpm" target="_blank">a recent article</a>, so I Googled it. Or at least, I tried to. Instead I typed “wndicromoly,” and was disappointed by the results, all due respect to Wendy Cromwell:</p>
@@ -155,7 +153,7 @@ ladders_df &lt;- data.frame(
 <p>The graph below moves from left to right and determines when each ladder went from a salvageable typo to an unrecognizable one. There’s a fair amount of overlap in the paths since there are only so many high-probability mutations these terms can go through.</p>
 <p>My instinct was that the ‘w’ in ‘wndicromoly’ was the culprit, although that thought is motivated from a linguistic standpoint, as I perceive ‘w’ to be a very different letter than ‘e’. But Google doesn’t really have trouble handling this error, probably since ‘wnd’ is a dead-end that no one ever really intends to type.</p>
 <p>It appears, however, that turning the ‘logy’ at the end of the word into ‘mogy’ was the mortal wound for many of these ladders, as that’s where the cells turn red, indicating a lack of suggested fixes from Google.</p>
-<p>(Note that the code to produce the graph is lengthy but not particularly interesting so I’ve hidden it, although it is available in <a href="https://github.com/WalkerHarrison/blogposts/blob/main/index.Rmd" target="_blank">the original .Rmd</a>.)</p>
+<p>(Note that the code to produce the graph is lengthy but not particularly interesting so I’ve hidden it, although it is available in <a href="https://github.com/WalkerHarrison/blogposts/blob/main/2020-12-17-pushing-google-s-autocorrect-to-the-limit/index.Rmd" target="_blank">the original .Rmd</a>.)</p>
 <p><img src="index_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
 <p>Before we finish, let’s pretend we don’t know what typo we’re going to end up with and instead just start with an intended term. The function <code>make_tree</code> will recursively mutate a term <code>n_children</code> times until a given <code>depth</code> is reached. Let’s use the word “youtube” as our original word.</p>
 <p><a href="#skip2"><em><strong>Still don’t like/know/care about R? Click here to skip to the (other) results.</strong></em></a></p>
@@ -229,6 +227,6 @@ corrected_df &lt;- data.frame(term = terms,
 </div>
 <p>The results are somewhat surprising, at least for me. Through four rounds of typos, all but two of the 16 mutated terms are still recognized as “youtube” by Google. One final iteration is enough to break the algorithm’s back in many cases, but queries like “oktiebe” and “hyurtuue” are still not beyond repair for the omnipotent search engine.</p>
 <p>Of course, the cynic in you might argue that the engineers behind the algorithm have reason to tip the scales for terms that are in the neighborhood of YouTube, which was bought by Google in 2006. Is it possible that Google is a little overly helpful in nudging astray searches toward their own products?</p>
-<p>(Again the graphing code is hidden. Again it is available in <a href="https://github.com/WalkerHarrison/blogposts/blob/main/index.Rmd" target="_blank">the original .Rmd</a>.)</p>
+<p>(Again the graphing code is hidden. Again it is available in <a href="https://github.com/WalkerHarrison/blogposts/blob/main/2020-12-17-pushing-google-s-autocorrect-to-the-limit/index.Rmd" target="_blank">the original .Rmd</a>.)</p>
 <p><img src="index_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
 <p>And that’s all for this post. Thanks for reading!</p>
