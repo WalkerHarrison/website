@@ -2,5 +2,7 @@
 .Rhistory
 .RData
 .Ruserdata
+.rdb
+.rdx
 static/data/secret-keys.R
 static/data/secret-vault.vault
