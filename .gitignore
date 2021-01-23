@@ -4,5 +4,6 @@
 .Ruserdata
 *.rdb
 *.rdx
+*.csv
 static/data/secret-keys.R
 static/data/secret-vault.vault
