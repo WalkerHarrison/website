@@ -1,0 +1,469 @@
+---
+title: 'Gradient Ascent: Finding Uphill Routes for my Long Walks'
+author: Walker Harrison
+date: '2021-01-23'
+draft: false
+slug: []
+categories: []
+tags: []
+lastmod: '2021-01-17T18:33:22-05:00'
+layout: post
+type: post
+highlight: yes
+summary: An old back injury makes it so that walking uphill is much more comfortable for me than walking downhill. A programmatic search for uphill routes reveals how strict constraints and "greedy" decisions can lead to sub-optimal results.
+---
+
+
+
+<p>I enjoy going for long walks — and no this isn’t the start of my lonely hearts column. But a herniated disc in my back brought on by too much baseball during my teenage years and not enough stretching (am I really blogging about my high school sports career? Maybe I do need to put up a personal…) makes walking uncomfortable sometimes.</p>
+<p>At least that’s the case in one direction. When I’m walking downhill, I’m more likely to feel some pain, but walking uphill is usually not a problem. From what I can gather via my micro medical degree from WebMD University, this phenomenon is caused by the different angles created in my spine as I lean forward or backward to offset the slope of my path. In any case, I find myself seeking out uphill routes when possible during my walks.</p>
+<p><strong>Which made me wonder: could I programmatically design entirely uphill routes?</strong></p>
+<p>First I need to define a map. In the interest of simplicity – and also nostalgia, as I lived on East 97th St. for three years – I choose the Upper East Side as the site of my experiment. The neighborhood sits on several square miles of uninterrupted grid, which is easier to simulate than some of the more complicated layouts further downtown.</p>
+<p><a href="#skip1"><em><strong>Don’t like/know/care about R? Click here to skip to the results.</strong></em></a></p>
+<center>
+<img src="/img/ues.png"/>
+</center>
+<p>First we define our intersections, which are every combination of the streets between 59th and 110th and the seven avenues that stretch from Central Park to the East River (excluding “partial” avenues like York that don’t cover the full sixty blocks):</p>
+<pre class="r"><code>library(tidyverse)
+library(httr)
+library(ggmap)
+library(data.table)
+
+streets &lt;- 59:110
+avenues &lt;- c(&#39;5th&#39;, &#39;Madison&#39;, &#39;Park&#39;, &#39;Lexington&#39;, &#39;3rd&#39;, &#39;2nd&#39;, &#39;1st&#39;)
+
+intersections &lt;- crossing(st = streets, ave = avenues) %&gt;%
+  rowwise() %&gt;%
+  mutate(intersection = paste0(&quot;E &quot;, toOrdinal::toOrdinal(st), 
+                               &quot; Street &amp; &quot;, ave, &quot; Ave, Manhattan&quot;)) %&gt;%
+  ungroup()</code></pre>
+<p><a href="https://developers.google.com/maps/documentation/geocoding/start" target="_blank">Google’s Geocoding API</a> will provide the latitude and longitude for each of our intersections. The only required parameters are an address (the intersection) and an API key which one can sign up for.</p>
+<pre class="r"><code>geo_requests &lt;- map(intersections$intersection, ~{
+  # bake in a pause to avoid hitting rate limits
+  Sys.sleep(0.1)
+  GET(
+    url = &quot;https://maps.googleapis.com/maps/api/geocode/json&quot;,
+    query = list(
+      address = .x,
+      key = api_key
+    )
+  )
+}
+)
+
+# add lat/long data to intersections dataframe
+intersections &lt;- intersections %&gt;%
+  mutate(lat = map_dbl(geo_requests, ~content(.x)$results[[1]]$geometry$location$lat),
+         long = map_dbl(geo_requests, ~content(.x)$results[[1]]$geometry$location$lng),
+         type = map_chr(geo_requests, ~content(.x)$results[[1]]$types[[1]])) %&gt;%
+  # some intersections don&#39;t exist 
+  filter(type == &quot;intersection&quot;)</code></pre>
+<p>The key to the whole exercise, of course, is knowing the elevation of all our locations so that we can determine if I’d actually be going uphill when traveling from one intersection to another. Again, Google steps in with their <a href="https://developers.google.com/maps/documentation/elevation/start" target="_blank">Elevation API</a>, which can handle multiple locations in a single request:</p>
+<pre class="r"><code>locations &lt;- intersections %&gt;%
+  mutate(location = paste0(lat, &quot;,&quot;, long)) %&gt;%
+  pull(location) %&gt;%
+  paste0(collapse = &quot;|&quot;)
+
+elevation_request &lt;- GET(
+  url = &quot;https://maps.googleapis.com/maps/api/elevation/json&quot;,
+  query = list(
+    locations = locations,
+    key = api_key
+  )
+)
+
+# extract elevation data and add dummy column for cross join
+intersections &lt;- intersections %&gt;%
+  mutate(elevation = map_dbl(content(elevation_request)$results, ~.x$elevation)) %&gt;%
+  rowwise() %&gt;%
+  mutate(ave_idx = which(ave == avenues),
+         dummy = TRUE) %&gt;%
+  ungroup()</code></pre>
+<p>We define our network as a dataframe of edges, which we compose by cross joining our intersections on itself and then filtering for pairs of intersections that are either a single avenue away or a single street away (i.e. the neighboring four intersections at any point in the grid):</p>
+<pre class="r"><code># every possible pair of intersections
+all_combos &lt;- intersections %&gt;%
+  inner_join(intersections, by = &#39;dummy&#39;)
+
+# find closest streets on same ave
+# can&#39;t simply filter for distance == 1 due to missing intersections
+next_street_over &lt;- all_combos %&gt;%
+  filter(st.x != st.y, ave.x  == ave.y) %&gt;%
+  group_by(idx.x, sign(st.x - st.y)) %&gt;%
+  filter(abs(st.x - st.y) == min(abs(st.x - st.y)))
+
+# find closest aves on same street
+# can&#39;t simply filter for distance == 1 due to missing intersections
+next_ave_over &lt;- all_combos %&gt;%
+  filter(ave.x != ave.y, st.x  == st.y) %&gt;%
+  group_by(idx.x, sign(ave_idx.x - ave_idx.y)) %&gt;%
+  filter(abs(ave_idx.x - ave_idx.y) == min(abs(ave_idx.x - ave_idx.y)))
+
+network &lt;- rbind(next_street_over, next_ave_over) %&gt;%
+  data.table()</code></pre>
+<p>And finally we arrive at our workhorse function, <code>find_paths</code>. Given a node (intersection), the function recursively finds available neighbors that are no more than <code>tolerance</code> feet below the current node in terms of elevation. The default value of <code>tolerance = 0</code> ensures that every segment in a path will be uphill. Additional features of the function are <code>prev</code>, which keeps the path from visiting the same intersection twice, and <code>max_depth</code>, which will truncate a path if it reaches a given depth.</p>
+At first this function was intractably slow for deep paths, so I had to make two adjustments:
+<ul>
+<li>
+replace the <code>dplyr</code> functions with <code>data.table</code> functions, a crushing blow for a tidy disciple
+</li>
+<li>
+limit the <code>options</code> at each intersection to the two best, instead of 3-4
+</li>
+</ul>
+<pre class="r"><code>find_paths &lt;- function(node, prev = integer(0), depth = 0, max_depth = 50, tolerance = 0){
+  
+  # find current elevation
+  elevation &lt;- intersections$elevation[which(intersections$idx==node)]
+  
+  # find best two permissible neighbors to travel to
+  options &lt;- network[idx.x == node &amp; !idx.y %in% prev &amp; elevation.y - elevation.x &gt; tolerance]
+  options &lt;- options[order(desc(elevation.y))]
+  options &lt;- options$idx.y
+  if(length(options) &gt; 2) options &lt;- options[1:2]
+  
+  # escape recursion if path is stuck or max depth hit
+  if(length(options) == 0 | depth == max_depth){
+    return(list(elevation = elevation))
+  }
+  
+  return(list(elevation = elevation,
+              options = map(options, ~find_paths(.x, 
+                                                 # add options to previously visited nodes
+                                                 prev = c(prev, options), 
+                                                 # increment depth
+                                                 depth = depth + 1, 
+                                                 max_depth = max_depth, 
+                                                 tolerance = tolerance)) %&gt;%
+                # make names non-numeric
+                set_names(paste0(&quot;i&quot;, options)))
+  )
+}</code></pre>
+<p>We start at the northeast corner of our grid at First Avenue and 110th Street, which also happens to be the second-lowest intersection in our network at an elevation of only 2.1 feet. Under a strict regime that requires each sequential intersection to be at a higher elevation, my path only lasts about 5 blocks and reaches a height of 7.8 feet.</p>
+<pre class="r"><code>start &lt;- which(intersections$intersection == &quot;E 110th Street &amp; 1st Ave, Manhattan&quot;)
+strict_paths &lt;- find_paths(start, tolerance = 0)
+
+strict_paths_df &lt;- data.frame(
+  elevation = unname(unlist(strict_paths)),
+  path = names(unlist(strict_paths)),
+  length = str_count(names(unlist(strict_paths)), &quot;\\d+&quot;)
+)
+
+best_strict_path &lt;- strict_paths_df %&gt;%
+  arrange(desc(length), desc(elevation)) %&gt;% 
+  slice(1) %&gt;%
+  pull(path) %&gt;%
+  str_extract_all(&quot;\\d+&quot;) %&gt;%
+  unlist() %&gt;%
+  as.numeric()
+
+best_strict_path_df &lt;- intersections %&gt;%
+  slice(c(start, best_strict_path))
+
+best_strict_path_df %&gt;%
+  select(intersection, elevation) %&gt;%
+  knitr::kable()</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">intersection</th>
+<th align="right">elevation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">E 110th Street &amp; 1st Ave, Manhattan</td>
+<td align="right">2.096720</td>
+</tr>
+<tr class="even">
+<td align="left">E 110th Street &amp; 2nd Ave, Manhattan</td>
+<td align="right">3.117095</td>
+</tr>
+<tr class="odd">
+<td align="left">E 110th Street &amp; 3rd Ave, Manhattan</td>
+<td align="right">3.637582</td>
+</tr>
+<tr class="even">
+<td align="left">E 110th Street &amp; Lexington Ave, Manhattan</td>
+<td align="right">5.667128</td>
+</tr>
+<tr class="odd">
+<td align="left">E 110th Street &amp; Park Ave, Manhattan</td>
+<td align="right">6.845007</td>
+</tr>
+<tr class="even">
+<td align="left">E 109th Street &amp; Park Ave, Manhattan</td>
+<td align="right">7.833213</td>
+</tr>
+</tbody>
+</table>
+<p>Let’s try loosening the constraints. By setting <code>tolerance = -1</code>, we allow the path to decrease elevation by as much as a foot between blocks in creating a route. As you can see by the lengthy dataframe, this approach allows the route to continue for 50 blocks (and perhaps more if we didn’t hit <code>max_depth</code>) and reach the global peak of 36.4 feet at 93rd St. and Park Avenue:</p>
+<pre class="r"><code>loose_paths &lt;- find_paths(start, tolerance = -1)
+
+items &lt;- unlist(loose_paths)
+
+loose_paths_df &lt;- data.frame(
+  elevation = unname(items),
+  path = names(items),
+  length = str_count(names(items), &quot;\\d+&quot;)
+)
+
+best_loose_path &lt;- loose_paths_df %&gt;%
+  arrange(desc(length), desc(elevation)) %&gt;% 
+  slice(1) %&gt;%
+  pull(path) %&gt;%
+  str_extract_all(&quot;\\d+&quot;) %&gt;%
+  unlist() %&gt;%
+  as.numeric()
+
+best_loose_path_df &lt;- intersections %&gt;%
+  slice(c(start, best_loose_path))
+
+best_loose_path_df %&gt;%
+  select(intersection, elevation)</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">intersection</th>
+<th align="right">elevation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">E 110th Street &amp; 1st Ave, Manhattan</td>
+<td align="right">2.096720</td>
+</tr>
+<tr class="even">
+<td align="left">E 110th Street &amp; 2nd Ave, Manhattan</td>
+<td align="right">3.117095</td>
+</tr>
+<tr class="odd">
+<td align="left">E 109th Street &amp; 2nd Ave, Manhattan</td>
+<td align="right">3.232970</td>
+</tr>
+<tr class="even">
+<td align="left">E 108th Street &amp; 2nd Ave, Manhattan</td>
+<td align="right">2.452764</td>
+</tr>
+<tr class="odd">
+<td align="left">E 107th Street &amp; 2nd Ave, Manhattan</td>
+<td align="right">3.091658</td>
+</tr>
+<tr class="even">
+<td align="left">E 107th Street &amp; 1st Ave, Manhattan</td>
+<td align="right">3.144592</td>
+</tr>
+<tr class="odd">
+<td align="left">E 106th Street &amp; 1st Ave, Manhattan</td>
+<td align="right">2.710831</td>
+</tr>
+<tr class="even">
+<td align="left">E 105th Street &amp; 1st Ave, Manhattan</td>
+<td align="right">3.288545</td>
+</tr>
+<tr class="odd">
+<td align="left">E 105th Street &amp; 2nd Ave, Manhattan</td>
+<td align="right">3.700262</td>
+</tr>
+<tr class="even">
+<td align="left">E 105th Street &amp; 3rd Ave, Manhattan</td>
+<td align="right">2.833672</td>
+</tr>
+<tr class="odd">
+<td align="left">E 105th Street &amp; Lexington Ave, Manhattan</td>
+<td align="right">4.861722</td>
+</tr>
+<tr class="even">
+<td align="left">E 106th Street &amp; Lexington Ave, Manhattan</td>
+<td align="right">5.146324</td>
+</tr>
+<tr class="odd">
+<td align="left">E 107th Street &amp; Lexington Ave, Manhattan</td>
+<td align="right">5.777032</td>
+</tr>
+<tr class="even">
+<td align="left">E 108th Street &amp; Lexington Ave, Manhattan</td>
+<td align="right">5.875484</td>
+</tr>
+<tr class="odd">
+<td align="left">E 109th Street &amp; Lexington Ave, Manhattan</td>
+<td align="right">6.045978</td>
+</tr>
+<tr class="even">
+<td align="left">E 109th Street &amp; Park Ave, Manhattan</td>
+<td align="right">7.833213</td>
+</tr>
+<tr class="odd">
+<td align="left">E 109th Street &amp; Madison Ave, Manhattan</td>
+<td align="right">7.136589</td>
+</tr>
+<tr class="even">
+<td align="left">E 108th Street &amp; Madison Ave, Manhattan</td>
+<td align="right">6.614437</td>
+</tr>
+<tr class="odd">
+<td align="left">E 107th Street &amp; Madison Ave, Manhattan</td>
+<td align="right">6.641176</td>
+</tr>
+<tr class="even">
+<td align="left">E 107th Street &amp; 5th Ave, Manhattan</td>
+<td align="right">6.412849</td>
+</tr>
+<tr class="odd">
+<td align="left">E 106th Street &amp; 5th Ave, Manhattan</td>
+<td align="right">7.970650</td>
+</tr>
+<tr class="even">
+<td align="left">E 105th Street &amp; 5th Ave, Manhattan</td>
+<td align="right">10.165221</td>
+</tr>
+<tr class="odd">
+<td align="left">E 104th Street &amp; 5th Ave, Manhattan</td>
+<td align="right">11.682654</td>
+</tr>
+<tr class="even">
+<td align="left">E 103rd Street &amp; 5th Ave, Manhattan</td>
+<td align="right">13.649129</td>
+</tr>
+<tr class="odd">
+<td align="left">E 102nd Street &amp; 5th Ave, Manhattan</td>
+<td align="right">17.922848</td>
+</tr>
+<tr class="even">
+<td align="left">E 101st Street &amp; 5th Ave, Manhattan</td>
+<td align="right">21.406879</td>
+</tr>
+<tr class="odd">
+<td align="left">E 98th Street &amp; 5th Ave, Manhattan</td>
+<td align="right">22.344194</td>
+</tr>
+<tr class="even">
+<td align="left">E 97th Street &amp; 5th Ave, Manhattan</td>
+<td align="right">22.305689</td>
+</tr>
+<tr class="odd">
+<td align="left">E 96th Street &amp; 5th Ave, Manhattan</td>
+<td align="right">24.677626</td>
+</tr>
+<tr class="even">
+<td align="left">E 95th Street &amp; 5th Ave, Manhattan</td>
+<td align="right">26.330078</td>
+</tr>
+<tr class="odd">
+<td align="left">E 94th Street &amp; 5th Ave, Manhattan</td>
+<td align="right">27.801750</td>
+</tr>
+<tr class="even">
+<td align="left">E 93rd Street &amp; 5th Ave, Manhattan</td>
+<td align="right">30.831589</td>
+</tr>
+<tr class="odd">
+<td align="left">E 92nd Street &amp; 5th Ave, Manhattan</td>
+<td align="right">31.593800</td>
+</tr>
+<tr class="even">
+<td align="left">E 91st Street &amp; 5th Ave, Manhattan</td>
+<td align="right">33.306374</td>
+</tr>
+<tr class="odd">
+<td align="left">E 91st Street &amp; Madison Ave, Manhattan</td>
+<td align="right">35.799683</td>
+</tr>
+<tr class="even">
+<td align="left">E 90th Street &amp; Madison Ave, Manhattan</td>
+<td align="right">35.461571</td>
+</tr>
+<tr class="odd">
+<td align="left">E 89th Street &amp; Madison Ave, Manhattan</td>
+<td align="right">34.924316</td>
+</tr>
+<tr class="even">
+<td align="left">E 88th Street &amp; Madison Ave, Manhattan</td>
+<td align="right">34.313847</td>
+</tr>
+<tr class="odd">
+<td align="left">E 87th Street &amp; Madison Ave, Manhattan</td>
+<td align="right">33.481079</td>
+</tr>
+<tr class="even">
+<td align="left">E 86th Street &amp; Madison Ave, Manhattan</td>
+<td align="right">32.650333</td>
+</tr>
+<tr class="odd">
+<td align="left">E 86th Street &amp; Park Ave, Manhattan</td>
+<td align="right">31.770727</td>
+</tr>
+<tr class="even">
+<td align="left">E 86th Street &amp; Lexington Ave, Manhattan</td>
+<td align="right">31.600262</td>
+</tr>
+<tr class="odd">
+<td align="left">E 87th Street &amp; Lexington Ave, Manhattan</td>
+<td align="right">32.004177</td>
+</tr>
+<tr class="even">
+<td align="left">E 88th Street &amp; Lexington Ave, Manhattan</td>
+<td align="right">31.479828</td>
+</tr>
+<tr class="odd">
+<td align="left">E 88th Street &amp; Park Ave, Manhattan</td>
+<td align="right">31.665833</td>
+</tr>
+<tr class="even">
+<td align="left">E 89th Street &amp; Park Ave, Manhattan</td>
+<td align="right">30.947744</td>
+</tr>
+<tr class="odd">
+<td align="left">E 90th Street &amp; Park Ave, Manhattan</td>
+<td align="right">32.227726</td>
+</tr>
+<tr class="even">
+<td align="left">E 91st Street &amp; Park Ave, Manhattan</td>
+<td align="right">32.429150</td>
+</tr>
+<tr class="odd">
+<td align="left">E 92nd Street &amp; Park Ave, Manhattan</td>
+<td align="right">35.524128</td>
+</tr>
+<tr class="even">
+<td align="left">E 93rd Street &amp; Park Ave, Manhattan</td>
+<td align="right">36.371769</td>
+</tr>
+</tbody>
+</table>
+<p>Graphing the two paths on top of our original map is perhaps a more fitting way to showcase the discrepancy. The strictly uphill route travels west four blocks and then south one before hitting a local max, while the loosely uphill route snakes around the neighborhood for miles:</p>
+<pre class="r"><code>map &lt;- get_map(c(left = -73.965, 
+                 bottom = 40.775, 
+                 right = -73.935, 
+                 top = 40.8))
+
+two_paths &lt;- rbind(
+  best_strict_path_df %&gt;% mutate(type = &quot;strictly uphill&quot;),
+  best_loose_path_df %&gt;% mutate(type = &quot;loosely uphill&quot;)
+) %&gt;%
+  group_by(intersection) %&gt;%
+  # shift overlap so we can see it on map
+  mutate(lat = case_when(n() == 2 &amp; type == &quot;strictly uphill&quot; ~ lat + 0.00015,
+                         n() == 2 &amp; type == &quot;loosely uphill&quot; ~ lat - 0.00015,
+                         TRUE ~ lat)) %&gt;%
+  arrange(desc(type)) %&gt;%
+  mutate(type = factor(type, levels = unique(.$type)))
+
+ggmap(map) +
+  geom_path(data = two_paths,
+            aes(x = long, y = lat, col = elevation),
+            size = 2) +
+  geom_point(data = two_paths,
+             aes(x = long, y = lat),
+             col = &quot;white&quot;,
+             alpha = 0.5,
+             size = 0.5) +
+  facet_wrap(~type) +
+  theme(axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank())</code></pre>
+<div id="skip1">
+
+</div>
+<p><img src="index_files/figure-html/unnamed-chunk-13-1.png" width="672" />
+What’s the upshot here? From a technical standpoint, this exercise showcases how <a href="https://en.wikipedia.org/wiki/Relaxation_(approximation)" target="_blank">relaxing a constraint</a> can lead to a satisfactory result, even if we’re no longer strictly staying within the original parameters of a problem. Engineers and developers are forced to make these tradeoffs all the time. It would also qualify as an example of a <a href="https://en.wikipedia.org/wiki/Greedy_algorithm" target="_blank">“greedy” algorithm</a> – i.e. one that makes the best choice at every iteration – failing to find a global maximum. If our theoretical walker were forced to make the most uphill decision at every intersection, he would quickly settle atop a nearby mini peak while missing out on a much higher one.</p>
+<p>But I’ve always found some deeper value in this idea as well. When it comes to your goals, whether they be physical or philosophical, personal or professional, it can feel tempting to try to force yourself into always making tangible improvements while avoiding setbacks. But often such unrelenting progress is unlikely or even impossible. Allowing yourself the time and space to do things incorrectly, to wander, to rest – these are the concessions that can unlock better outcomes in the long term. Try relaxing the constraints you impose on yourself, and you might just reach some new heights.</p>

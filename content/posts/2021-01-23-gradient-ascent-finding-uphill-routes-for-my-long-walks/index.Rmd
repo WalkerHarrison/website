@@ -1,0 +1,366 @@
+---
+title: 'Gradient Ascent: Finding Uphill Routes for my Long Walks'
+author: Walker Harrison
+date: '2021-01-23'
+draft: false
+slug: []
+categories: []
+tags: []
+lastmod: '2021-01-17T18:33:22-05:00'
+layout: post
+type: post
+highlight: yes
+summary: An old back injury makes it so that walking uphill is much more comfortable for me than walking downhill. A programmatic search for uphill routes reveals how strict constraints and "greedy" decisions can lead to sub-optimal results.
+---
+
+I enjoy going for long walks — and no this isn’t the start of my lonely hearts column. But a herniated disc in my back brought on by too much baseball during my teenage years and not enough stretching (am I really blogging about my high school sports career? Maybe I do need to put up a personal…) makes walking uncomfortable sometimes.
+
+At least that’s the case in one direction. When I’m walking downhill, I’m more likely to feel some pain, but walking uphill is usually not a problem. From what I can gather via my micro medical degree from WebMD University, this phenomenon is caused by the different angles created in my spine as I lean forward or backward to offset the slope of my path. In any case, I find myself seeking out uphill routes when possible during my walks.
+
+**Which made me wonder: could I programmatically design entirely uphill routes?**
+
+First I need to define a map. In the interest of simplicity -- and also nostalgia, as I lived on East 97th St. for three years -- I choose the Upper East Side as the site of my experiment. The neighborhood sits on several square miles of uninterrupted grid, which is easier to simulate than some of the more complicated layouts further downtown.
+
+[_**Don't like/know/care about R? Click here to skip to the results.**_](#skip1)
+
+<center><img src="/img/ues.png"/></center>
+
+First we define our intersections, which are every combination of the streets between 59th and 110th and the seven avenues that stretch from Central Park to the East River (excluding "partial" avenues like York that don't cover the full sixty blocks):
+
+```{r, warning = FALSE, message = FALSE, results = FALSE}
+library(tidyverse)
+library(httr)
+library(ggmap)
+library(data.table)
+
+streets <- 59:110
+avenues <- c('5th', 'Madison', 'Park', 'Lexington', '3rd', '2nd', '1st')
+
+intersections <- crossing(st = streets, ave = avenues) %>%
+  rowwise() %>%
+  mutate(intersection = paste0("E ", toOrdinal::toOrdinal(st), 
+                               " Street & ", ave, " Ave, Manhattan")) %>%
+  ungroup()
+```
+
+```{r, echo = FALSE, eval = FALSE}
+library(secret)
+my_vault <- "/Users/walkerharrison/Desktop/website/static/data/secret-vault.vault"
+walkerharrison_private_key <- "/Users/walkerharrison/.ssh/blog_vault"
+api_key <- get_secret("google_geocoding_api_key", key = walkerharrison_private_key, vault = my_vault)
+```
+
+[Google's Geocoding API](https://developers.google.com/maps/documentation/geocoding/start){target="_blank"} will provide the latitude and longitude for each of our intersections. The only required parameters are an address (the intersection) and an API key which one can sign up for.
+
+```{r, eval = FALSE}
+geo_requests <- map(intersections$intersection, ~{
+  # bake in a pause to avoid hitting rate limits
+  Sys.sleep(0.1)
+  GET(
+    url = "https://maps.googleapis.com/maps/api/geocode/json",
+    query = list(
+      address = .x,
+      key = api_key
+    )
+  )
+}
+)
+
+# add lat/long data to intersections dataframe
+intersections <- intersections %>%
+  mutate(lat = map_dbl(geo_requests, ~content(.x)$results[[1]]$geometry$location$lat),
+         long = map_dbl(geo_requests, ~content(.x)$results[[1]]$geometry$location$lng),
+         type = map_chr(geo_requests, ~content(.x)$results[[1]]$types[[1]])) %>%
+  # some intersections don't exist 
+  filter(type == "intersection")
+```
+
+```{r, echo = FALSE}
+load("geo_requests2.Rdata")
+
+intersections <- intersections %>%
+  mutate(lat = map_dbl(geo_requests, ~content(.x)$results[[1]]$geometry$location$lat),
+         long = map_dbl(geo_requests, ~content(.x)$results[[1]]$geometry$location$lng),
+         type = map_chr(geo_requests, ~content(.x)$results[[1]]$types[[1]])) %>%
+  # a handful intersections don't exist 
+  filter(type == "intersection") %>%
+  mutate(idx = row_number())
+```
+
+The key to the whole exercise, of course, is knowing the elevation of all our locations so that we can determine if I'd actually be going uphill when traveling from one intersection to another. Again, Google steps in with their [Elevation API](https://developers.google.com/maps/documentation/elevation/start){target="_blank"}, which can handle multiple locations in a single request:
+
+```{r, eval = FALSE}
+locations <- intersections %>%
+  mutate(location = paste0(lat, ",", long)) %>%
+  pull(location) %>%
+  paste0(collapse = "|")
+
+elevation_request <- GET(
+  url = "https://maps.googleapis.com/maps/api/elevation/json",
+  query = list(
+    locations = locations,
+    key = api_key
+  )
+)
+
+# extract elevation data and add dummy column for cross join
+intersections <- intersections %>%
+  mutate(elevation = map_dbl(content(elevation_request)$results, ~.x$elevation)) %>%
+  rowwise() %>%
+  mutate(ave_idx = which(ave == avenues),
+         dummy = TRUE) %>%
+  ungroup()
+```
+
+```{r, echo = FALSE}
+load("elevation_request2.Rdata")
+
+# extract elevation data and add dummy column for cross join
+intersections <- intersections %>%
+  mutate(elevation = map_dbl(content(elevation_request)$results, ~.x$elevation)) %>%
+  rowwise() %>%
+  mutate(ave_idx = which(ave == avenues),
+         dummy = TRUE) %>%
+  ungroup()
+```
+
+We define our network as a dataframe of edges, which we compose by cross joining our intersections on itself and then filtering for pairs of intersections that are either a single avenue away or a single street away (i.e. the neighboring four intersections at any point in the grid):
+
+```{r}
+# every possible pair of intersections
+all_combos <- intersections %>%
+  inner_join(intersections, by = 'dummy')
+
+# find closest streets on same ave
+# can't simply filter for distance == 1 due to missing intersections
+next_street_over <- all_combos %>%
+  filter(st.x != st.y, ave.x  == ave.y) %>%
+  group_by(idx.x, sign(st.x - st.y)) %>%
+  filter(abs(st.x - st.y) == min(abs(st.x - st.y)))
+
+# find closest aves on same street
+# can't simply filter for distance == 1 due to missing intersections
+next_ave_over <- all_combos %>%
+  filter(ave.x != ave.y, st.x  == st.y) %>%
+  group_by(idx.x, sign(ave_idx.x - ave_idx.y)) %>%
+  filter(abs(ave_idx.x - ave_idx.y) == min(abs(ave_idx.x - ave_idx.y)))
+
+network <- rbind(next_street_over, next_ave_over) %>%
+  data.table()
+```
+  
+And finally we arrive at our workhorse function, `find_paths`. Given a node (intersection), the function recursively finds available neighbors that are no more than `tolerance` feet below the current node in terms of elevation. The default value of `tolerance = 0` ensures that every segment in a path will be uphill. Additional features of the function are `prev`, which keeps the path from visiting the same intersection twice, and `max_depth`, which will truncate a path if it reaches a given depth.
+
+At first this function was intractably slow for deep paths, so I had to make two adjustments:
+<ul>
+  <li>replace the `dplyr` functions with `data.table` functions, a crushing blow for a tidy disciple</li>
+  <li>limit the `options` at each intersection to the two best, instead of 3-4</li>
+</ul>
+
+```{r}
+find_paths <- function(node, prev = integer(0), depth = 0, max_depth = 50, tolerance = 0){
+  
+  # find current elevation
+  elevation <- intersections$elevation[which(intersections$idx==node)]
+  
+  # find best two permissible neighbors to travel to
+  options <- network[idx.x == node & !idx.y %in% prev & elevation.y - elevation.x > tolerance]
+  options <- options[order(desc(elevation.y))]
+  options <- options$idx.y
+  if(length(options) > 2) options <- options[1:2]
+  
+  # escape recursion if path is stuck or max depth hit
+  if(length(options) == 0 | depth == max_depth){
+    return(list(elevation = elevation))
+  }
+  
+  return(list(elevation = elevation,
+              options = map(options, ~find_paths(.x, 
+                                                 # add options to previously visited nodes
+                                                 prev = c(prev, options), 
+                                                 # increment depth
+                                                 depth = depth + 1, 
+                                                 max_depth = max_depth, 
+                                                 tolerance = tolerance)) %>%
+                # make names non-numeric
+                set_names(paste0("i", options)))
+  )
+}
+```
+
+We start at the northeast corner of our grid at First Avenue and 110th Street, which also happens to be the second-lowest intersection in our network at an elevation of only 2.1 feet. Under a strict regime that requires each sequential intersection to be at a higher elevation, my path only lasts about 5 blocks and reaches a height of 7.8 feet.
+
+```{r}
+start <- which(intersections$intersection == "E 110th Street & 1st Ave, Manhattan")
+strict_paths <- find_paths(start, tolerance = 0)
+
+strict_paths_df <- data.frame(
+  elevation = unname(unlist(strict_paths)),
+  path = names(unlist(strict_paths)),
+  length = str_count(names(unlist(strict_paths)), "\\d+")
+)
+
+best_strict_path <- strict_paths_df %>%
+  arrange(desc(length), desc(elevation)) %>% 
+  slice(1) %>%
+  pull(path) %>%
+  str_extract_all("\\d+") %>%
+  unlist() %>%
+  as.numeric()
+
+best_strict_path_df <- intersections %>%
+  slice(c(start, best_strict_path))
+
+best_strict_path_df %>%
+  select(intersection, elevation) %>%
+  knitr::kable()
+```
+
+Let's try loosening the constraints. By setting `tolerance = -1`, we allow the path to decrease elevation by as much as a foot between blocks in creating a route. As you can see by the lengthy dataframe, this approach allows the route to continue for 50 blocks (and perhaps more if we didn't hit `max_depth`) and reach the global peak of 36.4 feet at 93rd St. and Park Avenue:
+
+```{r, eval = FALSE}
+loose_paths <- find_paths(start, tolerance = -1)
+
+items <- unlist(loose_paths)
+
+loose_paths_df <- data.frame(
+  elevation = unname(items),
+  path = names(items),
+  length = str_count(names(items), "\\d+")
+)
+
+best_loose_path <- loose_paths_df %>%
+  arrange(desc(length), desc(elevation)) %>% 
+  slice(1) %>%
+  pull(path) %>%
+  str_extract_all("\\d+") %>%
+  unlist() %>%
+  as.numeric()
+
+best_loose_path_df <- intersections %>%
+  slice(c(start, best_loose_path))
+
+best_loose_path_df %>%
+  select(intersection, elevation)
+```
+
+```{r, echo = FALSE, cache = TRUE, message = FALSE}
+loose_paths_df <- read_csv("loose_paths_df.csv")
+
+best_loose_path <- loose_paths_df %>%
+  filter(length > 40) %>%
+  filter(str_detect(path, "245")) %>%
+  arrange(desc(length)) %>%
+  slice(1) %>%
+  pull(path) %>%
+  str_extract_all("\\d+") %>%
+  unlist() %>%
+  as.numeric()
+
+best_loose_path_df <- intersections %>%
+  slice(c(start, best_loose_path))
+
+best_loose_path_df %>%
+  select(intersection, elevation) %>%
+  knitr::kable()
+```
+
+Graphing the two paths on top of our original map is perhaps a more fitting way to showcase the discrepancy. The strictly uphill route travels west four blocks and then south one before hitting a local max, while the loosely uphill route snakes around the neighborhood for miles:
+
+```{r, eval = FALSE}
+map <- get_map(c(left = -73.965, 
+                 bottom = 40.775, 
+                 right = -73.935, 
+                 top = 40.8))
+
+two_paths <- rbind(
+  best_strict_path_df %>% mutate(type = "strictly uphill"),
+  best_loose_path_df %>% mutate(type = "loosely uphill")
+) %>%
+  group_by(intersection) %>%
+  # shift overlap so we can see it on map
+  mutate(lat = case_when(n() == 2 & type == "strictly uphill" ~ lat + 0.00015,
+                         n() == 2 & type == "loosely uphill" ~ lat - 0.00015,
+                         TRUE ~ lat)) %>%
+  arrange(desc(type)) %>%
+  mutate(type = factor(type, levels = unique(.$type)))
+
+ggmap(map) +
+  geom_path(data = two_paths,
+            aes(x = long, y = lat, col = elevation),
+            size = 2) +
+  geom_point(data = two_paths,
+             aes(x = long, y = lat),
+             col = "white",
+             alpha = 0.5,
+             size = 0.5) +
+  facet_wrap(~type) +
+  theme(axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank())
+```
+
+<div id = "skip1"> </div>
+
+```{r, cache = TRUE, message = FALSE, echo = FALSE}
+map <- get_map(c(left = -73.965, 
+                 bottom = 40.775, 
+                 right = -73.935, 
+                 top = 40.8))
+
+two_paths <- rbind(
+  best_strict_path_df %>% mutate(type = "strictly uphill"),
+  best_loose_path_df %>% mutate(type = "loosely uphill")
+) %>%
+  group_by(intersection) %>%
+  # shift overlap so we can see it on map
+  mutate(lat = case_when(n() == 2 & type == "strictly uphill" ~ lat + 0.00015,
+                         n() == 2 & type == "loosely uphill" ~ lat - 0.00015,
+                         TRUE ~ lat)) %>%
+  arrange(desc(type)) %>%
+  mutate(type = factor(type, levels = unique(.$type)))
+
+ggmap(map) +
+  geom_path(data = two_paths,
+            aes(x = long, y = lat, col = elevation),
+            size = 2) +
+  geom_point(data = two_paths,
+             aes(x = long, y = lat),
+             col = "white",
+             alpha = 0.5,
+             size = 0.5) +
+  facet_wrap(~type) +
+  theme(axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank())
+```
+What's the upshot here? From a technical standpoint, this exercise showcases how [relaxing a constraint](https://en.wikipedia.org/wiki/Relaxation_(approximation)){target="_blank"} can lead to a satisfactory result, even if we're no longer strictly staying within the original parameters of a problem. Engineers and developers are forced to make these tradeoffs all the time. It would also qualify as an example of a ["greedy" algorithm](https://en.wikipedia.org/wiki/Greedy_algorithm){target="_blank"} -- i.e. one that makes the best choice at every iteration -- failing to find a global maximum. If our theoretical walker were forced to make the most uphill decision at every intersection, he would quickly settle atop a nearby mini peak while missing out on a much higher one.
+
+But I've always found some deeper value in this idea as well. When it comes to your goals, whether they be physical or philosophical, personal or professional, it can feel tempting to try to force yourself into always making tangible improvements while avoiding setbacks. But often such unrelenting progress is unlikely or even impossible. Allowing yourself the time and space to do things incorrectly, to wander, to rest -- these are the concessions that can unlock better outcomes in the long term. Try relaxing the constraints you impose on yourself, and you might just reach some new heights.
+
+```{r, eval = FALSE, echo  = FALSE}
+
+# code for creating original map
+
+map2 <- get_map(c(left = min(intersections$long) -0.001, 
+                 bottom = min(intersections$lat) -0.001, 
+                 right = max(intersections$long) + 0.001, 
+                 top = max(intersections$lat) + 0.001))
+
+bounding_box <- intersections %>%
+  slice(c(1, 4, 353, 1)) %>%
+  select(long, lat) %>%
+  add_row(long = -73.949226, lat = 40.796881) %>%
+  slice(c(1:2, 5, 3, 1))
+
+ggmap(map2) +
+  geom_path(data = bounding_box,
+             aes(x = long, y = lat),
+            linetype = "dashed",
+            size = 1.5)+
+  theme(axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        legend.title = element_blank())
+```
+
