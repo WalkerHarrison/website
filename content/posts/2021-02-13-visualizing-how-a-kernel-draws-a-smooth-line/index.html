@@ -16,13 +16,12 @@ summary: blah.
 
 
 <p>A few years ago, I <a href="https://towardsdatascience.com/how-does-a-computer-draw-a-smooth-line-a484176ac24e" target="_blank">wrote a script</a> that produced GIFs like the one below that visualize how a kernel smoother draws a line through a series of points:</p>
-<center>
-<img src="/img/kernel.gif"/>
-</center>
+<p><img src="img/kernel.gif" />
+<img src="img/commute.png" /></p>
 <p>It was a quick but fun project that actually helped me understand how local regression works, so I figured I’d port it over to my new site and walk through the logic.</p>
 <p>It seems a little simple to state, but the point of any (two-dimensional) line is to map x-values to y-values. The challenge of drawing a smooth curve, as opposed to a straight line which could be achieved with ordinary least squares, is to let the line follow the points as it passes through their neighborhoods while ignoring data that is more distant.</p>
-<p>The way that kernel regression achieves such “local” effects is by defining a function (typically denoted as K) that attributes weights to all the existing points based on how close they are to a theoretical new point.</p>
-<p>Let’s whip up some actual data to illustrate the concept. We’ll sample x uniformly from 0 to 1, and assign y-values from a sufficiently “wiggly” function along with some noise:</p>
+<p>The way that kernel regression achieves such “local” effects is by defining a function (typically denoted as <span class="math inline">\(K\)</span>) that attributes weights to all the existing points based on how close they are to a theoretical new point.</p>
+<p>Let’s whip up some actual data to illustrate the concept. We’ll sample x uniformly from 0 to <span class="math inline">\(4\pi\)</span> (to get two full periods of a trigonometric function), and assign y-values from a sufficiently “wiggly” function along with some noise:</p>
 <pre class="r"><code>library(tidyverse)
 library(magick)
 theme_set(theme_bw())
@@ -30,6 +29,7 @@ set.seed(0)
 
 n &lt;- 100
 x &lt;- runif(n, 0, 4*pi)
+# our function is the product of three distinct transformations
 y &lt;- sin(x)*x^2*exp(-x/2) + rnorm(n, sd = 0.3)
 df &lt;- data.frame(x, y)
 
@@ -37,7 +37,7 @@ df %&gt;%
   ggplot(aes(x, y)) +
   geom_point()</code></pre>
 <p><img src="index_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
-<p>So how are we gonna trace a line through this data? Well for any point on this theoretical curve, the y-value will be a weighted mean of nearby points. The only ___ is to define a weighting scheme, which is where we gaussian kernel. We take the density, which works well because this function peaks at a distance of 0 (i.e. at the x-value in question), but then quickly drops off to either side.</p>
+<p>So how are we gonna trace a line through this data? Well for any point on this theoretical curve, the y-value will be a weighted mean of nearby points. The only ___ is to define a weighting scheme, which is where we turn to a Gaussian kernel. We take the density, which works well because this function peaks at a distance of 0 (i.e. at the x-value in question), but then quickly drops off to either side.</p>
 <p>The function gk takes as input the original dataset and also a new X value and returns the weight that each of the former should have on the latter based on proximity.</p>
 <pre class="r"><code>x_new &lt;- seq(min(x), max(x), length.out = 100)
 
@@ -93,6 +93,4 @@ gif &lt;- img_files %&gt;%
 
 image_write(image = gif,
             path = &quot;kernel.gif&quot;)</code></pre>
-<center>
-<img src="/img/kernel.gif"/>
-</center>
+<p><img src="img/kernel.gif" /></p>

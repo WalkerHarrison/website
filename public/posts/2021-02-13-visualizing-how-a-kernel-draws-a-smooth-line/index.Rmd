@@ -1,0 +1,125 @@
+---
+title: Visualizing How a Kernel Draws a Smooth Line
+author: Walker Harrison
+date: '2021-02-13'
+draft: false
+slug: []
+categories: []
+tags: []
+lastmod: '2021-02-13T13:19:38-05:00'
+layout: post
+type: post
+highlight: yes
+summary: blah.
+---
+
+A few years ago, I [wrote a script](https://towardsdatascience.com/how-does-a-computer-draw-a-smooth-line-a484176ac24e){target="_blank"} that produced GIFs like the one below that visualize how a kernel smoother draws a line through a series of points:
+
+![](img/kernel.gif)
+
+It was a quick but fun project that actually helped me understand how local regression works, so I figured I’d port it over to my new site and walk through the logic.
+
+It seems a little simple to state, but the point of any (two-dimensional) line is to map x-values to y-values. The challenge of drawing a smooth curve, as opposed to a straight line which could be achieved with ordinary least squares, is to let the line follow the points as it passes through their neighborhoods while ignoring data that is more distant.
+
+The way that kernel regression achieves such “local” effects is by defining a function (typically denoted as $K$) that attributes weights to all the existing points based on how close they are to a theoretical new point.
+
+Let’s whip up some actual data to illustrate the concept. We’ll sample x uniformly from 0 to $4\pi$ (to get two full periods of a trigonometric function), and assign y-values from a sufficiently “wiggly” function along with some noise:
+
+```{r, message = FALSE}
+library(tidyverse)
+library(magick)
+theme_set(theme_bw())
+set.seed(0)
+
+n <- 100
+x <- runif(n, 0, 4*pi)
+# our function is the product of three distinct transformations
+y <- sin(x)*x^2*exp(-x/2) + rnorm(n, sd = 0.3)
+df <- data.frame(x, y)
+
+df %>%
+  ggplot(aes(x, y)) +
+  geom_point()
+```
+
+So how are we gonna trace a line through this data? Well for any point on this theoretical curve, the y-value will be a weighted mean of nearby points. The only ___ is to define a weighting scheme, which is where we turn to a Gaussian kernel. We take the density, which works well because this function peaks at a distance of 0 (i.e. at the x-value in question), but then quickly drops off to either side.
+
+The function gk takes as input the original dataset and also a new X value and returns the weight that each of the former should have on the latter based on proximity. 
+
+```{r}
+x_new <- seq(min(x), max(x), length.out = 100)
+
+y_smoothed <- map_dbl(x_new, ~sum(dnorm(x, mean = .x) * y)/
+                        sum(dnorm(x, mean = .x)))
+
+df_smoothed <- data.frame(x_new, y_smoothed)
+```
+
+```{r}
+df %>%
+  ggplot(aes(x, y)) +
+  geom_point() +
+  geom_line(aes(x_new, y_smoothed), data = df_smoothed)
+```
+```{r}
+x_new <- seq(min(x), max(x), length.out = 100)
+
+y_smoothed <- map_dbl(x_new, ~sum(dnorm(x, mean = .x, sd = 0.5) * y)/
+                        sum(dnorm(x, mean = .x, sd = 0.5)))
+
+df_smoothed <- data.frame(x_new, y_smoothed)
+```
+
+```{r}
+df %>%
+  ggplot(aes(x, y)) +
+  geom_point() +
+  geom_line(aes(x_new, y_smoothed), data = df_smoothed)
+```
+
+
+
+
+```{r}
+idx <- 50
+
+df %>%
+  ggplot(aes(x, y)) +
+  geom_point(aes(size = dnorm(x, mean = x_new[idx], sd = 0.5),
+                 col = dnorm(x, mean = x_new[idx], sd = 0.5))) +
+  geom_line(aes(x_new, y_smoothed), data = df_smoothed %>% filter(x_new <= x_new[idx])) +
+  geom_point(aes(x_new, y_smoothed), data = df_smoothed %>% filter(x_new == x_new[idx]),
+             size = 3, fill = "white", col = "black", shape = 21) +
+  theme(legend.position = "none")
+```
+
+```{r, eval = FALSE}
+for (idx in 1:length(x_new)){
+  
+  plt <- df %>%
+    ggplot(aes(x, y)) +
+    geom_point(aes(size = dnorm(x, mean = x_new[idx], sd = 0.5),
+                   col = dnorm(x, mean = x_new[idx], sd = 0.5))) +
+    geom_line(aes(x_new, y_smoothed), data = df_smoothed %>% filter(x_new <= x_new[idx])) +
+    geom_point(aes(x_new, y_smoothed), data = df_smoothed %>% filter(x_new == x_new[idx]),
+               size = 3, fill = "white", col = "black", shape = 21) +
+    theme(legend.position = "none")
+  
+  ggsave(plt, width = 6, height = 4, filename = paste0("kernel_", idx, ".png"))
+}
+
+```
+
+```{r, eval = FALSE}
+img_files <- paste0("kernel_", 1:length(x_new), ".png")
+gif <- img_files %>% 
+  map(image_read) %>%
+  image_join() %>%
+  image_animate(fps = 10)
+
+image_write(image = gif,
+            path = "kernel.gif")
+
+```
+
+<center><img src="/img/kernel.gif"/></center>

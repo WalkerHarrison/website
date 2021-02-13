@@ -6,7 +6,25 @@
     <description>Recent content in All Posts on Walker Harrison</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Sun, 10 Jan 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://walker-harrison.com/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 13 Feb 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://walker-harrison.com/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Visualizing How a Kernel Draws a Smooth Line</title>
+      <link>https://walker-harrison.com/posts/2021-02-13-visualizing-how-a-kernel-draws-a-smooth-line/</link>
+      <pubDate>Sat, 13 Feb 2021 00:00:00 +0000</pubDate>
+      
+      <guid>https://walker-harrison.com/posts/2021-02-13-visualizing-how-a-kernel-draws-a-smooth-line/</guid>
+      <description>blah.</description>
+    </item>
+    
+    <item>
+      <title>Gradient Ascent: Finding Uphill Routes for my Long Walks</title>
+      <link>https://walker-harrison.com/posts/2021-01-23-gradient-ascent-finding-uphill-routes-for-my-long-walks/</link>
+      <pubDate>Sat, 23 Jan 2021 00:00:00 +0000</pubDate>
+      
+      <guid>https://walker-harrison.com/posts/2021-01-23-gradient-ascent-finding-uphill-routes-for-my-long-walks/</guid>
+      <description>An old back injury makes it so that walking uphill is much more comfortable for me than walking downhill. A programmatic search for uphill routes reveals how strict constraints and &amp;ldquo;greedy&amp;rdquo; decisions can lead to sub-optimal results.</description>
+    </item>
+    
     <item>
       <title>Avoiding Variance on my Morning Commute</title>
       <link>https://walker-harrison.com/posts/2021-01-07-avoiding-variance-on-my-morning-commute/</link>
