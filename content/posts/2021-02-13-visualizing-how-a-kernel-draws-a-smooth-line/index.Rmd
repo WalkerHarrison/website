@@ -10,12 +10,12 @@ lastmod: '2021-02-13T13:19:38-05:00'
 layout: post
 type: post
 highlight: yes
-summary: blah.
+summary: How does software like Excel or R trace a smooth line through a series of points? It's easier to understand by visualizing how new values are created as a weighted mean of the existing data.
 ---
 
 A few years ago, I [wrote a script](https://towardsdatascience.com/how-does-a-computer-draw-a-smooth-line-a484176ac24e){target="_blank"} that produced GIFs like the one below that visualize how a kernel smoother draws a line through a series of points:
 
-![](img/kernel.gif)
+![](kernel.gif)
 
 It was a quick but fun project that actually helped me understand how local regression works, so I figured I’d port it over to my new site and walk through the logic.
 
@@ -42,9 +42,9 @@ df %>%
   geom_point()
 ```
 
-So how are we gonna trace a line through this data? Well for any point on this theoretical curve, the y-value will be a weighted mean of nearby points. The only ___ is to define a weighting scheme, which is where we turn to a Gaussian kernel. We take the density, which works well because this function peaks at a distance of 0 (i.e. at the x-value in question), but then quickly drops off to either side.
+So how are we gonna trace a line through this data? Well for any point on this theoretical curve, the y-value will be a weighted mean of nearby points. The way we define those weights is with a [Gaussian kernel](https://en.wikipedia.org/wiki/Kernel_smoother#Gaussian_kernel_smoother){target="_blank"}, which uses the useful "bell" shape of a normal distribution to assign greater influence to the existing points that are close to our incoming one.
 
-The function gk takes as input the original dataset and also a new X value and returns the weight that each of the former should have on the latter based on proximity. 
+The kernel is centered at the value of the new point so that the weight is maximized for existing points that are close to the new one, in the same way that the most likely values from a normal distribution are close to its mean. Below, we get the `y_smoothed` values for a sequence of `x_new` ponts by defining these weights with the `dnorm` function and applying them to the respective y-values
 
 ```{r}
 x_new <- seq(min(x), max(x), length.out = 100)
@@ -55,12 +55,17 @@ y_smoothed <- map_dbl(x_new, ~sum(dnorm(x, mean = .x) * y)/
 df_smoothed <- data.frame(x_new, y_smoothed)
 ```
 
+Unfortunately, this curve is a little too smoothed, in the sense that the line isn't permitted to follow the peaks and valleys very closely because it's being drawn back to intermediate points too heavily.
+
 ```{r}
 df %>%
   ggplot(aes(x, y)) +
   geom_point() +
   geom_line(aes(x_new, y_smoothed), data = df_smoothed)
 ```
+
+The fix is to reduce the standard deviation argument of our Gaussian kernel, which will tighten the distribution and therefore attribute smaller weights to more distant points:
+
 ```{r}
 x_new <- seq(min(x), max(x), length.out = 100)
 
@@ -68,17 +73,21 @@ y_smoothed <- map_dbl(x_new, ~sum(dnorm(x, mean = .x, sd = 0.5) * y)/
                         sum(dnorm(x, mean = .x, sd = 0.5)))
 
 df_smoothed <- data.frame(x_new, y_smoothed)
-```
 
-```{r}
 df %>%
   ggplot(aes(x, y)) +
   geom_point() +
   geom_line(aes(x_new, y_smoothed), data = df_smoothed)
 ```
 
+Okay let's make this pretty. At each value of `x_new`, we want:
+<ul>
+<li>all the original data, but colored and sized by its weight on the current point</li>
+<li>the smooth line up to the current point</li>
+<li>a single larger point as the "head" of the smoother</li>
+</ul>
 
-
+We can handle the first item simply by repeating the `dnorm` logic used in the smoother and passing it to the `size` and `col` aesthetics. After that, we can just add additional data layers while making sure to cut out later data
 
 ```{r}
 idx <- 50
@@ -92,6 +101,7 @@ df %>%
              size = 3, fill = "white", col = "black", shape = 21) +
   theme(legend.position = "none")
 ```
+Now we can just loop over all the new points, make each graph, and save it with `ggsave`:
 
 ```{r, eval = FALSE}
 for (idx in 1:length(x_new)){
@@ -110,6 +120,8 @@ for (idx in 1:length(x_new)){
 
 ```
 
+Threading all these individual images into a GIF requires the `magick` package. I used the logic from [this post](http://www.nagraj.net/notes/gifs-in-r/){target="_blank"} as guidance:
+
 ```{r, eval = FALSE}
 img_files <- paste0("kernel_", 1:length(x_new), ".png")
 gif <- img_files %>% 
@@ -122,4 +134,9 @@ image_write(image = gif,
 
 ```
 
-![](img/kernel.gif)
+And voila!
+
+![](kernel.gif)
+
+Most of the joy I got out of making these GIFs, both years ago and more recently, is in manipulating `ggplot` to create a neat little animation. But I do always also appreciate using methods like kernel smoothers or local regression or nearest-neighbor algorithms because they codify something that I think most people know intuitively: the closer you are to something, the more you can influence it.
+
