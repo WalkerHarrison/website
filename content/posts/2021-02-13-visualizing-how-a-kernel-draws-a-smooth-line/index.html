@@ -16,8 +16,7 @@ summary: blah.
 
 
 <p>A few years ago, I <a href="https://towardsdatascience.com/how-does-a-computer-draw-a-smooth-line-a484176ac24e" target="_blank">wrote a script</a> that produced GIFs like the one below that visualize how a kernel smoother draws a line through a series of points:</p>
-<p><img src="img/kernel.gif" />
-<img src="img/commute.png" /></p>
+<p><img src="img/kernel.gif" /></p>
 <p>It was a quick but fun project that actually helped me understand how local regression works, so I figured I’d port it over to my new site and walk through the logic.</p>
 <p>It seems a little simple to state, but the point of any (two-dimensional) line is to map x-values to y-values. The challenge of drawing a smooth curve, as opposed to a straight line which could be achieved with ordinary least squares, is to let the line follow the points as it passes through their neighborhoods while ignoring data that is more distant.</p>
 <p>The way that kernel regression achieves such “local” effects is by defining a function (typically denoted as <span class="math inline">\(K\)</span>) that attributes weights to all the existing points based on how close they are to a theoretical new point.</p>

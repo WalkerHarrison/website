@@ -16,7 +16,6 @@ summary: blah.
 A few years ago, I [wrote a script](https://towardsdatascience.com/how-does-a-computer-draw-a-smooth-line-a484176ac24e){target="_blank"} that produced GIFs like the one below that visualize how a kernel smoother draws a line through a series of points:
 
 ![](img/kernel.gif)
-![](img/commute.png)
 
 It was a quick but fun project that actually helped me understand how local regression works, so I figured I’d port it over to my new site and walk through the logic.
 
