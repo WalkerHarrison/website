@@ -49,8 +49,9 @@ The kernel is centered at the value of the new point so that the weight is maxim
 ```{r}
 x_new <- seq(min(x), max(x), length.out = 100)
 
+# dividing by the sum normalizes the weights to 1
 y_smoothed <- map_dbl(x_new, ~sum(dnorm(x, mean = .x) * y)/
-                        sum(dnorm(x, mean = .x)))
+                              sum(dnorm(x, mean = .x)))
 
 df_smoothed <- data.frame(x_new, y_smoothed)
 ```
@@ -69,6 +70,7 @@ The fix is to reduce the standard deviation argument of our Gaussian kernel, whi
 ```{r}
 x_new <- seq(min(x), max(x), length.out = 100)
 
+# same process with a smaller scale (0.5)
 y_smoothed <- map_dbl(x_new, ~sum(dnorm(x, mean = .x, sd = 0.5) * y)/
                         sum(dnorm(x, mean = .x, sd = 0.5)))
 
@@ -94,10 +96,15 @@ idx <- 50
 
 df %>%
   ggplot(aes(x, y)) +
+  # original data with size and oclor
   geom_point(aes(size = dnorm(x, mean = x_new[idx], sd = 0.5),
                  col = dnorm(x, mean = x_new[idx], sd = 0.5))) +
-  geom_line(aes(x_new, y_smoothed), data = df_smoothed %>% filter(x_new <= x_new[idx])) +
-  geom_point(aes(x_new, y_smoothed), data = df_smoothed %>% filter(x_new == x_new[idx]),
+  # smoothed line up to the new point
+  geom_line(aes(x_new, y_smoothed), 
+            data = df_smoothed %>% filter(x_new <= x_new[idx])) +
+  # "head" of the line
+  geom_point(aes(x_new, y_smoothed), 
+             data = df_smoothed %>% filter(x_new == x_new[idx]),
              size = 3, fill = "white", col = "black", shape = 21) +
   theme(legend.position = "none")
 ```

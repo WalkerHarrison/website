@@ -40,8 +40,9 @@ df %&gt;%
 <p>The kernel is centered at the value of the new point so that the weight is maximized for existing points that are close to the new one, in the same way that the most likely values from a normal distribution are close to its mean. Below, we get the <code>y_smoothed</code> values for a sequence of <code>x_new</code> ponts by defining these weights with the <code>dnorm</code> function and applying them to the respective y-values</p>
 <pre class="r"><code>x_new &lt;- seq(min(x), max(x), length.out = 100)
 
+# dividing by the sum normalizes the weights to 1
 y_smoothed &lt;- map_dbl(x_new, ~sum(dnorm(x, mean = .x) * y)/
-                        sum(dnorm(x, mean = .x)))
+                              sum(dnorm(x, mean = .x)))
 
 df_smoothed &lt;- data.frame(x_new, y_smoothed)</code></pre>
 <p>Unfortunately, this curve is a little too smoothed, in the sense that the line isn’t permitted to follow the peaks and valleys very closely because it’s being drawn back to intermediate points too heavily.</p>
@@ -53,6 +54,7 @@ df_smoothed &lt;- data.frame(x_new, y_smoothed)</code></pre>
 <p>The fix is to reduce the standard deviation argument of our Gaussian kernel, which will tighten the distribution and therefore attribute smaller weights to more distant points:</p>
 <pre class="r"><code>x_new &lt;- seq(min(x), max(x), length.out = 100)
 
+# same process with a smaller scale (0.5)
 y_smoothed &lt;- map_dbl(x_new, ~sum(dnorm(x, mean = .x, sd = 0.5) * y)/
                         sum(dnorm(x, mean = .x, sd = 0.5)))
 
@@ -80,10 +82,15 @@ a single larger point as the “head” of the smoother
 
 df %&gt;%
   ggplot(aes(x, y)) +
+  # original data with size and oclor
   geom_point(aes(size = dnorm(x, mean = x_new[idx], sd = 0.5),
                  col = dnorm(x, mean = x_new[idx], sd = 0.5))) +
-  geom_line(aes(x_new, y_smoothed), data = df_smoothed %&gt;% filter(x_new &lt;= x_new[idx])) +
-  geom_point(aes(x_new, y_smoothed), data = df_smoothed %&gt;% filter(x_new == x_new[idx]),
+  # smoothed line up to the new point
+  geom_line(aes(x_new, y_smoothed), 
+            data = df_smoothed %&gt;% filter(x_new &lt;= x_new[idx])) +
+  # &quot;head&quot; of the line
+  geom_point(aes(x_new, y_smoothed), 
+             data = df_smoothed %&gt;% filter(x_new == x_new[idx]),
              size = 3, fill = &quot;white&quot;, col = &quot;black&quot;, shape = 21) +
   theme(legend.position = &quot;none&quot;)</code></pre>
 <p><img src="index_files/figure-html/unnamed-chunk-5-1.png" width="672" />
