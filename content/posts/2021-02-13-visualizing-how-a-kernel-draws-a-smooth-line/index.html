@@ -1,0 +1,98 @@
+---
+title: Visualizing How a Kernel Draws a Smooth Line
+author: Walker Harrison
+date: '2021-02-13'
+draft: false
+slug: []
+categories: []
+tags: []
+lastmod: '2021-02-13T13:19:38-05:00'
+layout: post
+type: post
+highlight: yes
+summary: blah.
+---
+
+
+
+<p>A few years ago, I <a href="https://towardsdatascience.com/how-does-a-computer-draw-a-smooth-line-a484176ac24e" target="_blank">wrote a script</a> that produced GIFs like the one below that visualize how a kernel smoother draws a line through a series of points:</p>
+<center>
+<img src="/img/kernel.gif"/>
+</center>
+<p>It was a quick but fun project that actually helped me understand how local regression works, so I figured I’d port it over to my new site and walk through the logic.</p>
+<p>It seems a little simple to state, but the point of any (two-dimensional) line is to map x-values to y-values. The challenge of drawing a smooth curve, as opposed to a straight line which could be achieved with ordinary least squares, is to let the line follow the points as it passes through their neighborhoods while ignoring data that is more distant.</p>
+<p>The way that kernel regression achieves such “local” effects is by defining a function (typically denoted as K) that attributes weights to all the existing points based on how close they are to a theoretical new point.</p>
+<p>Let’s whip up some actual data to illustrate the concept. We’ll sample x uniformly from 0 to 1, and assign y-values from a sufficiently “wiggly” function along with some noise:</p>
+<pre class="r"><code>library(tidyverse)
+library(magick)
+theme_set(theme_bw())
+set.seed(0)
+
+n &lt;- 100
+x &lt;- runif(n, 0, 4*pi)
+y &lt;- sin(x)*x^2*exp(-x/2) + rnorm(n, sd = 0.3)
+df &lt;- data.frame(x, y)
+
+df %&gt;%
+  ggplot(aes(x, y)) +
+  geom_point()</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
+<p>So how are we gonna trace a line through this data? Well for any point on this theoretical curve, the y-value will be a weighted mean of nearby points. The only ___ is to define a weighting scheme, which is where we gaussian kernel. We take the density, which works well because this function peaks at a distance of 0 (i.e. at the x-value in question), but then quickly drops off to either side.</p>
+<p>The function gk takes as input the original dataset and also a new X value and returns the weight that each of the former should have on the latter based on proximity.</p>
+<pre class="r"><code>x_new &lt;- seq(min(x), max(x), length.out = 100)
+
+y_smoothed &lt;- map_dbl(x_new, ~sum(dnorm(x, mean = .x) * y)/
+                        sum(dnorm(x, mean = .x)))
+
+df_smoothed &lt;- data.frame(x_new, y_smoothed)</code></pre>
+<pre class="r"><code>df %&gt;%
+  ggplot(aes(x, y)) +
+  geom_point() +
+  geom_line(aes(x_new, y_smoothed), data = df_smoothed)</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<pre class="r"><code>x_new &lt;- seq(min(x), max(x), length.out = 100)
+
+y_smoothed &lt;- map_dbl(x_new, ~sum(dnorm(x, mean = .x, sd = 0.5) * y)/
+                        sum(dnorm(x, mean = .x, sd = 0.5)))
+
+df_smoothed &lt;- data.frame(x_new, y_smoothed)</code></pre>
+<pre class="r"><code>df %&gt;%
+  ggplot(aes(x, y)) +
+  geom_point() +
+  geom_line(aes(x_new, y_smoothed), data = df_smoothed)</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<pre class="r"><code>idx &lt;- 50
+
+df %&gt;%
+  ggplot(aes(x, y)) +
+  geom_point(aes(size = dnorm(x, mean = x_new[idx], sd = 0.5),
+                 col = dnorm(x, mean = x_new[idx], sd = 0.5))) +
+  geom_line(aes(x_new, y_smoothed), data = df_smoothed %&gt;% filter(x_new &lt;= x_new[idx])) +
+  geom_point(aes(x_new, y_smoothed), data = df_smoothed %&gt;% filter(x_new == x_new[idx]),
+             size = 3, fill = &quot;white&quot;, col = &quot;black&quot;, shape = 21) +
+  theme(legend.position = &quot;none&quot;)</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+<pre class="r"><code>for (idx in 1:length(x_new)){
+  
+  plt &lt;- df %&gt;%
+    ggplot(aes(x, y)) +
+    geom_point(aes(size = dnorm(x, mean = x_new[idx], sd = 0.5),
+                   col = dnorm(x, mean = x_new[idx], sd = 0.5))) +
+    geom_line(aes(x_new, y_smoothed), data = df_smoothed %&gt;% filter(x_new &lt;= x_new[idx])) +
+    geom_point(aes(x_new, y_smoothed), data = df_smoothed %&gt;% filter(x_new == x_new[idx]),
+               size = 3, fill = &quot;white&quot;, col = &quot;black&quot;, shape = 21) +
+    theme(legend.position = &quot;none&quot;)
+  
+  ggsave(plt, width = 6, height = 4, filename = paste0(&quot;kernel_&quot;, idx, &quot;.png&quot;))
+}</code></pre>
+<pre class="r"><code>img_files &lt;- paste0(&quot;kernel_&quot;, 1:length(x_new), &quot;.png&quot;)
+gif &lt;- img_files %&gt;% 
+  map(image_read) %&gt;%
+  image_join() %&gt;%
+  image_animate(fps = 10)
+
+image_write(image = gif,
+            path = &quot;kernel.gif&quot;)</code></pre>
+<center>
+<img src="/img/kernel.gif"/>
+</center>
