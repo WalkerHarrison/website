@@ -42,9 +42,9 @@ df %>%
   geom_point()
 ```
 
-So how are we gonna trace a line through this data? Well for any point on this theoretical curve, the y-value will be a weighted mean of nearby points. The way we define those weights is with a [Gaussian kernel](https://en.wikipedia.org/wiki/Kernel_smoother#Gaussian_kernel_smoother){target="_blank"}, which uses the useful "bell" shape of a normal distribution to assign greater influence to the existing points that are close to our incoming one.
+So how are we going to trace a line through this data? Well for any point on this theoretical curve, the y-value will be a weighted mean of nearby points. The way we define those weights is with a [Gaussian kernel](https://en.wikipedia.org/wiki/Kernel_smoother#Gaussian_kernel_smoother){target="_blank"}, which uses the useful "bell" shape of a normal distribution to assign greater influence to the existing points that are close to our incoming one.
 
-The kernel is centered at the value of the new point so that the weight is maximized for existing points that are close to the new one, in the same way that the most likely values from a normal distribution are close to its mean. Below, we get the `y_smoothed` values for a sequence of `x_new` ponts by defining these weights with the `dnorm` function and applying them to the respective y-values
+The kernel is centered at the value of the new point so that the weight is maximized for existing points that are close to the new one, in the same way that the most likely values from a normal distribution are close to its mean. Below, we get the `y_smoothed` values for a sequence of `x_new` points by defining these weights with the `dnorm` function and applying them to the respective y-values
 
 ```{r}
 x_new <- seq(min(x), max(x), length.out = 100)
@@ -96,7 +96,7 @@ idx <- 50
 
 df %>%
   ggplot(aes(x, y)) +
-  # original data with size and oclor
+  # original data with size and color
   geom_point(aes(size = dnorm(x, mean = x_new[idx], sd = 0.5),
                  col = dnorm(x, mean = x_new[idx], sd = 0.5))) +
   # smoothed line up to the new point

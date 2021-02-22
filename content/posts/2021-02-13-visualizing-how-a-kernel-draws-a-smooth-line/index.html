@@ -36,8 +36,8 @@ df %&gt;%
   ggplot(aes(x, y)) +
   geom_point()</code></pre>
 <p><img src="index_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
-<p>So how are we gonna trace a line through this data? Well for any point on this theoretical curve, the y-value will be a weighted mean of nearby points. The way we define those weights is with a <a href="https://en.wikipedia.org/wiki/Kernel_smoother#Gaussian_kernel_smoother" target="_blank">Gaussian kernel</a>, which uses the useful “bell” shape of a normal distribution to assign greater influence to the existing points that are close to our incoming one.</p>
-<p>The kernel is centered at the value of the new point so that the weight is maximized for existing points that are close to the new one, in the same way that the most likely values from a normal distribution are close to its mean. Below, we get the <code>y_smoothed</code> values for a sequence of <code>x_new</code> ponts by defining these weights with the <code>dnorm</code> function and applying them to the respective y-values</p>
+<p>So how are we going to trace a line through this data? Well for any point on this theoretical curve, the y-value will be a weighted mean of nearby points. The way we define those weights is with a <a href="https://en.wikipedia.org/wiki/Kernel_smoother#Gaussian_kernel_smoother" target="_blank">Gaussian kernel</a>, which uses the useful “bell” shape of a normal distribution to assign greater influence to the existing points that are close to our incoming one.</p>
+<p>The kernel is centered at the value of the new point so that the weight is maximized for existing points that are close to the new one, in the same way that the most likely values from a normal distribution are close to its mean. Below, we get the <code>y_smoothed</code> values for a sequence of <code>x_new</code> points by defining these weights with the <code>dnorm</code> function and applying them to the respective y-values</p>
 <pre class="r"><code>x_new &lt;- seq(min(x), max(x), length.out = 100)
 
 # dividing by the sum normalizes the weights to 1
@@ -82,7 +82,7 @@ a single larger point as the “head” of the smoother
 
 df %&gt;%
   ggplot(aes(x, y)) +
-  # original data with size and oclor
+  # original data with size and color
   geom_point(aes(size = dnorm(x, mean = x_new[idx], sd = 0.5),
                  col = dnorm(x, mean = x_new[idx], sd = 0.5))) +
   # smoothed line up to the new point
