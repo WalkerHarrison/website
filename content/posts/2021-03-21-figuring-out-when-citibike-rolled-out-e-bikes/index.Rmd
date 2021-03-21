@@ -49,6 +49,8 @@ It's not worth my time or my laptop's processor to sift through the millions of 
 
 And so we have our goal: **examine the various routes that we know crossed that bridge and see if their average duration dipped at some point in our suspected window**. This exercise would qualify as [change point detection](https://en.wikipedia.org/wiki/Change_detection).
 
+[_**Don't like/know/care about R? Click here to skip to the results.**_](#skip1)
+
 We need both ride and station data, [both of which Citi Bike provides](https://s3.amazonaws.com/tripdata/index.html).
 
 ```{r}
@@ -173,7 +175,7 @@ We also provide the first and last row in the data of each date to allow us to a
 data {
   int<lower = 1> N; // data size
   int<lower = 1> N_routes; // number of unique routes
-  int<lower = 1> N_days; // number of uniqute dates
+  int<lower = 1> N_days; // number of unique dates
   
   // assigning chunks of data to each day
   int<lower = 1, upper = N> day_first_idx [N_days];
@@ -343,11 +345,15 @@ fit <- stan("/Users/walkerharrison/Downloads/Bikez/bike_CPD.stan",
 load("fit321.Rdata")
 ```
 
+<div id = "skip1"> </div>
+
 The top row shows the posterior distribution of the mean and standard deviation of the rides before (blue) and after (red) the supposed change point. It appears that rides got about two minutes shorter at one point, which is consistent with what we might expect from an e-bike rollout.
 
 As for the actual timing of the change point, we see that the log probability peaks at October 12th and that posterior samples are extremely concentrated on this date. In fact, I'm a little suspicious in the confidence of this model in a single date, although I don't have much experience with this type of analysis so my fear might not be warranted.
 
-```{r, cache = TRUE}
+(Graphing code is hidden but it's available in [original .Rmd](https://github.com/WalkerHarrison/website/blob/main/content/posts/2021-03-21-figuring-out-when-citibike-rolled-out-e-bikes/index.Rmd){target="blank"})
+
+```{r, cache = FALSE, echo = FALSE}
 posterior <- rstan::extract(fit)
 
 g1 <- data.frame(
@@ -388,7 +394,7 @@ g1/(g2 + g3)
 
 We also can see the random effects in action by comparing the average durations by route with their respective parameter estimates. In general there's a clean one-to-one relationship, but we can also see the effect of varying sample sizes as routes with little data get regressed more while those with lots of rides "earn" more extreme intercepts.
 
-```{r}
+```{r, echo = FALSE}
 change_point <- which.max(apply(posterior$lp, 2, mean))
 
 trips_agg %>%
@@ -413,7 +419,7 @@ trips_agg %>%
 
 So why did the model pick October 12th? It's not really plausible to grasp the varying influences of thousands of routes, but we can pick a select few that illustrate the concept. Below are three popular trips that (if you squint), all saw slight downticks in their mean ride duration around the date in question:
 
-```{r}
+```{r, echo = FALSE}
 trips_agg %>%
   filter(start.station.id == 532,
          end.station.id %in% c(401, 311, 350)) %>%
@@ -425,4 +431,4 @@ trips_agg %>%
   theme_bw()
 ```
 
-This of course is just a best guess. It's more likely that e-bikes were released gradually and that (if there was an effect), it happened over time and not on a single date. But change point models are a neat concept that require some creative programming. And who knows...maybe CitiBike really did just flood New York with e-bikes on October 12th and were just waiting for a curious data blogger to reveal their strategy.
+This of course is just a best guess. It's more likely that e-bikes were released gradually and that (if there was an effect), it happened over time and not on a single date. But change point models are a neat concept that require some creative programming. And who knows...maybe CitiBike really did just flood New York with e-bikes on October 12th and was just waiting for a curious data blogger to reveal their strategy.
