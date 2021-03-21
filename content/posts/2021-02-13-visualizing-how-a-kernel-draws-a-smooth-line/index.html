@@ -97,6 +97,8 @@ df %&gt;%
 Now we can just loop over all the new points, make each graph, and save it with <code>ggsave</code>:</p>
 <pre class="r"><code>for (idx in 1:length(x_new)){
   
+  #idx &lt;- 5
+  
   plt &lt;- df %&gt;%
     ggplot(aes(x, y)) +
     geom_point(aes(size = dnorm(x, mean = x_new[idx], sd = 0.5),
@@ -104,19 +106,23 @@ Now we can just loop over all the new points, make each graph, and save it with 
     geom_line(aes(x_new, y_smoothed), data = df_smoothed %&gt;% filter(x_new &lt;= x_new[idx])) +
     geom_point(aes(x_new, y_smoothed), data = df_smoothed %&gt;% filter(x_new == x_new[idx]),
                size = 3, fill = &quot;white&quot;, col = &quot;black&quot;, shape = 21) +
-    theme(legend.position = &quot;none&quot;)
+    theme(legend.position = &quot;none&quot;) +
+    annotate(&quot;label&quot;, x = 11, y = -2.2, label = &quot;walker-harrison.com&quot;, fill = &quot;gray90&quot;,
+             size = 4.5)
   
-  ggsave(plt, width = 6, height = 4, filename = paste0(&quot;kernel_&quot;, idx, &quot;.png&quot;))
+  # plt
+  
+  ggsave(plt, width = 6, height = 4, filename = paste0(&quot;kernel_wh_&quot;, idx, &quot;.png&quot;))
 }</code></pre>
 <p>Threading all these individual images into a GIF requires the <code>magick</code> package. I used the logic from <a href="http://www.nagraj.net/notes/gifs-in-r/" target="_blank">this post</a> as guidance:</p>
-<pre class="r"><code>img_files &lt;- paste0(&quot;kernel_&quot;, 1:length(x_new), &quot;.png&quot;)
+<pre class="r"><code>img_files &lt;- paste0(&quot;kernel_wh_&quot;, 1:length(x_new), &quot;.png&quot;)
 gif &lt;- img_files %&gt;% 
   map(image_read) %&gt;%
   image_join() %&gt;%
   image_animate(fps = 10)
 
 image_write(image = gif,
-            path = &quot;kernel.gif&quot;)</code></pre>
+            path = &quot;kernel_wh.gif&quot;)</code></pre>
 <p>And voila!</p>
 <p><img src="kernel.gif" /></p>
 <p>Most of the joy I got out of making these GIFs, both years ago and more recently, is in manipulating <code>ggplot</code> to create a neat little animation. But I do always also appreciate using methods like kernel smoothers or local regression or nearest-neighbor algorithms because they codify something that I think most people know intuitively: the closer you are to something, the more you can influence it.</p>

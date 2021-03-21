@@ -6,14 +6,23 @@
     <description>Recent content on Walker Harrison</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Sat, 13 Feb 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://walker-harrison.com/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 21 Mar 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://walker-harrison.com/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Estimating When CitiBike Rolled Out E-Bikes Using Change Point Detection</title>
+      <link>https://walker-harrison.com/posts/2021-03-21-figuring-out-when-citibike-rolled-out-e-bikes/</link>
+      <pubDate>Sun, 21 Mar 2021 00:00:00 +0000</pubDate>
+      
+      <guid>https://walker-harrison.com/posts/2021-03-21-figuring-out-when-citibike-rolled-out-e-bikes/</guid>
+      <description>If electric bikes allow their riders to travel at greater speeds, will there be a corresponding dip in average trip duration between bikeshare docks that we can find in the data? We try to answer that question by applying a change point model to a notoriously difficult uphill route.</description>
+    </item>
+    
     <item>
       <title>Visualizing How a Kernel Draws a Smooth Line</title>
       <link>https://walker-harrison.com/posts/2021-02-13-visualizing-how-a-kernel-draws-a-smooth-line/</link>
       <pubDate>Sat, 13 Feb 2021 00:00:00 +0000</pubDate>
       
       <guid>https://walker-harrison.com/posts/2021-02-13-visualizing-how-a-kernel-draws-a-smooth-line/</guid>
-      <description>blah.</description>
+      <description>How does software like Excel or R trace a smooth line through a series of points? It&amp;rsquo;s easier to understand by visualizing how new values are created as a weighted mean of the existing data.</description>
     </item>
     
     <item>

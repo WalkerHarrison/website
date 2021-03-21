@@ -113,6 +113,8 @@ Now we can just loop over all the new points, make each graph, and save it with 
 ```{r, eval = FALSE}
 for (idx in 1:length(x_new)){
   
+  #idx <- 5
+  
   plt <- df %>%
     ggplot(aes(x, y)) +
     geom_point(aes(size = dnorm(x, mean = x_new[idx], sd = 0.5),
@@ -120,9 +122,13 @@ for (idx in 1:length(x_new)){
     geom_line(aes(x_new, y_smoothed), data = df_smoothed %>% filter(x_new <= x_new[idx])) +
     geom_point(aes(x_new, y_smoothed), data = df_smoothed %>% filter(x_new == x_new[idx]),
                size = 3, fill = "white", col = "black", shape = 21) +
-    theme(legend.position = "none")
+    theme(legend.position = "none") +
+    annotate("label", x = 11, y = -2.2, label = "walker-harrison.com", fill = "gray90",
+             size = 4.5)
   
-  ggsave(plt, width = 6, height = 4, filename = paste0("kernel_", idx, ".png"))
+  # plt
+  
+  ggsave(plt, width = 6, height = 4, filename = paste0("kernel_wh_", idx, ".png"))
 }
 
 ```
@@ -130,14 +136,14 @@ for (idx in 1:length(x_new)){
 Threading all these individual images into a GIF requires the `magick` package. I used the logic from [this post](http://www.nagraj.net/notes/gifs-in-r/){target="_blank"} as guidance:
 
 ```{r, eval = FALSE}
-img_files <- paste0("kernel_", 1:length(x_new), ".png")
+img_files <- paste0("kernel_wh_", 1:length(x_new), ".png")
 gif <- img_files %>% 
   map(image_read) %>%
   image_join() %>%
   image_animate(fps = 10)
 
 image_write(image = gif,
-            path = "kernel.gif")
+            path = "kernel_wh.gif")
 
 ```
 

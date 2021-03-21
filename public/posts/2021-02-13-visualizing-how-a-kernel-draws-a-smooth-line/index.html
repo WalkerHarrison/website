@@ -10,7 +10,7 @@
 <meta name="twitter:image" content="https://walker-harrison.com/img/site-feature-image.jpeg"/>
 
 <meta name="twitter:title" content="Visualizing How a Kernel Draws a Smooth Line"/>
-<meta name="twitter:description" content="blah."/>
+<meta name="twitter:description" content="How does software like Excel or R trace a smooth line through a series of points? It&rsquo;s easier to understand by visualizing how new values are created as a weighted mean of the existing data."/>
 
     <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -26,7 +26,7 @@
 
 
 <meta property="og:title" content="Visualizing How a Kernel Draws a Smooth Line" />
-<meta property="og:description" content="blah." />
+<meta property="og:description" content="How does software like Excel or R trace a smooth line through a series of points? It&rsquo;s easier to understand by visualizing how new values are created as a weighted mean of the existing data." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://walker-harrison.com/posts/2021-02-13-visualizing-how-a-kernel-draws-a-smooth-line/" />
 <meta property="og:image" content="https://walker-harrison.com/img/site-feature-image.jpeg"/>
@@ -226,7 +226,7 @@ Built with <a href="https://gohugo.io">Hugo</a> ❤️ <a href="https://github.c
     
     
     <br/>
-    <i class="fas fa-clock"></i> 3 min read
+    <i class="fas fa-clock"></i> 5 min read
 </div>
 
 
@@ -238,7 +238,7 @@ Built with <a href="https://gohugo.io">Hugo</a> ❤️ <a href="https://github.c
 
 
 <p>A few years ago, I <a href="https://towardsdatascience.com/how-does-a-computer-draw-a-smooth-line-a484176ac24e" target="_blank">wrote a script</a> that produced GIFs like the one below that visualize how a kernel smoother draws a line through a series of points:</p>
-<p><img src="img/kernel.gif" /></p>
+<p><img src="kernel.gif" /></p>
 <p>It was a quick but fun project that actually helped me understand how local regression works, so I figured I’d port it over to my new site and walk through the logic.</p>
 <p>It seems a little simple to state, but the point of any (two-dimensional) line is to map x-values to y-values. The challenge of drawing a smooth curve, as opposed to a straight line which could be achieved with ordinary least squares, is to let the line follow the points as it passes through their neighborhoods while ignoring data that is more distant.</p>
 <p>The way that kernel regression achieves such “local” effects is by defining a function (typically denoted as <span class="math inline">\(K\)</span>) that attributes weights to all the existing points based on how close they are to a theoretical new point.</p>
@@ -258,42 +258,68 @@ df %&gt;%
   ggplot(aes(x, y)) +
   geom_point()</code></pre>
 <p><img src="index_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
-<p>So how are we gonna trace a line through this data? Well for any point on this theoretical curve, the y-value will be a weighted mean of nearby points. The only ___ is to define a weighting scheme, which is where we turn to a Gaussian kernel. We take the density, which works well because this function peaks at a distance of 0 (i.e. at the x-value in question), but then quickly drops off to either side.</p>
-<p>The function gk takes as input the original dataset and also a new X value and returns the weight that each of the former should have on the latter based on proximity.</p>
+<p>So how are we going to trace a line through this data? Well for any point on this theoretical curve, the y-value will be a weighted mean of nearby points. The way we define those weights is with a <a href="https://en.wikipedia.org/wiki/Kernel_smoother#Gaussian_kernel_smoother" target="_blank">Gaussian kernel</a>, which uses the useful “bell” shape of a normal distribution to assign greater influence to the existing points that are close to our incoming one.</p>
+<p>The kernel is centered at the value of the new point so that the weight is maximized for existing points that are close to the new one, in the same way that the most likely values from a normal distribution are close to its mean. Below, we get the <code>y_smoothed</code> values for a sequence of <code>x_new</code> points by defining these weights with the <code>dnorm</code> function and applying them to the respective y-values</p>
 <pre class="r"><code>x_new &lt;- seq(min(x), max(x), length.out = 100)
 
+# dividing by the sum normalizes the weights to 1
 y_smoothed &lt;- map_dbl(x_new, ~sum(dnorm(x, mean = .x) * y)/
-                        sum(dnorm(x, mean = .x)))
+                              sum(dnorm(x, mean = .x)))
 
 df_smoothed &lt;- data.frame(x_new, y_smoothed)</code></pre>
+<p>Unfortunately, this curve is a little too smoothed, in the sense that the line isn’t permitted to follow the peaks and valleys very closely because it’s being drawn back to intermediate points too heavily.</p>
 <pre class="r"><code>df %&gt;%
   ggplot(aes(x, y)) +
   geom_point() +
   geom_line(aes(x_new, y_smoothed), data = df_smoothed)</code></pre>
 <p><img src="index_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p>The fix is to reduce the standard deviation argument of our Gaussian kernel, which will tighten the distribution and therefore attribute smaller weights to more distant points:</p>
 <pre class="r"><code>x_new &lt;- seq(min(x), max(x), length.out = 100)
 
+# same process with a smaller scale (0.5)
 y_smoothed &lt;- map_dbl(x_new, ~sum(dnorm(x, mean = .x, sd = 0.5) * y)/
                         sum(dnorm(x, mean = .x, sd = 0.5)))
 
-df_smoothed &lt;- data.frame(x_new, y_smoothed)</code></pre>
-<pre class="r"><code>df %&gt;%
+df_smoothed &lt;- data.frame(x_new, y_smoothed)
+
+df %&gt;%
   ggplot(aes(x, y)) +
   geom_point() +
   geom_line(aes(x_new, y_smoothed), data = df_smoothed)</code></pre>
-<p><img src="index_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<p><img src="index_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+Okay let’s make this pretty. At each value of <code>x_new</code>, we want:
+<ul>
+<li>
+all the original data, but colored and sized by its weight on the current point
+</li>
+<li>
+the smooth line up to the current point
+</li>
+<li>
+a single larger point as the “head” of the smoother
+</li>
+</ul>
+<p>We can handle the first item simply by repeating the <code>dnorm</code> logic used in the smoother and passing it to the <code>size</code> and <code>col</code> aesthetics. After that, we can just add additional data layers while making sure to cut out later data</p>
 <pre class="r"><code>idx &lt;- 50
 
 df %&gt;%
   ggplot(aes(x, y)) +
+  # original data with size and color
   geom_point(aes(size = dnorm(x, mean = x_new[idx], sd = 0.5),
                  col = dnorm(x, mean = x_new[idx], sd = 0.5))) +
-  geom_line(aes(x_new, y_smoothed), data = df_smoothed %&gt;% filter(x_new &lt;= x_new[idx])) +
-  geom_point(aes(x_new, y_smoothed), data = df_smoothed %&gt;% filter(x_new == x_new[idx]),
+  # smoothed line up to the new point
+  geom_line(aes(x_new, y_smoothed), 
+            data = df_smoothed %&gt;% filter(x_new &lt;= x_new[idx])) +
+  # &quot;head&quot; of the line
+  geom_point(aes(x_new, y_smoothed), 
+             data = df_smoothed %&gt;% filter(x_new == x_new[idx]),
              size = 3, fill = &quot;white&quot;, col = &quot;black&quot;, shape = 21) +
   theme(legend.position = &quot;none&quot;)</code></pre>
-<p><img src="index_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+<p><img src="index_files/figure-html/unnamed-chunk-5-1.png" width="672" />
+Now we can just loop over all the new points, make each graph, and save it with <code>ggsave</code>:</p>
 <pre class="r"><code>for (idx in 1:length(x_new)){
+  
+  #idx &lt;- 5
   
   plt &lt;- df %&gt;%
     ggplot(aes(x, y)) +
@@ -302,21 +328,26 @@ df %&gt;%
     geom_line(aes(x_new, y_smoothed), data = df_smoothed %&gt;% filter(x_new &lt;= x_new[idx])) +
     geom_point(aes(x_new, y_smoothed), data = df_smoothed %&gt;% filter(x_new == x_new[idx]),
                size = 3, fill = &quot;white&quot;, col = &quot;black&quot;, shape = 21) +
-    theme(legend.position = &quot;none&quot;)
+    theme(legend.position = &quot;none&quot;) +
+    annotate(&quot;label&quot;, x = 11, y = -2.2, label = &quot;walker-harrison.com&quot;, fill = &quot;gray90&quot;,
+             size = 4.5)
   
-  ggsave(plt, width = 6, height = 4, filename = paste0(&quot;kernel_&quot;, idx, &quot;.png&quot;))
+  # plt
+  
+  ggsave(plt, width = 6, height = 4, filename = paste0(&quot;kernel_wh_&quot;, idx, &quot;.png&quot;))
 }</code></pre>
-<pre class="r"><code>img_files &lt;- paste0(&quot;kernel_&quot;, 1:length(x_new), &quot;.png&quot;)
+<p>Threading all these individual images into a GIF requires the <code>magick</code> package. I used the logic from <a href="http://www.nagraj.net/notes/gifs-in-r/" target="_blank">this post</a> as guidance:</p>
+<pre class="r"><code>img_files &lt;- paste0(&quot;kernel_wh_&quot;, 1:length(x_new), &quot;.png&quot;)
 gif &lt;- img_files %&gt;% 
   map(image_read) %&gt;%
   image_join() %&gt;%
   image_animate(fps = 10)
 
 image_write(image = gif,
-            path = &quot;kernel.gif&quot;)</code></pre>
-<center>
-<img src="/img/kernel.gif"/>
-</center>
+            path = &quot;kernel_wh.gif&quot;)</code></pre>
+<p>And voila!</p>
+<p><img src="kernel.gif" /></p>
+<p>Most of the joy I got out of making these GIFs, both years ago and more recently, is in manipulating <code>ggplot</code> to create a neat little animation. But I do always also appreciate using methods like kernel smoothers or local regression or nearest-neighbor algorithms because they codify something that I think most people know intuitively: the closer you are to something, the more you can influence it.</p>
 
   </div>
   
@@ -328,6 +359,11 @@ image_write(image = gif,
       <span class="navigation-tittle">Gradient Ascent: Finding Uphill Routes for my Long Walks</span>
     </a>
     
+    
+    <a href="/posts/2021-03-21-figuring-out-when-citibike-rolled-out-e-bikes/" class="navigation-next">
+      <span class="navigation-tittle">Estimating When CitiBike Rolled Out E-Bikes Using Change Point Detection</span>
+      <i aria-hidden="true" class="fa fa-chevron-right"></i>
+    </a>
     
 </div>
 
