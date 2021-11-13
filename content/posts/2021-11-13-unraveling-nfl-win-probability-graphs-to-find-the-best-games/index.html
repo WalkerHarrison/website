@@ -18,7 +18,7 @@ summary: How do you determine how good a game is from its win probability graph?
 <center>
 <img src="/img/espn.png"/>
 </center>
-<p>In fact there’s a metric called the <a href="https://sports.sites.yale.edu/game-excitement-index-part-ii">Excitement Index</a> which adds up all the absolute changes in win probability to arrive at a single number that expresses a contest’s cumulative drama. You can think of the Excitement Index as pulling the win probability graph’s jagged path until it’s a tight horizontal line and then measuring its length. So can we retrieve all these win probability graphs in order to calculate and visualize their Excitement Index?</p>
+<p>In fact there’s a metric called the <a href="https://sports.sites.yale.edu/game-excitement-index-part-ii" target="_blank">Excitement Index</a> which adds up all the absolute changes in win probability to arrive at a single number that expresses a contest’s cumulative drama. You can think of the Excitement Index as pulling the win probability graph’s jagged path until it’s a tight horizontal line and then measuring its length. So can we retrieve all these win probability graphs in order to calculate and visualize their Excitement Index?</p>
 <pre class="r"><code>library(tidyverse)
 library(rvest)
 library(gganimate)
@@ -364,7 +364,6 @@ animate(p, nframes = 150, fps = 25, start_pause = 50, end_pause = 50)</code></pr
   geom_line() +
   scale_y_continuous(limits = c(0, 100), breaks = c(0, 50, 100)) +
   scale_x_continuous(limits = c(0, max(plays_flattened$new_play_number) + 50)) +
-  facet_wrap(~score_text, ncol = 1) +
   theme_bw() +
   theme(axis.title.x=element_blank(),
         axis.text.x=element_blank(),
@@ -419,8 +418,9 @@ p &lt;- plays_flattened %&gt;%
   theme(axis.title.x=element_blank(),
         axis.text.x=element_blank(),
         axis.ticks.x=element_blank()) +
-  labs(y = &quot;Win Probability&quot;)</code></pre>
-<p>The <code>annotation_custom2</code> function from <a href="https://stackoverflow.com/questions/44688623/adding-custom-images-to-ggplot-facets">this Stack Overflow post</a> allows us to add the team logos to individual facets:</p>
+  labs(y = &quot;Win Probability&quot;,
+       title = &quot;Most Exciting Postseason Games Since 2016&quot;)</code></pre>
+<p>The <code>annotation_custom2</code> function from <a href="https://stackoverflow.com/questions/44688623/adding-custom-images-to-ggplot-facets" target="_blank">this Stack Overflow post</a> allows us to add the team logos to individual facets:</p>
 <pre class="r"><code>annotation_custom2 &lt;- function (grob, xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf, data){ 
     layer(data = data, stat = StatIdentity, position = PositionIdentity, 
           geom = ggplot2:::GeomCustomAnn,
