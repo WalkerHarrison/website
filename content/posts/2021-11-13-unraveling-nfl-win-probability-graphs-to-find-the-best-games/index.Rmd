@@ -118,7 +118,7 @@ dfs <- map(html_files, ~ {
 ```
 
 ```{r, echo = FALSE}
-load("/Users/walkerharrison/Desktop/website_wrapper/website/dfs.Rdata")
+load("/Users/walkerharrison/Desktop/website_wrapper/website/content/posts/2021-11-13-unraveling-nfl-win-probability-graphs-to-find-the-best-games/dfs.Rdata")
 ```
 We bind these dataframes together to create our master list, `all_plays`, and do a little bit of cleaning to weed out bad data -- specifically, the first `filter` makes sure that the scores are non-decreasing, since occasionally a penalty-negated score will be momentarily counted, and the second `filter` stipulates that once a graph reaches 0% or 100% win probability, that game is over. The all important `change` variable is simply the (absolute) delta between the previous home win probability and the current one.
 
@@ -170,7 +170,7 @@ game_EI %>%
   knitr::kable()
 ```
 
-So how to we straighten out a win probability chart to measure its length? First let's take the original form of that top playoff game:
+So how do we straighten out a win probability chart to measure its length? First let's take the original form of that top playoff game:
 
 ```{r, message = FALSE}
 best_game <- game_EI %>% filter(season == "Postseason") %>% head(1)

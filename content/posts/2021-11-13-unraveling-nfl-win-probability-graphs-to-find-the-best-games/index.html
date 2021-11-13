@@ -310,7 +310,7 @@ game_EI %&gt;%
 </tr>
 </tbody>
 </table>
-<p>So how to we straighten out a win probability chart to measure its length? First let’s take the original form of that top playoff game:</p>
+<p>So how do we straighten out a win probability chart to measure its length? First let’s take the original form of that top playoff game:</p>
 <pre class="r"><code>best_game &lt;- game_EI %&gt;% filter(season == &quot;Postseason&quot;) %&gt;% head(1)
 plays &lt;- all_plays %&gt;% inner_join(best_game)
 
