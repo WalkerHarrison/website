@@ -6,7 +6,25 @@
     <description>Recent content on Walker Harrison</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Sun, 21 Mar 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://walker-harrison.com/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 13 Nov 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://walker-harrison.com/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Unraveling NFL Win Probability Graphs to Find the Best Games</title>
+      <link>https://walker-harrison.com/posts/2021-11-13-unraveling-nfl-win-probability-graphs-to-find-the-best-games/</link>
+      <pubDate>Sat, 13 Nov 2021 00:00:00 +0000</pubDate>
+      
+      <guid>https://walker-harrison.com/posts/2021-11-13-unraveling-nfl-win-probability-graphs-to-find-the-best-games/</guid>
+      <description>How do you determine how good a game is from its win probability graph? You could compute the Excitement Index by adding up all the changes, or you could take a visual approach and &amp;ldquo;pull&amp;rdquo; all the slack out of the chart.</description>
+    </item>
+    
+    <item>
+      <title>Stop Taking L&#39;s When Walking to Your Destination </title>
+      <link>https://walker-harrison.com/posts/2021-06-27-stop-taking-l-s-when-walking-to-your-destination/</link>
+      <pubDate>Sun, 27 Jun 2021 00:00:00 +0000</pubDate>
+      
+      <guid>https://walker-harrison.com/posts/2021-06-27-stop-taking-l-s-when-walking-to-your-destination/</guid>
+      <description>We&amp;rsquo;re often directed to get from one point in a grid to another by taking a single turn and otherwise walking in two long segments. But the Walk/Don&amp;rsquo;t Walk signs that dictate our travel make this approach very inefficent, and motivate a better strategy that may save you a few minutes.</description>
+    </item>
+    
     <item>
       <title>Estimating When CitiBike Rolled Out E-Bikes Using Change Point Detection</title>
       <link>https://walker-harrison.com/posts/2021-03-21-figuring-out-when-citibike-rolled-out-e-bikes/</link>

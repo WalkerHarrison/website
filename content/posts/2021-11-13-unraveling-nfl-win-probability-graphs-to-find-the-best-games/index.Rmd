@@ -1,0 +1,331 @@
+---
+title: Unraveling NFL Win Probability Graphs to Find the Best Games
+author: Walker Harrison
+date: '2021-11-13'
+slug: []
+categories: []
+tags: []
+lastmod: '2021-11-12T14:58:55-05:00'
+layout: post
+type: post
+highlight: yes
+summary: How do you determine how good a game is from its win probability graph? You could compute the Excitement Index by adding up all the changes, or you could take a visual approach and "pull" all the slack out of the chart.
+---
+
+
+Perhaps the most interesting aspect of ESPN's NFL game recap page is the win probability graph that they've included in the bottom left corner since the 2016 season. Without knowing anything else about the game, one could follow the twists and turns on this chart to relive all the exciting moments (if there were any).
+
+
+<center><img src="/img/espn.png"/></center>
+
+In fact there's a metric called the [Excitement Index](https://sports.sites.yale.edu/game-excitement-index-part-ii) which adds up all the absolute changes in win probability to arrive at a single number that expresses a contest's cumulative drama. You can think of the Excitement Index as pulling the win probability graph's jagged path until it's a tight horizontal line and then measuring its length. So can we retrieve all these win probability graphs in order to calculate and visualize their Excitement Index?
+
+```{r, message = FALSE, warning = FALSE}
+library(tidyverse)
+library(rvest)
+library(gganimate)
+library(grid)
+library(png)
+library(RCurl)
+options(dplyr.summarise.inform = FALSE)
+
+```
+
+First we have to collect ESPN's gamecast webpages and arrange them in a logical file structure. Since web-scraping is not the point of this blogpost and a somewhat questionable act to begin with, I won't include the code that fetches each webpage. Feel free to message me if you'd like some help building a scraper.
+
+Once we have the raw HTML, we can sift through it to gather the information we need. In particular, the `away` and `home` team identities are not too hard to find, along with their logos. The raw data for the win probability chart is hardcoded as a JSON object in one of the page's accompanying scripts:
+
+```{r, eval = FALSE}
+setwd("/Users/walkerharrison/Desktop/ESPN WinProb/")
+html_files <- list.files(recursive = T)
+
+dfs <- map(html_files, ~ {
+  
+  year <- .x %>%
+    str_extract("(?<=eason/)\\d+") %>%
+    as.numeric()
+  
+  season <- str_extract(.x, "[^/]+(?=/)")
+  
+  week <- .x %>%
+    str_extract("(?<=Week\\s)\\d+") %>%
+    as.numeric()
+  
+  game <- .x %>%
+    str_extract("\\d+(?=\\.html)") %>%
+    as.numeric()
+  
+  page <- read_html(.x)
+  
+  away <- page %>%
+    html_nodes("body") %>%
+    html_nodes(".away") %>%
+    html_nodes(".short-name") %>%
+    html_text()
+  
+  home <- page %>%
+    html_nodes("body") %>%
+    html_nodes(".home") %>%
+    html_nodes(".short-name") %>%
+    html_text()
+  
+  away_logo <- page %>%
+    html_nodes("body") %>%
+    html_nodes(".away") %>%
+    html_nodes(".team-logo") %>%
+    html_attr("src")
+  
+  home_logo <- page %>%
+    html_nodes("body") %>%
+    html_nodes(".home") %>%
+    html_nodes(".team-logo") %>%
+    html_attr("src")
+  
+  probability_data <- page %>%
+    html_nodes("script") %>%
+    keep(~str_detect(html_text(.x), "probability.data")) %>%
+    html_text() %>%
+    str_extract("probability\\.data.+") %>%
+    str_replace("probability.data = ", "") %>%
+    substr(1, nchar(.) -1) %>%
+    jsonlite::fromJSON(flatten = TRUE)
+  
+  payload <- data.frame(year = year,
+                        season = season,
+                        week = week,
+                        game = game,
+                        home = home,
+                        away = away,
+                        home_logo = home_logo,
+                        away_logo = away_logo)
+  
+  if(length(probability_data) != 0) {
+    payload <- probability_data %>%
+      mutate(year = year,
+             season = season,
+             week = week,
+             game = game,
+             home = home,
+             away = away,
+             home_logo = home_logo,
+             away_logo = away_logo,
+             play_number = row_number())
+  }
+  
+  payload
+}
+)
+```
+
+```{r, echo = FALSE}
+load("/Users/walkerharrison/Desktop/website_wrapper/website/dfs.Rdata")
+```
+We bind these dataframes together to create our master list, `all_plays`, and do a little bit of cleaning to weed out bad data -- specifically, the first `filter` makes sure that the scores are non-decreasing, since occasionally a penalty-negated score will be momentarily counted, and the second `filter` stipulates that once a graph reaches 0% or 100% win probability, that game is over. The all important `change` variable is simply the (absolute) delta between the previous home win probability and the current one.
+
+```{r}
+all_plays <- bind_rows(dfs) %>%
+  arrange(game, play_number) %>%
+  group_by(game) %>%
+  filter(play.homeScore <= lead(play.homeScore, defaul = Inf),
+         play.awayScore <= lead(play.awayScore, default = Inf)) %>%
+  filter(lag(cumsum(homeWinPercentage %in% c(0, 1)), default = 0) < 1) %>%
+  mutate(change = abs(homeWinPercentage - lag(homeWinPercentage))) %>%
+  ungroup()
+
+```
+
+Now for the fun stuff! We aggregate the total `change` by each game and throw in some other identifying features. Maybe it shouldn't be a surprise that the two games with the highest Excitement Index in recent years are both overtime ties:
+
+```{r}
+game_EI <- all_plays %>%
+  group_by(year, season, week, game, home, home_logo, away, away_logo) %>%
+  summarize(home_final_score = max(play.homeScore),
+            away_final_score = max(play.awayScore),
+            ExcitementIndex = sum(change, na.rm = T)) %>%
+  mutate(winner = case_when(
+    home_final_score > away_final_score ~ "home",
+    home_final_score < away_final_score ~ "away",
+    TRUE ~ "tie"
+  )) %>%
+  arrange(desc(ExcitementIndex)) %>%
+  ungroup() %>%
+  mutate(score_text = ifelse(home_final_score > away_final_score,
+                             paste0(home, " ", home_final_score, ", ", away, " ", away_final_score),
+                             paste0(away, " ", away_final_score, ", ", home, " ", home_final_score)))
+
+game_EI %>% 
+  filter(season == "Regular Season") %>% 
+  head(10) %>% 
+  select(year, season, week, score_text, ExcitementIndex) %>% 
+  knitr::kable()
+```
+
+Of course, no one really cares about a Week 3 Bengals game (sorry, Cincy), so let's also print out the top postseason games, which feature some classic (and sometimes controversial) conference championships:
+
+```{r}
+game_EI %>% 
+  filter(season == "Postseason") %>% 
+  head(10) %>% 
+  select(year, season, week, score_text, ExcitementIndex) %>% 
+  knitr::kable()
+```
+
+So how to we straighten out a win probability chart to measure its length? First let's take the original form of that top playoff game:
+
+```{r, message = FALSE}
+best_game <- game_EI %>% filter(season == "Postseason") %>% head(1)
+plays <- all_plays %>% inner_join(best_game)
+
+plays %>%
+  ggplot(aes(play_number, homeWinPercentage)) +
+  geom_line() +
+  theme_bw()
+```
+
+What we're trying to do is "pull" each line segment until it's horizontal. Another way to think of that is that we have a vector from one win probability to the next lying at an angle determined by the severity of the win probability change. If we slowly reduce that angle to 0, the vector will lie flat with a length of the distance between the original points. 
+
+```{r, warning = FALSE}
+reps <- 10
+
+plays_flattened <- plays %>%
+  mutate(homeWinPercentage = 100*homeWinPercentage) %>%
+  mutate(change = (lead(homeWinPercentage) - homeWinPercentage)) %>%
+  # determine length and angle of each line segment
+  mutate(length = sqrt(1 + change^2),
+         angle = atan(change),
+         angled = angle*180/pi) %>%
+  # copy each row ten times
+  slice(rep(1:nrow(.), each = reps)) %>%
+  group_by(game, play_number) %>%
+  mutate(idx = row_number()) %>%
+  # gradually reduce the angle in each row copy
+  mutate(angled_new = (reps-idx)/(reps-1)*angled) %>%
+  mutate(angle_new = angled_new*pi/180) %>%
+  arrange(idx, play_number) %>%
+  group_by(game, idx) %>%
+  # use sine and cosine to determine the new x and y coordinates
+  mutate(newx = coalesce(lag(cos(angle_new)*length), play_number),
+         newy = coalesce(lag(sin(angle_new)*length), homeWinPercentage)) %>%
+  # accumulate these differences to get final location
+  mutate(new_play_number = cumsum(newx),
+         new_wp = cumsum(newy))
+```
+
+Here's what pulling the slack out of a single play looks like, courtesy of `gganimate`:
+
+```{r}
+p <- plays_flattened %>%
+  filter(play_number %in% 1:2) %>%
+  ggplot(aes(new_play_number, new_wp)) +
+  geom_line() +
+  theme_bw() +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) +
+  labs(y = "Win Probability", x = "Play Number") +
+  transition_time(idx)
+
+animate(p, nframes = 150, fps = 25, start_pause = 50, end_pause = 50)
+```
+
+And here's how it looks when you do all plays simultaneously:
+
+```{r, warning = FALSE, message = FALSE}
+p <- plays_flattened %>%
+  ggplot(aes(new_play_number, new_wp)) +
+  geom_line() +
+  scale_y_continuous(limits = c(0, 100), breaks = c(0, 50, 100)) +
+  scale_x_continuous(limits = c(0, max(plays_flattened$new_play_number) + 50)) +
+  facet_wrap(~score_text, ncol = 1) +
+  theme_bw() +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) +
+  labs(y = "Win Probability") +
+  transition_time(idx)
+
+animate(p, nframes = 150, fps = 25, start_pause = 50, end_pause = 50)
+
+```
+
+Okay let's spice this up a little bit. We're going to do multiple games at once, pull in some logos, and make it so that the final straight line lands on the winning team, which we'll accomplish my gradually moving the y-component toward 1 or 0, depending on who won the game.
+
+```{r, message = FALSE, warning = FALSE}
+best_games <- game_EI %>% filter(season == "Postseason") %>% head(5)
+
+plays_flattened <- all_plays %>%
+  inner_join(best_games) %>%
+  arrange(desc(ExcitementIndex)) %>%
+  # ensures the're in decscending excitement order on the facet
+  mutate(score_text = factor(score_text, levels = unique(.$score_text))) %>%
+  group_by(game) %>%
+  # same process as before
+  mutate(homeWinPercentage = 100*homeWinPercentage) %>%
+  mutate(change = (lead(homeWinPercentage) - homeWinPercentage)) %>%
+  mutate(length = sqrt(1 + change^2),
+         angle = atan(change),
+         angled = angle*180/pi) %>%
+  slice(rep(1:nrow(.), each = reps)) %>%
+  group_by(game, play_number) %>%
+  mutate(idx = row_number()) %>%
+  mutate(angled_new = (reps-idx)/(reps-1)*angled) %>%
+  mutate(angle_new = angled_new*pi/180) %>%
+  arrange(idx, play_number) %>%
+  group_by(game, idx) %>%
+  mutate(newx = coalesce(lag(cos(angle_new)*length), play_number),
+         newy = coalesce(lag(sin(angle_new)*length), homeWinPercentage)) %>%
+  mutate(new_play_number = cumsum(newx),
+         new_wp = cumsum(newy)) %>%
+  # now we gradually move the line up toward 1 or 0
+  group_by(game, play_number) %>%
+  mutate(new_wp_adj = case_when(
+    winner == "home" ~ new_wp + (idx-1)/(reps-1)*(100-new_wp),
+    winner == "away" ~ new_wp + (idx-1)/(reps-1)*(-new_wp),
+    winner == "tie" ~ new_wp + (idx-1)/(reps-1)*(50-new_wp))
+    ) %>%
+  ungroup()
+
+p <- plays_flattened %>%
+  ggplot(aes(new_play_number, new_wp_adj)) +
+  geom_line() +
+  scale_y_continuous(limits = c(-20, 120), breaks = c(0, 50, 100)) +
+  scale_x_continuous(limits = c(-150, max(plays_flattened$new_play_number) + 50)) +
+  facet_wrap(~score_text, ncol = 1) +
+  theme_bw() +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) +
+  labs(y = "Win Probability")
+```
+
+The `annotation_custom2` function from [this Stack Overflow post](https://stackoverflow.com/questions/44688623/adding-custom-images-to-ggplot-facets) allows us to add the team logos to individual facets:
+
+```{r, message = FALSE, warning = FALSE}
+annotation_custom2 <- function (grob, xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf, data){ 
+    layer(data = data, stat = StatIdentity, position = PositionIdentity, 
+          geom = ggplot2:::GeomCustomAnn,
+          inherit.aes = TRUE, params = list(grob = grob, 
+                                            xmin = xmin, xmax = xmax, 
+                                            ymin = ymin, ymax = ymax))}
+
+for (gm in best_games$game){
+  
+  away_img <- best_games %>% filter(game == gm) %>% pull(away_logo) %>% getURLContent() %>% readPNG()
+  home_img <- best_games %>% filter(game == gm) %>% pull(home_logo) %>% getURLContent() %>% readPNG()
+
+  away_annotation <- annotation_custom2(rasterGrob(away_img, interpolate=TRUE), xmin = -150, xmax = -10, ymin = -20, ymax = 40,
+                                        data = plays_flattened %>% filter(game == gm))
+
+  home_annotation <- annotation_custom2(rasterGrob(home_img, interpolate=TRUE), xmin = -150, xmax = -10, ymin = 60, ymax = 120,
+                                        data = plays_flattened %>% filter(game == gm))
+
+  p <- p + away_annotation + home_annotation
+}
+
+p <- p + transition_time(idx)
+
+animate(p, nframes = 150, fps = 25, start_pause = 30, end_pause = 50)
+
+```
+
+Now that's a good looking GIF!
