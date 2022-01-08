@@ -135,7 +135,7 @@ msgs_by_date %>%
   theme(legend.position = 'none')
 ```
 
-But it's better to build an actual model. The Stan model below will decompose our daily message count into:
+But it's better to build [an actual model](https://raw.githubusercontent.com/WalkerHarrison/website/main/content/posts/2021-12-18-analyzing-the-groupme-to-prove-i-m-the-most-popular/groupme_ts.stan). The Stan model below will decompose our daily message count into:
 <ul>
 <li>an overall trend that uses a B-spline to figure out the general level of activity over the years</li>
 <li>in-year harmonics that capture the effect of certain months or seasons </li>
@@ -274,7 +274,7 @@ liked_df_grouped %>%
 
 But this is a rather crude and misleading way to measure likability, because it's difficult to separate the interaction effects between a sender and a liker from the general rates that we'd expect those two to achieve. Put another way: sure Daniel has given over 5,000 likes to Rex historically, but is that actually more than we'd expect given that Daniel is liberal with his likes anyway and that Rex makes many like-worthy posts?
 
-So we should build an actual model. We use the transformed dataset `liked_df`, which has a row for each *potential* like (so that the data size is the number of messages multiplied by the size of the group), and implement the formula below, where a like is a binary outcome suited for a logistic regression:
+So we should build [another model](https://raw.githubusercontent.com/WalkerHarrison/website/main/content/posts/2021-12-18-analyzing-the-groupme-to-prove-i-m-the-most-popular/like_model.stan). We use the transformed dataset `liked_df`, which has a row for each *potential* like (so that the data size is the number of messages multiplied by the size of the group), and implement the formula below, where a like is a binary outcome suited for a logistic regression:
 
 **like ~ liker + sender + liker:sender**
 

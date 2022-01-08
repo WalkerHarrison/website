@@ -147,7 +147,7 @@ msgs_by_date %&gt;%
   theme_bw() +
   theme(legend.position = &#39;none&#39;)</code></pre>
 <p><img src="index_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
-But it’s better to build an actual model. The Stan model below will decompose our daily message count into:
+But it’s better to build <a href="https://raw.githubusercontent.com/WalkerHarrison/website/main/content/posts/2021-12-18-analyzing-the-groupme-to-prove-i-m-the-most-popular/groupme_ts.stan">an actual model</a>. The Stan model below will decompose our daily message count into:
 <ul>
 <li>
 an overall trend that uses a B-spline to figure out the general level of activity over the years
@@ -232,7 +232,7 @@ liked_df_grouped %&gt;%
   labs(x = &quot;Sender&quot;, y = &quot;Liker&quot;, title = &quot;Like Counts&quot;)</code></pre>
 <p><img src="index_files/figure-html/unnamed-chunk-10-1.png" width="960" /></p>
 <p>But this is a rather crude and misleading way to measure likability, because it’s difficult to separate the interaction effects between a sender and a liker from the general rates that we’d expect those two to achieve. Put another way: sure Daniel has given over 5,000 likes to Rex historically, but is that actually more than we’d expect given that Daniel is liberal with his likes anyway and that Rex makes many like-worthy posts?</p>
-<p>So we should build an actual model. We use the transformed dataset <code>liked_df</code>, which has a row for each <em>potential</em> like (so that the data size is the number of messages multiplied by the size of the group), and implement the formula below, where a like is a binary outcome suited for a logistic regression:</p>
+<p>So we should build <a href="https://raw.githubusercontent.com/WalkerHarrison/website/main/content/posts/2021-12-18-analyzing-the-groupme-to-prove-i-m-the-most-popular/like_model.stan">another model</a>. We use the transformed dataset <code>liked_df</code>, which has a row for each <em>potential</em> like (so that the data size is the number of messages multiplied by the size of the group), and implement the formula below, where a like is a binary outcome suited for a logistic regression:</p>
 <p><strong>like ~ liker + sender + liker:sender</strong></p>
 <p>For any message, the first two effects will capture how frequently the sender and the liker generate likes in general, while the interaction effect will capture any ability for those two to over- or underperform the preceding main effects.</p>
 <p>As a final note, consecutive messages by the same sender have been “chained” together into single, amalgamated messages and been awarded the unique set of likers across all the individual messages. This modification was made so as not to punish people who like to chop their statements up across multiple messages.</p>
