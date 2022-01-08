@@ -97,10 +97,10 @@ records <- rbind(g_home, g_away) %>%
 # distribution of WP both ways
 g1 <- records %>%
   ungroup() %>%
-  select(`Current` = WP, `No OT` = WP2) %>%
+  select(`Actual` = WP, `Turning OT games into ties` = WP2) %>%
   gather(type, val) %>%
   count(type, val) %>% 
-  mutate(type = factor(type, levels = c("Current", "No OT"))) %>%
+  mutate(type = factor(type, levels = c("Actual", "Turning OT games into ties"))) %>%
   ggplot(aes(val, n)) + 
   geom_bar(stat = "identity", fill = "cornflowerblue", col = "black") +
   facet_wrap(~type) +
