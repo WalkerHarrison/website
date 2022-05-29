@@ -1,0 +1,316 @@
+---
+title: Evaluating the NBA point spreads produced by FiveThirtyEight's RAPTOR metric
+author: Walker Harrison
+date: '2022-05-29'
+slug: []
+categories: []
+tags: []
+lastmod: '2022-05-27T00:45:29-04:00'
+layout: post
+type: post
+summary: FiveThirtyEight posts win probabilities and point spreads for every NBA game based on RAPTOR, their home-brewed player value metric. Are they any good?
+highlight: yes
+---
+
+
+
+<p>Navigate to FiveThirtyEight’s <a href="https://projects.fivethirtyeight.com/2022-nba-predictions/games/" target="_blank">daily NBA predictions webpage</a> and you will find compact previews of upcoming games that include a “RAPTOR spread,” meant to express the projected point differential between the two competing teams.</p>
+<center>
+<img src="/img/score538_2.png"/>
+</center>
+<p>FiveThirtyEight did not design RAPTOR in order to create accurate betting lines for single NBA games. Rather it’s a <a href="https://fivethirtyeight.com/features/how-our-raptor-metric-works/" target="_blank">metric used to evaluate individual players</a> by updating Box Plus-Minus with player tracking data and then combining it with another established basketball statistic, On/Off Ratings. To arrive at a point spread for a particular game, FiveThirtyEight aggregates the average RAPTOR across a roster (weighted by projected playing time), and compares it with that of an opponent.</p>
+<p>All of that is to say that I don’t expect RAPTOR to be good at predicting NBA games, especially if they don’t have up-to-the-minute injury news. But if you’re going to throw up point spreads, I can’t help but see how accurate they are and compare them to the famously sharp lines put out by sportsbooks.</p>
+<p>Aggregating and parsing all of FiveThirtyEight’s predictions for the 2021-2022 season is pretty straightforward once you click “Show More Games” on the aforementioned page and then download the HTML. All 1,230 regular season games are successfully accounted for; unspool the code below if you’re interested in the mechanics.</p>
+<details>
+<p><summary>Code</summary></p>
+<pre class="r"><code>library(tidyverse)
+library(lubridate)
+library(rvest)
+library(patchwork)
+library(knitr)
+options(dplyr.summarise.inform = FALSE)
+
+odds_to_prob &lt;- function(odds){
+  ifelse(odds &gt; 0, 100/(odds + 100), -odds/(-odds + 100))
+}
+
+prob_to_odds &lt;- function(prob){
+  ifelse(prob &gt; 0.5, prob/(1-prob)*-100, (1-prob)/prob*100)
+}
+
+odds_to_payout &lt;- function(odds, bet){
+  ifelse(odds &gt; 0, odds*(bet/100), -bet/odds*100)
+}
+
+kelly_bet &lt;- function(win_prob, odds){
+  win_prob + (win_prob - 1)/(ifelse(odds &gt; 0, odds/100, 100/-odds))
+}
+
+page &lt;- read_html(&quot;/Users/walkerharrison/Desktop/raptor.html&quot;)
+
+page_completed &lt;- page %&gt;%
+  html_nodes(&quot;#completed-days&quot;)
+
+dates &lt;- page_completed %&gt;%
+  html_nodes(&quot;.day&quot;) %&gt;%
+  html_nodes(&quot;.h3&quot;) %&gt;%
+  html_text()
+
+raptor_long &lt;- map(1:length(dates), ~{
+  
+  game_block &lt;- page_completed %&gt;%
+    html_nodes(paste0(&quot;.day:nth-child(&quot;, .x + 1, &#39;)&#39;))
+  
+  date &lt;- game_block %&gt;%
+    html_nodes(&quot;.h3&quot;) %&gt;%
+    html_text()
+  
+  teams &lt;- game_block%&gt;%
+    html_nodes(&quot;.text&quot;) %&gt;%
+    html_text()
+  
+  spreads &lt;- game_block %&gt;%
+    html_nodes(&quot;.number.spread&quot;) %&gt;%
+    html_text()
+  
+  probs &lt;- game_block %&gt;%
+    html_nodes(&quot;.number.chance&quot;) %&gt;%
+    html_text()
+  
+  scores &lt;- game_block %&gt;%
+    html_nodes(&quot;.number.score&quot;) %&gt;%
+    html_text()
+  
+  df &lt;- data.frame(
+    date = date,
+    ha = rep(c(&#39;away&#39;, &#39;home&#39;), length(teams)/2),
+    team = teams,
+    spread = spreads,
+    prob = probs,
+    score = scores
+  )
+  
+  df
+  
+}
+) %&gt;%
+  bind_rows()
+
+raptor_long_cleaned &lt;- raptor_long %&gt;%
+  group_by(ha) %&gt;%
+  mutate(game = row_number()) %&gt;%
+  ungroup() %&gt;%
+  mutate(spread = as.numeric(ifelse(spread == &quot;PK&quot;, 0, spread))) %&gt;%
+  mutate(spread = ifelse(ha == &quot;home&quot;, spread, -spread)) %&gt;%
+  group_by(game) %&gt;%
+  mutate(spread = max(spread, na.rm = T)) %&gt;%
+  ungroup() %&gt;%
+  mutate(prob = as.numeric(str_replace(prob, &quot;%&quot;, &quot;&quot;))/100) %&gt;%
+  mutate(score = as.numeric(score)) %&gt;%
+  mutate(date = str_extract(date, &quot;.*[0-9]+&quot;)) %&gt;%
+  mutate(date = coalesce(as_date(date, format = &quot;%A, %b. %d&quot;),
+                         as_date(date, format = &quot;%A, %B %d&quot;))) %&gt;%
+  mutate(date = if_else(month(date) &gt;= 10, date - years(1), date)) %&gt;%
+  mutate(team = ifelse(str_detect(team, &quot;[1-4]&quot;),
+                       str_extract(team, &quot;([a-z, A-Z, 6-7])*(?=[1-4])&quot;),
+                       team))
+
+raptor &lt;- raptor_long_cleaned %&gt;%
+  filter(ha == &quot;home&quot;) %&gt;%
+  filter(date &lt;= &quot;2022-04-11&quot;) %&gt;%
+  select(date, team, spread, prob, score, game) %&gt;%
+  inner_join(raptor_long_cleaned %&gt;% 
+               filter(ha == &quot;away&quot;) %&gt;%
+               select(date, team, score, game),
+             by = c(&quot;date&quot;, &quot;game&quot;),
+             suffix = c(&quot;_home&quot;, &quot;_away&quot;)) %&gt;%
+  mutate(diff = score_away - score_home,
+         home_win = score_home &gt; score_away)</code></pre>
+</details>
+<p>Before examining the spreads, we can run some basic diagnostics on the win probabilities that FiveThirtyEight also provides. Any probabilistic predictions should at the least be “calibrated,” which means that when you assign an event 50% probability, over time about 50% of those events should occur.</p>
+<p>But RAPTOR’s win probabilities seem to systematically overrate home teams and especially home underdogs. Nearly every point on the graph below, where I’ve grouped home team win probabilities into 5% buckets, falls short of the identity line, meaning that the actual win percentage is lower than its projection. Take the point at 0.5 on the x-axis for example: games that RAPTOR thinks are a fair coin flip for the home team are actually losses 65% of the time.</p>
+<p><img src="index_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<p>There’s a similar albeit more understated theme when comparing point spreads to the ultimate point differentials in each game. Note that the spread and differential are again always in terms of the home team, so that -5 would indicate a 5-point home favorite (or a 5-point home win). It’s subtle, but the gap below the blue smooth trend line and above the red identity line indicates that the spreads in general should be more positive (i.e. favor the home team less), especially for home dogs.</p>
+<p><img src="index_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p>It would appear that RAPTOR spreads and win probabilities could use a bump toward the away team. Let’s now compare them to the famously sharp lines offered by sportsbooks, which I’m sourcing from <a href="https://www.sportsbookreviewsonline.com/scoresoddsarchives/nba/nbaoddsarchives.htm" target="_blank">sportsbooksreviewsonline.com</a>. While spreads will vary by as much as a point between different sportsbooks, they’re typically close enough that consensus lines like these will be sufficient for the analysis. Two of the 1,230 regular season games were missing lines, but I used Action Network spreads to fill those in.</p>
+<p>Again, all data cleaning code below for those interested.</p>
+<details>
+<p><summary>Code</summary></p>
+<pre class="r"><code>team_map &lt;- tribble(
+  ~city, ~team,
+  &quot;Atlanta&quot;, &quot;Hawks&quot;,
+  &quot;Boston&quot;, &quot;Celtics&quot;,
+  &quot;Brooklyn&quot;, &quot;Nets&quot;,
+  &quot;Charlotte&quot;, &quot;Hornets&quot;,
+  &quot;Chicago&quot;, &quot;Bulls&quot;,
+  &quot;Cleveland&quot;, &quot;Cavaliers&quot;,
+  &quot;Dallas&quot;, &quot;Mavericks&quot;,
+  &quot;Denver&quot;, &quot;Nuggets&quot;,
+  &quot;Detroit&quot;, &quot;Pistons&quot;,
+  &quot;GoldenState&quot;, &quot;Warriors&quot;,
+  &quot;Houston&quot;, &quot;Rockets&quot;,
+  &quot;Indiana&quot;, &quot;Pacers&quot;,
+  &quot;LAClippers&quot;, &quot;Clippers&quot;,
+  &quot;LALakers&quot;, &quot;Lakers&quot;,
+  &quot;Memphis&quot;, &quot;Grizzlies&quot;,
+  &quot;Miami&quot;, &quot;Heat&quot;,
+  &quot;Milwaukee&quot;, &quot;Bucks&quot;,
+  &quot;Minnesota&quot;, &quot;Timberwolves&quot;,
+  &quot;NewOrleans&quot;, &quot;Pelicans&quot;, 
+  &quot;NewYork&quot;, &quot;Knicks&quot;,
+  &quot;OklahomaCity&quot;, &quot;Thunder&quot;,
+  &quot;Orlando&quot;, &quot;Magic&quot;,
+  &quot;Philadelphia&quot;, &quot;76ers&quot;,
+  &quot;Phoenix&quot;, &quot;Suns&quot;,
+  &quot;Portland&quot;, &quot;Trail Blazers&quot;,
+  &quot;Sacramento&quot;, &quot;Kings&quot;,
+  &quot;SanAntonio&quot;, &quot;Spurs&quot;,
+  &quot;Toronto&quot;, &quot;Raptors&quot;,
+  &quot;Utah&quot;, &quot;Jazz&quot;,
+  &quot;Washington&quot;, &quot;Wizards&quot;
+)
+
+sportsbook_raw &lt;- readxl::read_xlsx(&quot;/Users/walkerharrison/Downloads/nba odds 2021-22.xlsx&quot;)
+
+sportsbook_raw &lt;- sportsbook_raw %&gt;%
+  select(Date, Rot, VH, Team, Final, Close, ML) %&gt;%
+  mutate(Close = ifelse(Close %in% c(&quot;pk&quot;, &quot;PK&quot;), &quot;0&quot;, Close)) %&gt;%
+  mutate(Close = as.numeric(Close)) %&gt;%
+  mutate(game = ceiling(row_number()/2)) %&gt;%
+  mutate(Date = as.character(Date)) %&gt;%
+  mutate(month = ifelse(nchar(Date) == 4, substr(Date, 1, 2), substr(Date, 1, 1))) %&gt;% 
+  mutate(day = ifelse(nchar(Date) == 4, substr(Date, 3, 4), substr(Date, 2, 3))) %&gt;%
+  mutate(year = ifelse(nchar(Date) == 4, 2021, 2022)) %&gt;%
+  mutate(Date = ymd(paste(year, month, day))) %&gt;%
+  mutate(Close = case_when(
+    game == 890 &amp; VH ==&quot;H&quot; ~ -4,
+    game == 913 &amp; VH ==&quot;H&quot; ~ -8.5,
+    TRUE ~ Close
+  ))
+
+sportsbook &lt;- sportsbook_raw %&gt;% 
+  filter(VH == &quot;V&quot;) %&gt;% select(-VH, -Rot) %&gt;%
+  inner_join(sportsbook_raw %&gt;% 
+               filter(VH == &quot;H&quot;) %&gt;% 
+               select(-VH, -Rot), 
+             by = c(&#39;game&#39;, &#39;Date&#39;), 
+             suffix = c(&quot;.v&quot;, &quot;.h&quot;)) %&gt;%
+  filter(Close.v &lt; 100 | Close.h &lt; 100) %&gt;%
+  mutate(spread = ifelse(Close.h &lt; 100, -Close.h, Close.v),
+         total = ifelse(Close.h &gt; 100, Close.h, Close.v),
+         wp_home = ifelse(ML.h &gt; 0, 100/(ML.h + 100), -ML.h/(-ML.h + 100)),
+         wp_away = ifelse(ML.v &gt; 0, 100/(ML.v + 100), -ML.v/(-ML.v + 100)),
+         ML_juice = wp_home + wp_away - 1) %&gt;%
+  mutate(wp_home = wp_home/(1 + ML_juice),
+         wp_away = wp_away/(1 + ML_juice)) %&gt;%
+  select(date = Date,
+         team_away = Team.v,
+         team_home = Team.h,
+         spread,
+         prob = wp_home,
+         total,
+         score_away = Final.v,
+         score_home = Final.h) %&gt;%
+  mutate(home_win = score_home &gt; score_away,
+         diff = score_away - score_home) %&gt;%
+  filter(date &lt;= &quot;2022-04-11&quot;) %&gt;%
+  inner_join(team_map, by = c(&quot;team_home&quot; = &quot;city&quot;)) %&gt;%
+  select(-team_home) %&gt;% rename(team_home = team) %&gt;%
+  inner_join(team_map, by = c(&quot;team_away&quot; = &quot;city&quot;)) %&gt;%
+  select(-team_away) %&gt;% rename(team_away = team)</code></pre>
+</details>
+<p>Reproducing the above graphs seems to indicate that the sportsbooks don’t suffer from the same bias toward home teams, as both the calibration and smoothed fit between spreads and results are more faithful to the identity line.</p>
+<p><img src="index_files/figure-html/unnamed-chunk-5-1.png" width="672" />
+Putting two and two together, you’d expect the RAPTOR win probabilities to be higher than the sportsbooks’, and their spreads to favor the home team more – at least when they’re underdogs, which we do indeed observe. As a technical note, RAPTOR spreads of +0.5 and -0.5 were converted to 0 (“pick ’em”) to match the sportsbooks, since functionally there’s no difference in games that can’t end in ties.</p>
+<p><img src="index_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+<div id="the-mythical-fivethirtyeight-raptor-sportsbook" class="section level3">
+<h3>The Mythical FiveThirtyEight RAPTOR Sportsbook</h3>
+<p>So what if FiveThirtyEight opened a sportsbook and offered their RAPTOR lines to the public? Let’s pretend they posted the standard -110 odds for either side of their spreads and converted their win probabilities into moneylines with an extra 5% juice:</p>
+<center>
+<img src="/img/score538_3.png"/>
+</center>
+<p>A naive approach would be to simply bet whenever we felt like we had an advantage, according to the sportsbook lines. So if FiveThirtyEight was offering a spread of -3.5/+3.5 for that Bucks vs. Cavs game and the Vegas line was -5.5/+5.5, we would bet on the Bucks -3.5 since that spread undervalued the Hawks according to our information. The same applies to the moneylines.</p>
+<p>At $100 a bet, you’d make over $13,000 on spread bets or 11% ROI on about $114,000 of bets. On the moneyline bets, you’d make over $32,000, or 26% ROI on about $123,000 of bets:</p>
+<table>
+<caption><span id="tab:unnamed-chunk-7">Table 1: </span>Naive $100 Bets</caption>
+<thead>
+<tr class="header">
+<th align="left">type</th>
+<th align="right">bets</th>
+<th align="right">wagered</th>
+<th align="right">wins</th>
+<th align="right">losses</th>
+<th align="right">push</th>
+<th align="right">profit</th>
+<th align="right">ROI</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">spreads</td>
+<td align="right">1144</td>
+<td align="right">$114,400</td>
+<td align="right">656</td>
+<td align="right">466</td>
+<td align="right">22</td>
+<td align="right">$13,036</td>
+<td align="right">11.40%</td>
+</tr>
+<tr class="even">
+<td align="left">moneyline</td>
+<td align="right">1228</td>
+<td align="right">$122,800</td>
+<td align="right">577</td>
+<td align="right">651</td>
+<td align="right">0</td>
+<td align="right">$32,450</td>
+<td align="right">26.43%</td>
+</tr>
+</tbody>
+</table>
+<p>But any degenerate gambler will tell you that’s not how to optimally size your bets. The bigger the perceived advantage, the more you’re supposed to wager as a proportion of your bankroll – such is the principle that underpins the <a href="https://en.wikipedia.org/wiki/Kelly_criterion" target="_blank">Kelly Criterion</a>. If your advantage isn’t big enough to cover the vig, then you hold on to your money.</p>
+<p>Deriving an expected advantage is simple with moneylines, since outcomes are binary and we can just compare the implied probabilities. Differences in spreads require us to estimate what fraction of outcomes might fall between the two lines. In terms of the previous Bucks vs. Cavs example, how often will the Bucks win by 4 or 5 points to cash RAPTOR’s -3.5 line but not the sportsbooks’ -5.5?</p>
+<p>We could compare point differentials in our existing datasets, or we could examine alternative spreads on sportsbooks that are offered at various prices besides -110. Either approach yields a similar answer: each additional point is worth about 3% of expected value, so we will proceed with that assumption.</p>
+<p>Applying Kelly bets on a $1000 bankroll yields even better results. You’d make over $21,000 on spread bets or 16% ROI on about $133,000 of bets. On the moneyline bets, you’d make over $42,000, or close to 34% ROI on about $126,000 of bets</p>
+<table>
+<caption><span id="tab:unnamed-chunk-8">Table 2: </span>Kelly Bet with $1000 Bankroll</caption>
+<thead>
+<tr class="header">
+<th align="left">type</th>
+<th align="right">bets</th>
+<th align="right">wagered</th>
+<th align="right">wins</th>
+<th align="right">losses</th>
+<th align="right">push</th>
+<th align="right">profit</th>
+<th align="right">ROI</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">spreads</td>
+<td align="right">981</td>
+<td align="right">$133,020</td>
+<td align="right">574</td>
+<td align="right">387</td>
+<td align="right">20</td>
+<td align="right">$21,211</td>
+<td align="right">15.95%</td>
+</tr>
+<tr class="even">
+<td align="left">moneyline</td>
+<td align="right">1052</td>
+<td align="right">$126,368</td>
+<td align="right">473</td>
+<td align="right">579</td>
+<td align="right">0</td>
+<td align="right">$42,634</td>
+<td align="right">33.74%</td>
+</tr>
+</tbody>
+</table>
+<p>None of this analysis is meant to denigrate the work done on the RAPTOR metric or in general at FiveThirtyEight, a website that has consistently published a high standard of data journalism since its inception. As noted before, FiveThirtyEight did not create RAPTOR to predict individual games, so pretending that they would lose vs. Vegas in doing so isn’t exactly a radical observation.</p>
+<p>Plus, I assume that much of the sportsbooks’ advantage comes from letting their lines move up until the opening tip, either by manual intervention or via balancing incoming money from bettors.</p>
+<p>For example, the biggest disagreement between the two datasets is a December 15th game between the Lakers, who sportsbooks saw as a 4 point favorite, and the Mavs, who RAPTOR saw as a 7 point favorite. Luka Doncic was scratched from this game, probably without enough time for RAPTOR to bake his absence into their line, which accounts for the difference. In that sense, maybe it’s impressive that one could <em>only</em> get away with about 16% ROI on their spreads.</p>
+<p>I do find it curious that they haven’t calibrated their models to eliminate the home team bias, since that seems like a simple enough fix. But as long as they don’t open up a sportsbook, I guess it doesn’t really matter that much…</p>
+</div>
