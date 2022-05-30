@@ -6,7 +6,34 @@
     <description>Recent content on Walker Harrison</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Sat, 13 Nov 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://walker-harrison.com/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 29 May 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://walker-harrison.com/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Evaluating the NBA point spreads produced by FiveThirtyEight&#39;s RAPTOR metric</title>
+      <link>https://walker-harrison.com/posts/2022-05-27-evaluating-the-point-spreads-produced-by-538-s-raptor-metric/</link>
+      <pubDate>Sun, 29 May 2022 00:00:00 +0000</pubDate>
+      
+      <guid>https://walker-harrison.com/posts/2022-05-27-evaluating-the-point-spreads-produced-by-538-s-raptor-metric/</guid>
+      <description>FiveThirtyEight posts win probabilities and point spreads for every NBA game based on RAPTOR, their home-brewed player value metric. Are they any good?</description>
+    </item>
+    
+    <item>
+      <title>Abolish Overtime! An Argument in Favor of More Ties in the NFL</title>
+      <link>https://walker-harrison.com/posts/2022-01-09-abolish-overtime-an-argument-in-favor-of-more-ties-in-the-nfl/</link>
+      <pubDate>Sat, 08 Jan 2022 00:00:00 +0000</pubDate>
+      
+      <guid>https://walker-harrison.com/posts/2022-01-09-abolish-overtime-an-argument-in-favor-of-more-ties-in-the-nfl/</guid>
+      <description>As unappealing as ties are to the average American sports fan, creating more of them in the NFL by eliminating the overtime period has a handful of advantages.</description>
+    </item>
+    
+    <item>
+      <title>Who&#39;s the Funny One? Analyzing 7 Years of Messages from my College GroupMe</title>
+      <link>https://walker-harrison.com/posts/2021-12-18-analyzing-the-groupme-to-prove-i-m-the-most-popular/</link>
+      <pubDate>Tue, 21 Dec 2021 00:00:00 +0000</pubDate>
+      
+      <guid>https://walker-harrison.com/posts/2021-12-18-analyzing-the-groupme-to-prove-i-m-the-most-popular/</guid>
+      <description>A group of nine friends and I have sent over 100,000 messages on GroupMe in the last seven years. Such a sizable corpus gives us a chance to figure out when the chat is most active, who receives and gets the most likes, and what unique terms define each participant.</description>
+    </item>
+    
     <item>
       <title>Unraveling NFL Win Probability Graphs to Find the Best Games</title>
       <link>https://walker-harrison.com/posts/2021-11-13-unraveling-nfl-win-probability-graphs-to-find-the-best-games/</link>

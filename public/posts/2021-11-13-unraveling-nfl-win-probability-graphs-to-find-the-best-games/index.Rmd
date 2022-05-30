@@ -18,7 +18,7 @@ Perhaps the most interesting aspect of ESPN's NFL game recap page is the win pro
 
 <center><img src="/img/espn.png"/></center>
 
-In fact there's a metric called the [Excitement Index](https://sports.sites.yale.edu/game-excitement-index-part-ii) which adds up all the absolute changes in win probability to arrive at a single number that expresses a contest's cumulative drama. You can think of the Excitement Index as pulling the win probability graph's jagged path until it's a tight horizontal line and then measuring its length. So can we retrieve all these win probability graphs in order to calculate and visualize their Excitment Index?
+In fact there's a metric called the [Excitement Index](https://sports.sites.yale.edu/game-excitement-index-part-ii){target="_blank"} which adds up all the absolute changes in win probability to arrive at a single number that expresses a contest's cumulative drama. You can think of the Excitement Index as pulling the win probability graph's jagged path until it's a tight horizontal line and then measuring its length. So can we retrieve all these win probability graphs in order to calculate and visualize their Excitement Index?
 
 ```{r, message = FALSE, warning = FALSE}
 library(tidyverse)
@@ -118,7 +118,7 @@ dfs <- map(html_files, ~ {
 ```
 
 ```{r, echo = FALSE}
-load("/Users/walkerharrison/Desktop/website_wrapper/website/dfs.Rdata")
+load("/Users/walkerharrison/Desktop/website_wrapper/website/content/posts/2021-11-13-unraveling-nfl-win-probability-graphs-to-find-the-best-games/dfs.Rdata")
 ```
 We bind these dataframes together to create our master list, `all_plays`, and do a little bit of cleaning to weed out bad data -- specifically, the first `filter` makes sure that the scores are non-decreasing, since occasionally a penalty-negated score will be momentarily counted, and the second `filter` stipulates that once a graph reaches 0% or 100% win probability, that game is over. The all important `change` variable is simply the (absolute) delta between the previous home win probability and the current one.
 
@@ -170,7 +170,7 @@ game_EI %>%
   knitr::kable()
 ```
 
-So how to we straighten out a win probability chart to measure its length? First let's take the original form of that top playoff game:
+So how do we straighten out a win probability chart to measure its length? First let's take the original form of that top playoff game:
 
 ```{r, message = FALSE}
 best_game <- game_EI %>% filter(season == "Postseason") %>% head(1)
@@ -236,7 +236,6 @@ p <- plays_flattened %>%
   geom_line() +
   scale_y_continuous(limits = c(0, 100), breaks = c(0, 50, 100)) +
   scale_x_continuous(limits = c(0, max(plays_flattened$new_play_number) + 50)) +
-  facet_wrap(~score_text, ncol = 1) +
   theme_bw() +
   theme(axis.title.x=element_blank(),
         axis.text.x=element_blank(),
@@ -295,10 +294,11 @@ p <- plays_flattened %>%
   theme(axis.title.x=element_blank(),
         axis.text.x=element_blank(),
         axis.ticks.x=element_blank()) +
-  labs(y = "Win Probability")
+  labs(y = "Win Probability",
+       title = "Most Exciting Postseason Games Since 2016")
 ```
 
-The `annotation_custom2` function from [this Stack Overflow post](https://stackoverflow.com/questions/44688623/adding-custom-images-to-ggplot-facets) allows us to add the team logos to individual facets:
+The `annotation_custom2` function from [this Stack Overflow post](https://stackoverflow.com/questions/44688623/adding-custom-images-to-ggplot-facets){target="_blank"} allows us to add the team logos to individual facets:
 
 ```{r, message = FALSE, warning = FALSE}
 annotation_custom2 <- function (grob, xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf, data){ 

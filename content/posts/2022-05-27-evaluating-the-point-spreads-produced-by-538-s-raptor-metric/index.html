@@ -1,7 +1,7 @@
 ---
 title: Evaluating the NBA point spreads produced by FiveThirtyEight's RAPTOR metric
 author: Walker Harrison
-date: '2022-05-29'
+date: '2022-05-30'
 slug: []
 categories: []
 tags: []
@@ -19,7 +19,7 @@ highlight: yes
 <img src="/img/score538_2.png"/>
 </center>
 <p>FiveThirtyEight did not design RAPTOR in order to create accurate betting lines for single NBA games. Rather it’s a <a href="https://fivethirtyeight.com/features/how-our-raptor-metric-works/" target="_blank">metric used to evaluate individual players</a> by updating Box Plus-Minus with player tracking data and then combining it with another established basketball statistic, On/Off Ratings. To arrive at a point spread for a particular game, FiveThirtyEight aggregates the average RAPTOR across a roster (weighted by projected playing time), and compares it with that of an opponent.</p>
-<p>All of that is to say that I don’t expect RAPTOR to be good at predicting NBA games, especially if they don’t have up-to-the-minute injury news. But if you’re going to throw up point spreads, I can’t help but see how accurate they are and compare them to the famously sharp lines put out by sportsbooks.</p>
+<p>All of that is to say that I don’t expect RAPTOR to be good at predicting NBA games, especially if they don’t have up-to-the-minute injury news. But if you’re going to throw up point spreads, I can’t help but see how accurate they are and compare them to the lines that Vegas offers, which are usually nearly impossible to beat.</p>
 <p>Aggregating and parsing all of FiveThirtyEight’s predictions for the 2021-2022 season is pretty straightforward once you click “Show More Games” on the aforementioned page and then download the HTML. All 1,230 regular season games are successfully accounted for; unspool the code below if you’re interested in the mechanics.</p>
 <details>
 <p><summary>Code</summary></p>
@@ -46,7 +46,7 @@ kelly_bet &lt;- function(win_prob, odds){
   win_prob + (win_prob - 1)/(ifelse(odds &gt; 0, odds/100, 100/-odds))
 }
 
-page &lt;- read_html(&quot;/Users/walkerharrison/Desktop/raptor.html&quot;)
+page &lt;- read_html(&quot;raptor.html&quot;)
 
 page_completed &lt;- page %&gt;%
   html_nodes(&quot;#completed-days&quot;)
@@ -170,7 +170,7 @@ raptor &lt;- raptor_long_cleaned %&gt;%
   &quot;Washington&quot;, &quot;Wizards&quot;
 )
 
-sportsbook_raw &lt;- readxl::read_xlsx(&quot;/Users/walkerharrison/Downloads/nba odds 2021-22.xlsx&quot;)
+sportsbook_raw &lt;- readxl::read_xlsx(&quot;nba odds 2021-22.xlsx&quot;)
 
 sportsbook_raw &lt;- sportsbook_raw %&gt;%
   select(Date, Rot, VH, Team, Final, Close, ML) %&gt;%
@@ -229,7 +229,7 @@ Putting two and two together, you’d expect the RAPTOR win probabilities to be 
 <center>
 <img src="/img/score538_3.png"/>
 </center>
-<p>A naive approach would be to simply bet whenever we felt like we had an advantage, according to the sportsbook lines. So if FiveThirtyEight was offering a spread of -3.5/+3.5 for that Bucks vs. Cavs game and the Vegas line was -5.5/+5.5, we would bet on the Bucks -3.5 since that spread undervalued the Hawks according to our information. The same applies to the moneylines.</p>
+<p>A naive approach would be to simply bet whenever we felt like we had an advantage, according to the sportsbook lines. So if FiveThirtyEight was offering a spread of -3.5/+3.5 for that Bucks vs. Cavs game and the Vegas line was -5.5/+5.5, we would bet on the Bucks -3.5, since our information implies our wager will win more than half the time. The same applies to the moneylines.</p>
 <p>At $100 a bet, you’d make over $13,000 on spread bets or 11% ROI on about $114,000 of bets. On the moneyline bets, you’d make over $32,000, or 26% ROI on about $123,000 of bets:</p>
 <table>
 <caption><span id="tab:unnamed-chunk-7">Table 1: </span>Naive $100 Bets</caption>
@@ -271,7 +271,7 @@ Putting two and two together, you’d expect the RAPTOR win probabilities to be 
 <p>But any degenerate gambler will tell you that’s not how to optimally size your bets. The bigger the perceived advantage, the more you’re supposed to wager as a proportion of your bankroll – such is the principle that underpins the <a href="https://en.wikipedia.org/wiki/Kelly_criterion" target="_blank">Kelly Criterion</a>. If your advantage isn’t big enough to cover the vig, then you hold on to your money.</p>
 <p>Deriving an expected advantage is simple with moneylines, since outcomes are binary and we can just compare the implied probabilities. Differences in spreads require us to estimate what fraction of outcomes might fall between the two lines. In terms of the previous Bucks vs. Cavs example, how often will the Bucks win by 4 or 5 points to cash RAPTOR’s -3.5 line but not the sportsbooks’ -5.5?</p>
 <p>We could compare point differentials in our existing datasets, or we could examine alternative spreads on sportsbooks that are offered at various prices besides -110. Either approach yields a similar answer: each additional point is worth about 3% of expected value, so we will proceed with that assumption.</p>
-<p>Applying Kelly bets on a $1000 bankroll yields even better results. You’d make over $21,000 on spread bets or 16% ROI on about $133,000 of bets. On the moneyline bets, you’d make over $42,000, or close to 34% ROI on about $126,000 of bets</p>
+<p>Applying Kelly bets on a $1000 bankroll yields even better results. You’d make over $21,000 on spread bets or 16% ROI on about $133,000 of bets. On the moneyline bets, you’d make over $42,000, or close to 34% ROI on about $126,000 of bets:</p>
 <table>
 <caption><span id="tab:unnamed-chunk-8">Table 2: </span>Kelly Bet with $1000 Bankroll</caption>
 <thead>
