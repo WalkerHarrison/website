@@ -136,7 +136,8 @@ raptor &lt;- raptor_long_cleaned %&gt;%
 <p><img src="index_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
 <p>There’s a similar albeit more understated theme when comparing point spreads to the ultimate point differentials in each game. Note that the spread and differential are again always in terms of the home team, so that -5 would indicate a 5-point home favorite (or a 5-point home win). It’s subtle, but the gap below the blue smooth trend line and above the red identity line indicates that the spreads in general should be more positive (i.e. favor the home team less), especially for home dogs.</p>
 <p><img src="index_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
-<p>It would appear that RAPTOR spreads and win probabilities could use a bump toward the away team. Let’s now compare them to the famously sharp lines offered by sportsbooks, which I’m sourcing from <a href="https://www.sportsbookreviewsonline.com/scoresoddsarchives/nba/nbaoddsarchives.htm" target="_blank">sportsbooksreviewsonline.com</a>. While spreads will vary by as much as a point between different sportsbooks, they’re typically close enough that consensus lines like these will be sufficient for the analysis. Two of the 1,230 regular season games were missing lines, but I used Action Network spreads to fill those in.</p>
+<p>It would appear that RAPTOR spreads and win probabilities could use a bump toward the away team. As a recently as the 2019-2020 season, however, the calibration of their predictions was quite healthy, at least <a href="https://projects.fivethirtyeight.com/checking-our-work/nba-games/" target="_blank">according to a review</a> the website did of their own forecasts. One wonders if the COVID pandemic that led first to empty arenas and then to limited capacity events threw off their models’ grasp of homecourt advantage.</p>
+<p>Let’s now compare them to the famously sharp lines offered by sportsbooks, which I’m sourcing from <a href="https://www.sportsbookreviewsonline.com/scoresoddsarchives/nba/nbaoddsarchives.htm" target="_blank">sportsbooksreviewsonline.com</a>. While spreads will vary by as much as a point between different sportsbooks, they’re typically close enough that consensus lines like these will be sufficient for the analysis. Two of the 1,230 regular season games were missing lines, but I used Action Network spreads to fill those in.</p>
 <p>Again, all data cleaning code below for those interested.</p>
 <details>
 <p><summary>Code</summary></p>
@@ -280,7 +281,7 @@ Putting two and two together, you’d expect the RAPTOR win probabilities to be 
 <p>We could compare point differentials in our existing datasets, or we could examine alternative spreads on sportsbooks that are offered at various prices besides -110. Either approach yields a similar answer: each additional point is worth about 3% of expected value, so we will proceed with that assumption.</p>
 <p>Applying Kelly bets on a $1000 bankroll yields even better results. You’d make over $21,000 on spread bets or 16% ROI on about $133,000 of bets. On the moneyline bets, you’d make over $42,000, or close to 34% ROI on about $126,000 of bets:</p>
 <table>
-<caption><span id="tab:unnamed-chunk-8">Table 2: </span>Kelly Bet with $1000 Bankroll</caption>
+<caption><span id="tab:unnamed-chunk-8">Table 2: </span>Kelly Bet vs. RAPTOR with $1000 Bankroll</caption>
 <thead>
 <tr class="header">
 <th align="left">type</th>
@@ -401,7 +402,7 @@ Next we regress the results (point differential for spreads, binary won/loss for
 <p>Using the 600 or so games from the hold-out set that our models have not seen and applying the same Kelly Criterion from above, we get mixed results. The spread bets go a balanced 137-137-4 for a grand total of -$7, or effectively net even given that we’re wagering about $14,000. Note that while our game sample has only been cut in half, our amount wagered has dwindled to about 10% as compared to the original scenario, which tells us that our edge is much smaller.</p>
 <p>The moneyline bets actually yield 8% ROI, though, which is a very respectable figure in an industry with razor-thin margins. These results would imply that even though the RAPTOR lines aren’t very predictive in isolation, they can be used to sharpen sportsbook lines.</p>
 <table>
-<caption><span id="tab:unnamed-chunk-12">Table 5: </span>Kelly Bet with $1000 Bankroll</caption>
+<caption><span id="tab:unnamed-chunk-12">Table 5: </span>Kelly Bet vs. Vegas with $1000 Bankroll</caption>
 <thead>
 <tr class="header">
 <th align="left">type</th>
