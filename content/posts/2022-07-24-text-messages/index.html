@@ -165,7 +165,7 @@ daily_thread_counts &lt;- messages_recent %&gt;%
   complete(date, thread, fill = list(n = 0)) %&gt;%
   mutate(date_idx = as.numeric(as.factor(date)))
 
-test &lt;- daily_thread_counts %&gt;%
+coordinates &lt;- daily_thread_counts %&gt;%
   group_by(thread) %&gt;%
   # triangular rolling average (smooths forward and backward)
   mutate(n2 = pracma::movavg(n, 14, type = &#39;t&#39;)) %&gt;%
@@ -189,7 +189,7 @@ test &lt;- daily_thread_counts %&gt;%
   mutate(idx = row_number()) %&gt;%
   ungroup()
 
-p &lt;- test %&gt;%
+p &lt;- coordinates %&gt;%
   ggplot(aes(newx, newy)) +
   geom_point(aes(size = 1 - (radius-0.25), fill = radius),
              col = &quot;black&quot;,
@@ -214,13 +214,13 @@ annotation_custom2 &lt;- function (grob, xmin = -Inf, xmax = Inf, ymin = -Inf, y
 
 annotation &lt;- annotation_custom2(rasterGrob(walker_head, interpolate = TRUE), 
                                  xmin = -0.4, xmax = 0.4, ymin = -0.4, ymax = 0.4,
-                                 data = test)
+                                 data = coordinates)
 p &lt;- p + annotation
 
 p &lt;- p + transition_manual(idx) +
-  labs(title = &#39;{test$date[as.integer(frame)]}&#39;)
+  labs(title = &#39;{coordinates$date[as.integer(frame)]}&#39;)
 
-gif &lt;- animate(p, fps = 10, nframes = 300)</code></pre>
+gif &lt;- animate(p, fps = 10, nframes = 300, height = 400, width = 400)</code></pre>
 </details>
 <center>
 <img src="/img/bubbles.gif"/>

@@ -265,7 +265,7 @@ daily_thread_counts <- messages_recent %>%
   complete(date, thread, fill = list(n = 0)) %>%
   mutate(date_idx = as.numeric(as.factor(date)))
 
-test <- daily_thread_counts %>%
+coordinates <- daily_thread_counts %>%
   group_by(thread) %>%
   # triangular rolling average (smooths forward and backward)
   mutate(n2 = pracma::movavg(n, 14, type = 't')) %>%
@@ -289,7 +289,7 @@ test <- daily_thread_counts %>%
   mutate(idx = row_number()) %>%
   ungroup()
 
-p <- test %>%
+p <- coordinates %>%
   ggplot(aes(newx, newy)) +
   geom_point(aes(size = 1 - (radius-0.25), fill = radius),
              col = "black",
@@ -314,13 +314,13 @@ annotation_custom2 <- function (grob, xmin = -Inf, xmax = Inf, ymin = -Inf, ymax
 
 annotation <- annotation_custom2(rasterGrob(walker_head, interpolate = TRUE), 
                                  xmin = -0.4, xmax = 0.4, ymin = -0.4, ymax = 0.4,
-                                 data = test)
+                                 data = coordinates)
 p <- p + annotation
 
 p <- p + transition_manual(idx) +
-  labs(title = '{test$date[as.integer(frame)]}')
+  labs(title = '{coordinates$date[as.integer(frame)]}')
 
-gif <- animate(p, fps = 10, nframes = 300)
+gif <- animate(p, fps = 10, nframes = 300, height = 400, width = 400)
 ```
 </details>
 
