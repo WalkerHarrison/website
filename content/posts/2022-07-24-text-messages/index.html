@@ -1,0 +1,229 @@
+---
+title: I've Got The Receipts! Sifting Through My Own Personal iMessage History
+author: Walker Harrison
+date: '2022-07-24'
+slug: text-messages
+categories: []
+tags: []
+lastmod: '2022-07-24T10:58:47-04:00'
+layout: post
+type: post
+summary: Discovering that five years' worth of text messages were sitting on my MacBook allowed me to profile myself as a communicator and track the changes in my personal network.
+highlight: yes
+---
+
+
+
+<p>A thin silver lining of the massive digital footprint we leave behind is that occasionally we’re given the opportunity to access and analyze some personal data instead of just handing it over to Big Tech.</p>
+<p>Which is why I delighted in the discovery that, as a Mac user, all of my iMessages are in the mysterious <code>Library</code> folder within the root directory, housed in a database called <code>chat.db</code> that I can query directly from R with the guidance of <a href="https://apple.stackexchange.com/questions/421665/how-specificially-do-i-read-a-chat-db-file" target="_blank">this helpful post</a>.</p>
+<details>
+<p><summary>Code</summary></p>
+<pre class="r"><code>library(tidyverse)
+library(lubridate)
+library(DBI)
+library(gganimate)
+library(png)
+library(grid)
+library(tidytext)
+set.seed(0)
+
+setwd(&quot;/Users/walkerharrison/Desktop/&quot;)
+
+con_chat &lt;- dbConnect(RSQLite::SQLite(), dbname = &quot;chat.db&quot;)
+
+chat_query &lt;- &quot;
+  select distinct
+  m.rowid as msgid, coalesce(m.cache_roomnames, h.id) as thread,
+  m.is_from_me,
+  datetime((m.date / 1000000000) + 978307200, &#39;unixepoch&#39;, &#39;localtime&#39;) as datetime,
+  m.text
+  from message m
+  left join handle as h on m.handle_id = h.rowid
+  order by m.date desc
+&quot;
+
+messages_raw &lt;- dbGetQuery(con_chat, chat_query)
+
+
+# if you need contact information, copy contacts db as well
+# ~/Library/Application Support/AddressBook/Sources
+
+con_contacts &lt;- dbConnect(RSQLite::SQLite(), dbname = &quot;contacts.db&quot;)
+
+contacts_query &lt;- &quot;
+  select 
+  r.Z_PK as contactid, 
+  r.ZFIRSTNAME as first, r.ZLASTNAME as last, 
+  n.ZFULLNUMBER as number, e.ZADDRESS as email
+  from ZABCDRECORD r
+  left join ZABCDPHONENUMBER n on r.Z_PK = n.ZOWNER
+  left join ZABCDEMAILADDRESS e on r.Z_PK = e.ZOWNER
+&quot;
+
+contacts_raw &lt;- dbGetQuery(con_contacts, contacts_query)
+
+# standardize phone numbers
+contacts &lt;- contacts_raw %&gt;%
+  mutate(number = str_replace_all(number, &quot;[\\+\\(\\)\\- ]&quot;, &quot;&quot;)) %&gt;%
+  mutate(number = ifelse(nchar(number) &lt; 11, paste0(1, number), number)) %&gt;%
+  mutate(number = ifelse(!is.na(number), paste0(&quot;+&quot;, number), number))
+
+messages &lt;- messages_raw %&gt;%
+  filter(!is.na(thread)) %&gt;%
+  left_join(contacts, by = c(&#39;thread&#39; = &#39;number&#39;), keep = TRUE) %&gt;%
+  left_join(contacts, by = c(&#39;thread&#39; = &#39;email&#39;), keep = TRUE) %&gt;%
+  transmute(msgid, is_from_me, 
+            datetime = as_datetime(datetime), 
+            date = as_date(datetime),
+            thread,
+            contactid = coalesce(contactid.x, contactid.y),
+            first = coalesce(first.x, first.y),
+            last = coalesce(last.x, last.y),
+            number = coalesce(number.x, number.y),
+            email = coalesce(email.x, email.y),
+            text) %&gt;%
+  filter(!is.na(text)) %&gt;%
+  mutate(thread = ifelse(!is.na(contactid), paste0(&#39;c&#39;, contactid), thread)) </code></pre>
+</details>
+<p>Usually the best thing to do with data this large is to simply count it. In total, I’ve exchanged over 330,000 messages since the dataset’s inception in late summer of 2017, although in the graph below you can see some missing periods in early 2020 and summer of 2021. On a daily basis, I receive about 130 texts and send out about 80.</p>
+<p>The day I received the most messages was January 6, 2021, as my friends and I marveled at this country’s crumbling democracy. The day I sent the most messages was March 11, 2018 when I was trying to teach a friend how to web scrape (you’re welcome, Dave).</p>
+<details>
+<p><summary>Code</summary></p>
+<pre class="r"><code>daily_message_counts &lt;- messages %&gt;% 
+  count(date, is_from_me) %&gt;%
+  transmute(date, type = ifelse(is_from_me, &quot;sent&quot;, &quot;received&quot;), n)
+
+p1 &lt;- daily_message_counts %&gt;%
+  ggplot(aes(date, n, col = type)) +
+  geom_line() +
+  facet_wrap(~type, nrow = 2) +
+  scale_color_manual(values = c(&quot;dark blue&quot;, &quot;orangered2&quot;)) +
+  theme_bw() +
+  theme(legend.position = &quot;none&quot;)</code></pre>
+</details>
+<p><img src="index_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<p>As I did in my <a href="https://www.walker-harrison.com/posts/2021-12-18-analyzing-the-groupme-to-prove-i-m-the-most-popular/" target="_blank">post about GroupMe messages</a>, I can compare how frequently I use terms vs. the people who message me to determine which phrases define my vernacular. Below are the top twenty terms I use more than others, scored using the difference in log frequency.</p>
+<p>Most of the terms are slight mutations of normal phrases (“damn” to “zamn” or “sweet” to “sveet” or “yuck” to “yug”). “jnj” refers to the Johnson &amp; Johnson COVID vaccination I got last year, while “chenqui” is a mispelling of “chenquieh,” which is how Borat says thank you.</p>
+<details>
+<p><summary>Code</summary></p>
+<pre class="r"><code>msgs_tokens &lt;- messages %&gt;%
+  mutate(text = str_replace_all(text, &quot;’&quot;, &quot;&#39;&quot;)) %&gt;%
+  select(is_from_me, text) %&gt;%
+  unnest_tokens(word, text) %&gt;% 
+  anti_join(stop_words, by = &quot;word&quot;) %&gt;%
+  filter(!str_detect(word, &quot;\\.&quot;)) %&gt;%
+  filter(!str_detect(word, &quot;_&quot;)) %&gt;%
+  filter(!str_detect(word, &quot;\\d&quot;))
+
+my_words &lt;- msgs_tokens %&gt;%
+  group_by(is_from_me, word) %&gt;%
+  summarize(n = n()) %&gt;%
+  ungroup() %&gt;%
+  complete(is_from_me, word, fill = list(n = 0)) %&gt;%
+  group_by(is_from_me) %&gt;%
+  mutate(n_total = sum(n)) %&gt;%
+  mutate(p = (n+1)/(n_total+1)) %&gt;%
+  select(-n_total, -n) %&gt;%
+  spread(is_from_me, p) %&gt;%
+  mutate(score_diff = log(`1`) - log(`0`)) %&gt;%
+  select(word, score_diff) %&gt;%
+  arrange(desc(score_diff)) %&gt;%
+  head(20)
+
+p2 &lt;- my_words %&gt;%
+  arrange(score_diff) %&gt;%
+  mutate(word = factor(word, levels = .$word)) %&gt;%
+  ggplot(aes(word, score_diff, fill = score_diff)) +
+  geom_col(show.legend = FALSE) +
+  labs(x = NULL, y = NULL, title = &quot;Things I say a lot that more than other people&quot;) +
+  coord_flip() +
+  scale_fill_gradient(low = &quot;dark blue&quot;, high = &quot;orangered2&quot;) +
+  theme_bw() +
+  theme(axis.text.x = element_blank())</code></pre>
+</details>
+<p><img src="index_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+<p>While these macro trends are fun to tease out, ultimately I wanted to do this project to examine my personal life as expressed via texting. These days, messaging is the heartbeat of most of our relationships, whether they be friends, family, or romantic partners. It follows that this database would show me who the most important people in my life are, and how that might have changed over time.</p>
+<p>I’m not going to list out my most frequent conversations because that’s private and also doesn’t mean anything to the majority of readers. Rather, I’d like to try to create a visualization that’s a little more universal.</p>
+<p>If you imagine yourself as the center of the universe (quite easy for a narcissist like me), you can think of message exchanges between others as drawing those contacts nearer to you while silence pulls them back to the periphery. To achieve this spatially, we simply distribute people randomly at angles around the origin (my bitmoji) and let their rolling text frequency determine their radius (and also their size and color for extra effect).</p>
+<p>Below I apply this idea to the 213 unique conversations I’ve had since last September. Most exchanges are transient and only bubble up for a brief moment. My core relationships – my close friends, my family, my group chats that won’t shut up – hover continuously around me. Some people regularly pop in and out of my life; others start close and fade:</p>
+<details>
+<p><summary>Code</summary></p>
+<pre class="r"><code>messages_recent &lt;- messages %&gt;% filter(date &gt;= &quot;2021-09-14&quot;)
+
+thread_counts &lt;- messages_recent %&gt;%
+  count(thread, first, last, sort = TRUE) %&gt;%
+  # rank randomly
+  arrange(rnorm(nrow(.))) %&gt;%
+  mutate(rank = row_number()) %&gt;%
+  # distribute along circle
+  mutate(angle = 2*pi*rank/max(rank))
+
+daily_thread_counts &lt;- messages_recent %&gt;%
+  count(date = as_date(datetime), thread) %&gt;%
+  arrange(date, thread) %&gt;%
+  # fill out 0-count days
+  complete(date, thread, fill = list(n = 0)) %&gt;%
+  mutate(date_idx = as.numeric(as.factor(date)))
+
+test &lt;- daily_thread_counts %&gt;%
+  group_by(thread) %&gt;%
+  # triangular rolling average (smooths forward and backward)
+  mutate(n2 = pracma::movavg(n, 14, type = &#39;t&#39;)) %&gt;%
+  # radius is determined by rolling average
+  # minimum radius to allow room for my fat head in middle
+  mutate(radius = 1 - atan(n2/5)*2/pi + 0.35) %&gt;%
+  inner_join(thread_counts %&gt;% select(thread, first, last, angle, rank), by = &quot;thread&quot;) %&gt;%
+  # convert back to cartesian
+  mutate(x = radius*cos(angle),
+         y = radius*sin(angle)) %&gt;%
+  # interpolate for smoother visualization
+  mutate(idx = row_number(),
+         nextx = lead(x),
+         nexty = lead(y)) %&gt;%
+  slice(rep(1:nrow(.), each = 5)) %&gt;%
+  group_by(thread, idx) %&gt;%
+  mutate(idx2 = row_number()) %&gt;%
+  mutate(newx = x + (idx2-1)/5*(nextx - x),
+         newy = y + (idx2-1)/5*(nexty - y)) %&gt;%
+  group_by(thread) %&gt;%
+  mutate(idx = row_number()) %&gt;%
+  ungroup()
+
+p &lt;- test %&gt;%
+  ggplot(aes(newx, newy)) +
+  geom_point(aes(size = 1 - (radius-0.25), fill = radius),
+             col = &quot;black&quot;,
+             pch = 21,
+             alpha = 0.8) +
+  scale_x_continuous(limits = c(-1.5, 1.5)) +
+  scale_y_continuous(limits = c(-1.5, 1.5)) +
+  scale_size_area(max_size = 15) +
+  scale_fill_gradient(low = &quot;orangered2&quot;, high = &quot;dark blue&quot;) +
+  theme_void() +
+  theme(legend.position = &quot;none&quot;)
+
+walker_head &lt;- readPNG(&quot;/Users/walkerharrison/Desktop/walkerhead.png&quot;)
+
+annotation_custom2 &lt;- function (grob, xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf, data){ 
+  layer(data = data, stat = StatIdentity, position = PositionIdentity, 
+        geom = ggplot2:::GeomCustomAnn,
+        inherit.aes = TRUE, params = list(grob = grob, 
+                                          xmin = xmin, xmax = xmax, 
+                                          ymin = ymin, ymax = ymax))
+}
+
+annotation &lt;- annotation_custom2(rasterGrob(walker_head, interpolate = TRUE), 
+                                 xmin = -0.4, xmax = 0.4, ymin = -0.4, ymax = 0.4,
+                                 data = test)
+p &lt;- p + annotation
+
+p &lt;- p + transition_manual(idx) +
+  labs(title = &#39;{test$date[as.integer(frame)]}&#39;)
+
+gif &lt;- animate(p, fps = 10, nframes = 300)</code></pre>
+</details>
+<center>
+<img src="/img/bubbles.gif"/>
+</center>
+<p>While I finish most of my posts by encouraging readers to run the analyses for themselves, I can’t advise people to dive into their old text messages without also noting that this was an emotionally turbulent exercise. Yes, tracing your life backwards leads you through moments of joy and laughter but it also can force you to re-live some disappointments and dashed dreams. I had to stop myself from interminably re-reading old conversations, as tempting as it was to drink deeply from this fascinating information pool, since I wasn’t convinced it was good for my mental state.</p>
+<p>In any case, I hope you’ve enjoyed some of the discussion above regardless of whether you’re considering doing it for yourself. Chenquieh for reading!</p>
