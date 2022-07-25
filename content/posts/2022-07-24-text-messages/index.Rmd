@@ -16,9 +16,29 @@ A thin silver lining of the massive digital footprint we leave behind is that oc
 
 Which is why I delighted in the discovery that, as a Mac user, all of my iMessages are in the mysterious `Library` folder within the root directory, housed in a database called `chat.db` that I can query directly from R with the guidance of [this helpful post](https://apple.stackexchange.com/questions/421665/how-specificially-do-i-read-a-chat-db-file){target="_blank"}.
 
+It's a bit safer to copy the database somewhere else before using it, though. To do so, first make sure that your Terminal has full disk access:
+
+<center><img src="/img/privacysettings.png"/></center>
+
+Then use the Terminal to navigate to the `Library/Messages` folder and copy `chat.db` somewhere more useful, such as the Desktop.
+
+```{bash, eval = FALSE}
+cd ~/Library/Messages/
+cp chat.db /Users/YOUR_NAME_HERE/Desktop/chat.db
+```
+
+In my case, I also needed my contacts database, since iMessage sometimes uses email addresses to send texts as opposed to phone numbers. I copied that database to the Desktop as well, this time under a new name `contacts.db`. Your subdirectory under `Sources` will probably not be named the same thing, and you might have multiple -- use the one that is the largest, as [this user points out](https://apple.stackexchange.com/questions/321521/can-i-access-contact-names-in-chat-db){target="_blank"}:
+
+```{bash, eval = FALSE}
+cd ~/Library/Application\ Support/AddressBook/Sources/DDC2B856-A6BB-4600-9FAE-62A73F84C665/
+cp chat.db /Users/YOUR_NAME_HERE/Desktop/chat.db
+```
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 ```
+
+Once you've moved both of those databases, the rest of the analysis can be implemented with R.
 
 <details>
 <summary>Code</summary>
@@ -320,7 +340,7 @@ p <- p + annotation
 p <- p + transition_manual(idx) +
   labs(title = '{coordinates$date[as.integer(frame)]}')
 
-gif <- animate(p, fps = 10, nframes = 300, height = 400, width = 400)
+gif <- animate(p, fps = 10, nframes = 300, height = 300, width = 300)
 ```
 </details>
 

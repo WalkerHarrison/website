@@ -16,6 +16,17 @@ highlight: yes
 
 <p>A thin silver lining of the massive digital footprint we leave behind is that occasionally we’re given the opportunity to access and analyze some personal data instead of just handing it over to Big Tech.</p>
 <p>Which is why I delighted in the discovery that, as a Mac user, all of my iMessages are in the mysterious <code>Library</code> folder within the root directory, housed in a database called <code>chat.db</code> that I can query directly from R with the guidance of <a href="https://apple.stackexchange.com/questions/421665/how-specificially-do-i-read-a-chat-db-file" target="_blank">this helpful post</a>.</p>
+<p>It’s a bit safer to copy the database somewhere else before using it, though. To do so, first make sure that your Terminal has full disk access:</p>
+<center>
+<img src="/img/privacysettings.png"/>
+</center>
+<p>Then use the Terminal to navigate to the <code>Library/Messages</code> folder and copy <code>chat.db</code> somewhere more useful, such as the Desktop.</p>
+<pre class="bash"><code>cd ~/Library/Messages/
+cp chat.db /Users/YOUR_NAME_HERE/Desktop/chat.db</code></pre>
+<p>In my case, I also needed my contacts database, since iMessage sometimes uses email addresses to send texts as opposed to phone numbers. I copied that database to the Desktop as well, this time under a new name <code>contacts.db</code>. Your subdirectory under <code>Sources</code> will probably not be named the same thing, and you might have multiple – use the one that is the largest, as <a href="https://apple.stackexchange.com/questions/321521/can-i-access-contact-names-in-chat-db" target="_blank">this user points out</a>:</p>
+<pre class="bash"><code>cd ~/Library/Application\ Support/AddressBook/Sources/DDC2B856-A6BB-4600-9FAE-62A73F84C665/
+cp chat.db /Users/YOUR_NAME_HERE/Desktop/chat.db</code></pre>
+<p>Once you’ve moved both of those databases, the rest of the analysis can be implemented with R.</p>
 <details>
 <p><summary>Code</summary></p>
 <pre class="r"><code>library(tidyverse)
@@ -101,7 +112,7 @@ p1 &lt;- daily_message_counts %&gt;%
   theme_bw() +
   theme(legend.position = &quot;none&quot;)</code></pre>
 </details>
-<p><img src="index_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<p><img src="index_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
 <p>As I did in my <a href="https://www.walker-harrison.com/posts/2021-12-18-analyzing-the-groupme-to-prove-i-m-the-most-popular/" target="_blank">post about GroupMe messages</a>, I can compare how frequently I use terms vs. the people who message me to determine which phrases define my vernacular. Below are the top twenty terms I use more than others, scored using the difference in log frequency.</p>
 <p>Most of the terms are slight mutations of normal phrases (“damn” to “zamn” or “sweet” to “sveet” or “yuck” to “yug”). “jnj” refers to the Johnson &amp; Johnson COVID vaccination I got last year, while “chenqui” is a mispelling of “chenquieh,” which is how Borat says thank you.</p>
 <details>
@@ -141,7 +152,7 @@ p2 &lt;- my_words %&gt;%
   theme_bw() +
   theme(axis.text.x = element_blank())</code></pre>
 </details>
-<p><img src="index_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+<p><img src="index_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
 <p>While these macro trends are fun to tease out, ultimately I wanted to do this project to examine my personal life as expressed via texting. These days, messaging is the heartbeat of most of our relationships, whether they be friends, family, or romantic partners. It follows that this database would show me who the most important people in my life are, and how that might have changed over time.</p>
 <p>I’m not going to list out my most frequent conversations because that’s private and also doesn’t mean anything to the majority of readers. Rather, I’d like to try to create a visualization that’s a little more universal.</p>
 <p>If you imagine yourself as the center of the universe (quite easy for a narcissist like me), you can think of message exchanges between others as drawing those contacts nearer to you while silence pulls them back to the periphery. To achieve this spatially, we simply distribute people randomly at angles around the origin (my bitmoji) and let their rolling text frequency determine their radius (and also their size and color for extra effect).</p>
@@ -220,7 +231,7 @@ p &lt;- p + annotation
 p &lt;- p + transition_manual(idx) +
   labs(title = &#39;{coordinates$date[as.integer(frame)]}&#39;)
 
-gif &lt;- animate(p, fps = 10, nframes = 300, height = 400, width = 400)</code></pre>
+gif &lt;- animate(p, fps = 10, nframes = 300, height = 300, width = 300)</code></pre>
 </details>
 <center>
 <img src="/img/bubbles.gif"/>
