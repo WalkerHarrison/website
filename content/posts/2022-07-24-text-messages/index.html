@@ -25,7 +25,7 @@ highlight: yes
 cp chat.db /Users/YOUR_NAME_HERE/Desktop/chat.db</code></pre>
 <p>In my case, I also needed my contacts database, since iMessage sometimes uses email addresses to send texts as opposed to phone numbers. I copied that database to the Desktop as well, this time under a new name <code>contacts.db</code>. Your subdirectory under <code>Sources</code> will probably not be named the same thing, and you might have multiple – use the one that is the largest, as <a href="https://apple.stackexchange.com/questions/321521/can-i-access-contact-names-in-chat-db" target="_blank">this user points out</a>:</p>
 <pre class="bash"><code>cd ~/Library/Application\ Support/AddressBook/Sources/DDC2B856-A6BB-4600-9FAE-62A73F84C665/
-cp chat.db /Users/YOUR_NAME_HERE/Desktop/chat.db</code></pre>
+cp AddressBook-v22.abcddb /Users/YOUR_NAME_HERE/Desktop/contacts.db</code></pre>
 <p>Once you’ve moved both of those databases, the rest of the analysis can be implemented with R.</p>
 <details>
 <p><summary>Code</summary></p>

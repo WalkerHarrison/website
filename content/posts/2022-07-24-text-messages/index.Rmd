@@ -31,7 +31,7 @@ In my case, I also needed my contacts database, since iMessage sometimes uses em
 
 ```{bash, eval = FALSE}
 cd ~/Library/Application\ Support/AddressBook/Sources/DDC2B856-A6BB-4600-9FAE-62A73F84C665/
-cp chat.db /Users/YOUR_NAME_HERE/Desktop/chat.db
+cp AddressBook-v22.abcddb /Users/YOUR_NAME_HERE/Desktop/contacts.db
 ```
 
 ```{r setup, include=FALSE}
