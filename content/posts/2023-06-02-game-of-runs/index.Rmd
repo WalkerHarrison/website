@@ -1,5 +1,5 @@
 ---
-title: Is every Run Random? Investigating Streaky Scoring in NBA Basketball
+title: Is every Run Random? Investigating Momentum and Streaky Scoring in NBA Basketball
 author: Walker Harrison
 date: '2023-06-02'
 slug: game_of_runs
@@ -29,31 +29,55 @@ These "runs," of course, are the short but influential stretches of nearly every
 
 <center><img src="/img/jimmy.png"/></center>
 
-<br>
+But it also feels like calling basketball a game of runs over and over again implies that points are exchanged between teams in sequences that are streakier or more volatile than baseline scoring rates would otherwise dictate. In other words, characterizing the sport as runny seems equivalent to believing in the existence of momentum and the idea that scoring the most recent basket increases your probability of scoring the next one. So: does NBA basketball feature more runs than you would expect from two teams with hundreds of alternating opportunities to score every game?
 
-But it also feels like calling basketball a game of runs over and over again implies that the sport's flow is more volatile than you might otherwise assume, and that catalyzing these sequences for your team (or stifling them for your opponent) is a component of the sport that's not captured simply by having good players. So: does NBA basketball feature more runs than you would expect from two teams with hundreds of alternating opportunities to score every game?
+Let us examine the 1300 games from the 2021-2022 NBA season using play-by-play data [hosted on Kaggle](https://www.kaggle.com/datasets/xocelyk/nba-pbp){target="_blank"}. We define a possession for a team as any continuous time period with the ball (so offensive rebounds extend possessions as opposed to incrementing them), and a successful possession as scoring any amount of points in that timeframe, whether that be a single free throw or a four-point play. We can then tally how many uninterrupted scoring possessions teams can achieve before their opponent logs a bucket for themselves, and turn any game into a series of back-and-forth runs that are each at least one score in length. Note that we reset the count at the end of each quarter.
 
-Let us examine the 1300 games from the 2021-2022 NBA season using play-by-play data [hosted on Kaggle](https://www.kaggle.com/datasets/xocelyk/nba-pbp){target="_blank"}. We define a possession for a team as any continuous time period with the ball (so offensive rebounds extend possessions as opposed to incrementing them), and a successful possession as scoring any amount of points in that timeframe, whether that be a single free throw or a four-point play. We can then tally how many uninterrupted scoring possessions teams can achieve before their opponent logs a bucket for themselves.
+For example, consider the sequence below from last year's conference finals between the Heat (MIA) and the Celtics (BOS). After a Tyler Herro made jumper for the Heat, the Celtics score two unanswered baskets before the Heat come right back with consecutive unanswered baskets of their own, leading to run lengths of 1, 2, and 2, respectively.
 
-As the histogram below demonstrates, most runs are just a single scoring possession that is eventually answered by the other team. After that, about one third of existing runs are extended an extra scoring possession at each step (which tightly follows the implied theoretical frequencies from the empirical 50% scoring rate). Each game typically has a longest run of four to five unanswered baskets.
+```{r}
+run_ex_table %>%
+  select(-basket) %>%
+  flextable() %>%
+  merge_v(' ') %>%
+  bold(i = which(run_ex_table$basket), j = which(names(run_ex_table)== "play")) %>%
+  theme_vanilla() %>%
+  width(width = 100)
+```
+
+If we gather all of these run-lengths from an entire season, we can see which ones are most common. As the histogram on the left below demonstrates, most runs are just a single scoring possession that is eventually answered by the other team. After that, about one third of existing runs are extended an extra scoring possession at each step. On the right, if we calculate the longest run within each individual quarter, we find the most typical values to be three or four unanswered baskets.
 
 ```{r, echo = FALSE, fig.height = 4}
 emp1 + emp2 + plot_layout(guides = "collect")
 ```
 
-To test whether these runs are self-sustaining, we can overwrite the result of each possession with a simulation using either a basic scoring rate or a matchup-specific one. If there truly are longer runs than we'd expect from treating each possession independently, then the simulation would not be able to capture the game's "momentum," since it is unaware of the results of previous possessions. 
+How can we test whether these runs are self-sustaining? Well if each possession really did depend on who scored last, then we wouldn’t be able to reproduce the distributions above without that necessary context. On the other hand, if we can create similar results with a process that eliminates any dependencies between observations, then there’s no reason to believe these runs are a product of momentum. 
 
-However, the distributions from the simulation closely follow those from the empirical results, which leaves us no reason to believe that NBA basketball is any runnier than you'd expect from a game with so many scoring opportunities, matching the conclusion from [a 2019 paper with similar methodology.](https://arxiv.org/pdf/1903.08716.pdf){target="_blank"}
+One way to do this is to simply scramble the results of each team’s possessions. If we completely randomize the order of the play column above while keeping everything else intact, we will preserve the length and team scoring rates of each game but destroy any existing relationship between adjacent rows. This approach is known as a [permutation test](https://en.wikipedia.org/wiki/Permutation_test){target="_blank"}, and it's used to ascertain whether data is "exchangeable," meaning any arrangement of observations is equally likely.
+
+For example, shuffling the order of possession results in the table above yields the following sequence, which now is composed entirely of single-basket runs:
+
+```{r}
+run_ex_table2 %>%
+  select(-basket) %>%
+  flextable() %>%
+  merge_v(' ') %>%
+  bold(i = which(run_ex_table2$basket), j = which(names(run_ex_table2)== "play")) %>%
+  theme_vanilla() %>%
+  width(width = 100)
+```
+
+Do this for the entire dataset and you can re-calculate how often runs of every length occur and what a typical longest run per quarter looks like. The results are distributions that look very similar to those based on the actual results. The average run length in the shuffled data is 1.46 compared to 1.48 in the real data, and the average maximum run per quarter is 3.55 in the shuffled data compared to 3.62 in the real data.
 
 ```{r, echo = FALSE, fig.height = 4}
 sim1 + sim2 + plot_layout(guides = "collect")
 ```
 
-If the existence of momentum is difficult to prove, then perhaps we should stop faulting teams for not being able to claim it exclusively for themselves. In particular, it's popular to criticize coaches for failing to call a timeout in the middle an opponent's run. Fans and media alike recently [piled on Celtics coach Joe Mazzulla](https://nesn.com/2023/05/how-celtics-joe-mazzulla-defended-timeout-usage-in-game-1/){target="_blank"} for not intervening more often during his team's worst stretches in their playoff losses to Butler's Heat.
+If randomizing the possessions creates nearly the same incidence of a single team stacking up consecutive baskets, then we're left with little reason to believe that NBA basketball is any runnier than you'd expect from a game with so many scoring opportunities, matching the conclusion from [a 2019 paper with similar methodology.](https://arxiv.org/pdf/1903.08716.pdf){target="_blank"}
+
+Given that the existence of momentum is difficult to prove, perhaps we should stop faulting teams for not being able to claim it exclusively for themselves. In particular, it's popular to criticize coaches for failing to call a timeout in the middle an opponent's run. Fans and media alike recently [piled on Celtics coach Joe Mazzulla](https://nesn.com/2023/05/how-celtics-joe-mazzulla-defended-timeout-usage-in-game-1/){target="_blank"} for not intervening more often during his team's worst stretches in their playoff losses to Butler's Heat.
 
 <center><img src="/img/mazz.png"/></center>
-
-<br>
 
 But if we examine when timeouts were used during opponents' runs in the dataset, we find that they do little to change the events that immediately follow. For each minimum length of unanswered scoring possessions, we split runs into those that featured an opponent's timeout at that juncture and those that didn't. For example, for every run that lasted at least three scores, we can note if a timeout was called after the third score and compare the remainder of those runs. The table below shows that runs continue at approximately the same length, regardless of whether a timeout was used.
 
@@ -123,79 +147,158 @@ pbp <- pbp_raw %>%
             end_away_score = max(AwayScore),
             # mark timeout if following end of possession
             home_timeout_after = last(home_timeout_after) == 1,
-            away_timeout_after = last(away_timeout_after) == 1) %>%
+            away_timeout_after = last(away_timeout_after) == 1,
+            last_event = last(coalesce(AwayEvent, HomeEvent))) %>%
   group_by(game) %>%
   # keep track of score
   mutate(score = ifelse(possession == home, end_home_score > lag(end_home_score, default = 0), 
-                        end_away_score > lag(end_away_score, default = 0))
-  ) %>%
+                        end_away_score > lag(end_away_score, default = 0)),
+         last_score = ifelse(score, possession, NA)) %>% 
+  # keep track of who scored last
+  fill(last_score, .direction = "down") %>% 
+  mutate(last_score = lag(last_score)) %>%
   ungroup() %>%
   # team identities required for matchup modeling
   mutate(home_poss = possession == home, 
          offense = ifelse(home_poss, home, away),
-         defense = ifelse(home_poss, away, home))
+         defense = ifelse(home_poss, away, home),
+         # treat every quarter as a distinct game
+         gp = paste0(game, period))
 
 rm(pbp_raw)
 
-# turning possessions into runs
+
+# mapping possessions to runs
 runs <- pbp %>%
-  filter(score) %>%
-  # uncomment to treat every quarter as a distinct game
-  # mutate(game = paste0(game, period)) %>%
-  group_by(game) %>%
+  # once for games
+  group_by(game, score) %>%
   # trick for assigning key column to clusters of data
   mutate(run_id = 1 + cumsum(offense != lag(offense, default = first(offense)))) %>%
-  group_by(game, offense, defense, home_poss, run_id) %>%
-  # aggregate info over runs
+  # once for game-periods
+  group_by(gp, score) %>%
+  # trick for assigning key column to clusters of data
+  mutate(run_id_gp = 1 + cumsum(offense != lag(offense, default = first(offense)))) %>%
+  ungroup()
+
+# aggregate possession info over runs (game)
+runs_agg <- runs %>%
+  group_by(game, score, offense, defense, home_poss, run_id) %>%
   summarize(length = n(),
             # determine when first (if any) opponent timeout was used during run
             timeout = min(c(Inf, which(ifelse(home_poss, away_timeout_after, home_timeout_after)))),
             start_period = min(period),
             # determine if run spans across multiple quarters
-            period_change = min(c(Inf, which(lead(period) != period))))
+            period_change = min(c(Inf, which(lead(period) != period)))) %>%
+  ungroup()
 
-# empirical distributions of runs and max runs per game
-emp1 <- runs %>%
+# aggregate possession info over runs (game-period)
+runs_agg_gp <- runs %>%
+  group_by(gp, score, offense, defense, home_poss, run_id_gp) %>%
+  summarize(length = n(),
+            # determine when first (if any) opponent timeout was used during run
+            timeout = min(c(Inf, which(ifelse(home_poss, away_timeout_after, home_timeout_after)))),
+            start_period = min(period),
+            # determine if run spans across multiple quarters
+            period_change = min(c(Inf, which(lead(period) != period)))) %>%
+  ungroup()
+
+# example of run calculation
+run_ex_table <- runs %>%
+  filter(gp == "202205170MIA2") %>%
+  left_join(runs_agg_gp %>% filter(score)) %>% 
+  mutate(run_id = run_id_gp) %>%
+  filter((run_id %in% 14:16 & score) | (run_id %in% 11:12 & !score)) %>%
+  # get rid of non-scoring ids and fill down
+  mutate(run_id = ifelse(score, run_id, NA)) %>%
+  fill(run_id, .direction = "down") %>%
+  fill(run_id, .direction = "up") %>%
+  transmute(run_id, offense, defense, 
+            time = paste0(floor(end/60), ":", str_pad(end%%60, 2, pad = "0")), 
+            play = last_event, 
+            basket = score,
+            score = paste0(end_home_score, "-", end_away_score)) %>%
+  slice(1:7) %>%
+  # create an invisible runid for printing purposes
+  mutate(run_id2 = as.numeric(as.factor(run_id))) %>% 
+  rowwise() %>% 
+  mutate(run_id_inviz = paste0(rep(" ", run_id2), collapse = "")) %>%
+  ungroup() %>%
+  select(-run_id, -run_id2) %>%
+  select(' ' = run_id_inviz, everything())
+
+# shuffling up that example
+set.seed(0)
+
+# gross, hard-coded but whatever
+run_ex_table2 <- run_ex_table %>%
+  select(- ` `, basket) %>%
+  group_by(offense) %>%
+  mutate(play = sample(play)) %>%
+  ungroup() %>%
+  mutate(basket = str_detect(play, "make"),
+         pts = 2 + str_detect(play, "3-pt")) %>%
+  mutate(oscore = 41 + cumsum(basket*(offense == "MIA")*pts),
+         dscore = 51 + cumsum(basket*(offense == "BOS")*pts)) %>%
+  mutate(score = paste0(oscore, "-", dscore)) %>%
+  mutate(run_id = c(1, 2, 3, 4, 4, 4, 5)) %>%
+  # create an invisible runid for printing purposes
+  mutate(run_id2 = as.numeric(as.factor(run_id))) %>% 
+  rowwise() %>% 
+  mutate(run_id_inviz = paste0(rep(" ", run_id2), collapse = "")) %>%
+  rename(' ' = run_id_inviz) %>%
+  ungroup() %>%
+  select(names(run_ex_table))
+
+runs_agg_score <- runs_agg %>% filter(score)
+runs_agg_score_gp <- runs_agg_gp %>% filter(score)
+
+# empirical distributions of runs and max runs per game-period
+emp1 <- runs_agg_score_gp %>%
   ggplot(aes(length)) +
   geom_bar(width = 1, col = "black", fill = "#F8766D") +
-  scale_x_continuous(breaks = 1:max(runs$length)) +
+  scale_x_continuous(breaks = 1:max(runs_agg_score$length)) +
   theme_bw() +
   labs(x = "run length")
 
-emp2 <- runs %>%
-  group_by(game) %>%
+emp2 <- runs_agg_score_gp %>%
+  group_by(gp) %>%
   summarize(max_run = max(length)) %>%
   ggplot(aes(max_run)) +
   geom_bar(width = 1, col = "black", fill = "#F8766D") +
-  scale_x_continuous(breaks = 1:max(runs$length)) +
+  scale_x_continuous(breaks = 1:max(runs_agg_score$length)) +
   theme_bw() +
-  labs(x = "maximum run length per game")
+  labs(x = "maximum run length per quarter")
 
 emp1 + emp2
 
-# model that finds matchup-specific scoring rate
-mod <- glm(score ~ home + offense + defense, family = binomial(), data = pbp)
+# models for doing this parametrically
+# # models of various complexity
+# mod1 <- glm(score ~ 1, family = binomial(), data = pbp)
+# mod2 <- glm(score ~ home_poss + offense + defense, family = binomial(), data = pbp)
+# mod3 <- glm(score ~ home_poss + offense + defense + I(last_score == possession), family = binomial(), data = pbp)
+# 
+# # overwriting results with simulation using those rates
+# pbp_sim <- pbp %>% 
+#   mutate(fitted = predict(mod2, type = "response"),
+#          score = as.logical(rbinom(nrow(.), 1, fitted)))
 
-# overwriting results with simulation using those rates
+# randomize possession result
 pbp_sim <- pbp %>% 
-  mutate(fitted = predict(mod, type = "response"),
-         score = as.logical(rbinom(nrow(.), 1, fitted))
-  )
+  group_by(gp, possession) %>%
+  mutate(score = sample(score))
 
 # turning simulated possessions into runs
 runs_sim <- pbp_sim %>%
   filter(score) %>%
-  # uncomment to treat every quarter as a distinct game
-  # mutate(game = paste0(game, period)) %>%
-  group_by(game) %>%
+  group_by(gp) %>%
   # trick for assigning key column to clusters of data
   mutate(run_id = 1 + cumsum(offense != lag(offense, default = first(offense)))) %>%
-  group_by(game, offense, defense, home_poss, run_id) %>%
+  group_by(gp, offense, defense, home_poss, run_id) %>%
   # aggregate info over runs
   summarize(length = n())
 
-combo <- bind_rows(runs %>% mutate(type = "empirical"),
-                   runs_sim %>% mutate(type = "simulated"))
+combo <- bind_rows(runs_agg_score_gp %>% mutate(type = "observed"),
+                   runs_sim %>% mutate(type = "shuffled"))
 
 # simulated distributions of runs and max runs per game
 sim1 <- combo %>%
@@ -206,13 +309,13 @@ sim1 <- combo %>%
   labs(x = "run length")
 
 sim2 <- combo %>%
-  group_by(game, type) %>%
+  group_by(gp, type) %>%
   summarize(max_run = max(length)) %>%
   ggplot(aes(max_run)) +
   geom_bar(width = 0.8, col = "black", aes(fill = type), position = "dodge") +
   scale_x_continuous(breaks = 1:max(combo$length)) +
   theme_bw() +
-  labs(x = "maximum run length per game")
+  labs(x = "maximum run length per quarter")
 
 sim1 + sim2 + plot_layout(guides = "collect")
 
@@ -223,7 +326,7 @@ to_times <- 1:10
 to_effect <- map(to_times, ~{
   to_time <- .x
   
-  runs %>% 
+  runs_agg_score %>% 
     # runs must be at least that long and not have a time out yet
     filter(length >= to_time, 
            # and not have a time out yet
@@ -247,8 +350,8 @@ to_table <- to_effect %>%
   transmute(`initial run length` = to_time,
             `timeout called` = timeout,
             n,
-            `average remaining run` = round(avg_remaining_run, 2))
+            `average remaining run` = round(avg_remaining_run, 2)) 
 
-save(emp1, emp2, sim1, sim2, to_table, file = "runs_output.Rdata")
+save(emp1, emp2, sim1, sim2, run_ex_table, run_ex_table2, to_table, file = "runs_output.Rdata")
 ```
 </details>
