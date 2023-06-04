@@ -1,7 +1,7 @@
 ---
 title: Is every Run Random? Investigating Momentum and Streaky Scoring in NBA Basketball
 author: Walker Harrison
-date: '2023-06-02'
+date: '2023-06-04'
 slug: game_of_runs
 categories: []
 tags: []
@@ -31,9 +31,9 @@ These "runs," of course, are the short but influential stretches of nearly every
 
 But it also feels like calling basketball a game of runs over and over again implies that points are exchanged between teams in sequences that are streakier or more volatile than baseline scoring rates would otherwise dictate. In other words, characterizing the sport as runny seems equivalent to believing in the existence of momentum and the idea that scoring the most recent basket increases your probability of scoring the next one. So: does NBA basketball feature more runs than you would expect from two teams with hundreds of alternating opportunities to score every game?
 
-Let us examine the 1300 games from the 2021-2022 NBA season using play-by-play data [hosted on Kaggle](https://www.kaggle.com/datasets/xocelyk/nba-pbp){target="_blank"}. We define a possession for a team as any continuous time period with the ball (so offensive rebounds extend possessions as opposed to incrementing them), and a successful possession as scoring any amount of points in that timeframe, whether that be a single free throw or a four-point play. We can then tally how many uninterrupted scoring possessions teams can achieve before their opponent logs a bucket for themselves, and turn any game into a series of back-and-forth runs that are each at least one score in length. Note that we reset the count at the end of each quarter.
+Let us examine the 1300 games from the 2021-2022 NBA season using play-by-play data [hosted on Kaggle](https://www.kaggle.com/datasets/xocelyk/nba-pbp){target="_blank"}. We define a possession for a team as any continuous time period with the ball (so offensive rebounds extend possessions as opposed to incrementing them), and a successful possession as scoring any number of points in that timeframe, whether that be a single free throw or a four-point play. We can then tally how many uninterrupted scoring possessions teams can achieve before their opponent logs a bucket for themselves, and turn any game into a series of back-and-forth runs that are each at least one score in length. Note that we reset the count at the end of each quarter.
 
-For example, consider the sequence below from last year's conference finals between the Heat (MIA) and the Celtics (BOS). After a Tyler Herro made jumper for the Heat, the Celtics score two unanswered baskets before the Heat come right back with consecutive unanswered baskets of their own, leading to run lengths of 1, 2, and 2, respectively.
+For example, consider the sequence below from last year's conference finals between the Heat (MIA) and the Celtics (BOS). After Tyler Herro made a jumper for the Heat, the Celtics score two unanswered baskets before the Heat come right back with consecutive unanswered baskets of their own, leading to run lengths of 1, 2, and 2, respectively.
 
 ```{r}
 run_ex_table %>%
