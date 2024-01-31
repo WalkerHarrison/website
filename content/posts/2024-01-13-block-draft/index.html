@@ -1,0 +1,5605 @@
+---
+title: "Greatness within the Grid: Can I find the Best Block in New York City?"
+author: Walker Harrison
+date: '2024-01-28'
+slug: best_block
+categories: []
+tags: []
+lastmod: '2023-04-08T01:37:15-04:00'
+layout: post
+type: post
+summary: They say you can find anything in New York, but can you find anything on a single block without crossing the street?
+highlight: yes
+---
+
+<script src="{{< blogdown/postref >}}index_files/kePrint/kePrint.js"></script>
+<link href="{{< blogdown/postref >}}index_files/lightable/lightable.css" rel="stylesheet" />
+
+
+<style type="text/css">
+.maptab td {
+  padding:5px 10px 5px 10px;
+}
+
+.maptab table td {
+  border-top: thin solid; 
+  border-bottom: thin solid;
+}
+
+.maptab table td:first-child {
+  border-left: thin solid;
+}
+
+.maptab table td:last-child {
+  border-right: thin solid;
+}
+
+figure figcaption {
+  text-align: center;
+}
+</style>
+<p>The house I grew up in was so close to my high school that if I poked my head out of our bathroom window on the top floor, I could actually see my fellow students scampering around the yard during their PE classes. On occasion I’d daydream about how much time I might save if I could somehow string a zipline between the two endpoints and glide onto campus every morning.</p>
+<p>Not that my three-minute commute was at all unmanageable. Because our house and the school occupied the same Brooklyn block, I could get from breakfast to Biology simply by tracing the perimeter of our shared rectangle, no crosswalks required. This level of self-containment comforted me — I liked knowing that if all of the surrounding streets spontaneously sunk to the center of the earth, separating each block into its own island, well then I could still get to school everyday, and even pick up a croissant from Ozzie’s along the way.</p>
+<figure>
+<center>
+<img src="/img/myblock.jpeg"/>
+</center>
+<figcaption>
+<i>My little island growing up</i>
+</figcaption>
+</figure>
+<p>I’ve carried this appreciation for proximity into my adulthood, during which I’ve lived in a handful of apartments across various Manhattan neighborhoods. There’s something extra satisfying about being able to procure a coffee, a beer, a roll of toilet paper without straying from your block of origin. And so I wondered: which block in New York City has the most resources? <strong>If you wanted to get the most out of life without ever crossing the street, where should you live? In a city more or less devoid of traditional malls, can we recreate one in the aggregate on a single block?</strong></p>
+<p>To answer this question we need to first divide the city up into the blocks created by its signature grid pattern. To do so, we take a shapefile of New York City streets (sourced from <a href="https://data.gis.ny.gov/" target="_blank">NY.gov</a>) and remove that area from a larger shapefile of the five boroughs (sourced from <a href="https://data.cityofnewyork.us/City-Government/Borough-Boundaries/tqmj-j8zm" target="_blank">NYC OpenData</a>). It’s kind of like the streets are a giant cookie cutter that we’re using to press out individual biscuits from the city’s terrain.</p>
+<p>Next, we need to list and locate as many of the city’s businesses – restaurants, bars, supermarkets, gyms, laundromats, etc. – as we can. Thankfully, the folks at Open Street Maps provide their <a href="https://wiki.openstreetmap.org/wiki/Overpass_API" target="_blank">Overpass API</a>, which, given a geographical bounding box, will tell you exactly what they can find within it, down to park benches and bike racks. (It should be noted that there appears to be some missing locations from this dataset, especially as you stray further from Manhattan; while I was able to verify the map’s accuracy in regions close to my Upper East Side apartment, I couldn’t find some of my go-to lunch spots near my office in the Bronx.)</p>
+<p>Here is where the the analysis tips over into unavoidable subjectivity. How do we define a utility function to grade the resources available at each city block? As far as I’m concerned, a Chipotle, a Dunkin’, two bars, a laundromat, and a gym would more than suffice (if you can’t tell, I’m a man of culture). But my mom would probably like a yoga studio, a sushi restaurant, and a flower store. And beyond preference, there’s the question of saturation – at what point is the marginal value of another restaurant eclipsed by something less exciting, like a post office?</p>
+<p>Understanding that I can’t please everybody (or maybe even anybody), I’ve assigned the following points for each category as displayed in the table below. Blocks accumulate <code>points per location</code> for each instance of a particular category, but are also capped at <code>max points</code> in that category – so that, for example, seven restaurants would be no more valuable than six. The most important rows are the high frequency ones, like cafes, bars, and supermarkets, but for the sake of thoroughness I evaluated the utility of every last category available. Yes, I think a “swingerclub” is worth a point (and probably more, to be quite honest).</p>
+<div style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height:300px; ">
+<table>
+<thead>
+<tr>
+<th style="text-align:left;position: sticky; top:0; background-color: #FFFFFF;">
+category
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: #FFFFFF;">
+frequency
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: #FFFFFF;">
+points per location
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: #FFFFFF;">
+max points
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+restaurant
+</td>
+<td style="text-align:right;">
+6673
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+fast food
+</td>
+<td style="text-align:right;">
+3115
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+cafe
+</td>
+<td style="text-align:right;">
+2021
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+convenience
+</td>
+<td style="text-align:right;">
+1656
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+9
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+place of worship
+</td>
+<td style="text-align:right;">
+1614
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+bar
+</td>
+<td style="text-align:right;">
+1436
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+clothes
+</td>
+<td style="text-align:right;">
+1431
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+school
+</td>
+<td style="text-align:right;">
+1392
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+hairdresser
+</td>
+<td style="text-align:right;">
+1152
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+beauty
+</td>
+<td style="text-align:right;">
+1083
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+pharmacy
+</td>
+<td style="text-align:right;">
+991
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+bank
+</td>
+<td style="text-align:right;">
+990
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+bicycle rental
+</td>
+<td style="text-align:right;">
+843
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+supermarket
+</td>
+<td style="text-align:right;">
+798
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+12
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+alcohol
+</td>
+<td style="text-align:right;">
+689
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+deli
+</td>
+<td style="text-align:right;">
+666
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+laundry
+</td>
+<td style="text-align:right;">
+604
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+bakery
+</td>
+<td style="text-align:right;">
+591
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+mobile phone
+</td>
+<td style="text-align:right;">
+491
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+fitness centre
+</td>
+<td style="text-align:right;">
+478
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+8
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+dry cleaning
+</td>
+<td style="text-align:right;">
+419
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+dentist
+</td>
+<td style="text-align:right;">
+411
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+clinic
+</td>
+<td style="text-align:right;">
+376
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+doctors
+</td>
+<td style="text-align:right;">
+363
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+variety store
+</td>
+<td style="text-align:right;">
+349
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+park
+</td>
+<td style="text-align:right;">
+331
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+8
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+jewelry
+</td>
+<td style="text-align:right;">
+291
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+car repair
+</td>
+<td style="text-align:right;">
+288
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+post box
+</td>
+<td style="text-align:right;">
+287
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+optician
+</td>
+<td style="text-align:right;">
+281
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+fuel
+</td>
+<td style="text-align:right;">
+265
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ice cream
+</td>
+<td style="text-align:right;">
+243
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+post office
+</td>
+<td style="text-align:right;">
+236
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+fire station
+</td>
+<td style="text-align:right;">
+235
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+shoes
+</td>
+<td style="text-align:right;">
+235
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+gift
+</td>
+<td style="text-align:right;">
+234
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+furniture
+</td>
+<td style="text-align:right;">
+203
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+tobacco
+</td>
+<td style="text-align:right;">
+196
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+florist
+</td>
+<td style="text-align:right;">
+175
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+hardware
+</td>
+<td style="text-align:right;">
+165
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+kindergarten
+</td>
+<td style="text-align:right;">
+157
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+bicycle
+</td>
+<td style="text-align:right;">
+156
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+department store
+</td>
+<td style="text-align:right;">
+153
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+massage
+</td>
+<td style="text-align:right;">
+151
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+theatre
+</td>
+<td style="text-align:right;">
+150
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+cosmetics
+</td>
+<td style="text-align:right;">
+144
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+greengrocer
+</td>
+<td style="text-align:right;">
+140
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+childcare
+</td>
+<td style="text-align:right;">
+136
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+books
+</td>
+<td style="text-align:right;">
+134
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+social facility
+</td>
+<td style="text-align:right;">
+133
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+atm
+</td>
+<td style="text-align:right;">
+118
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+sports centre
+</td>
+<td style="text-align:right;">
+117
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+pet
+</td>
+<td style="text-align:right;">
+116
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+butcher
+</td>
+<td style="text-align:right;">
+110
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+car
+</td>
+<td style="text-align:right;">
+108
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+veterinary
+</td>
+<td style="text-align:right;">
+104
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+library
+</td>
+<td style="text-align:right;">
+102
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+tattoo
+</td>
+<td style="text-align:right;">
+97
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+arts centre
+</td>
+<td style="text-align:right;">
+95
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+cannabis
+</td>
+<td style="text-align:right;">
+89
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+nightclub
+</td>
+<td style="text-align:right;">
+89
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+electronics
+</td>
+<td style="text-align:right;">
+88
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+police
+</td>
+<td style="text-align:right;">
+88
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+car rental
+</td>
+<td style="text-align:right;">
+83
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+community centre
+</td>
+<td style="text-align:right;">
+75
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+events venue
+</td>
+<td style="text-align:right;">
+72
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+sports
+</td>
+<td style="text-align:right;">
+71
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+telephone
+</td>
+<td style="text-align:right;">
+71
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+nutrition supplements
+</td>
+<td style="text-align:right;">
+70
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+public bookcase
+</td>
+<td style="text-align:right;">
+70
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+copyshop
+</td>
+<td style="text-align:right;">
+68
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+yes
+</td>
+<td style="text-align:right;">
+68
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+car parts
+</td>
+<td style="text-align:right;">
+66
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+confectionery
+</td>
+<td style="text-align:right;">
+64
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+funeral directors
+</td>
+<td style="text-align:right;">
+64
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+marketplace
+</td>
+<td style="text-align:right;">
+64
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+stationery
+</td>
+<td style="text-align:right;">
+62
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+garden
+</td>
+<td style="text-align:right;">
+61
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+seafood
+</td>
+<td style="text-align:right;">
+60
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+studio
+</td>
+<td style="text-align:right;">
+60
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+houseware
+</td>
+<td style="text-align:right;">
+58
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+cinema
+</td>
+<td style="text-align:right;">
+56
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+dance
+</td>
+<td style="text-align:right;">
+56
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+parking
+</td>
+<td style="text-align:right;">
+56
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+toys
+</td>
+<td style="text-align:right;">
+55
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+trade
+</td>
+<td style="text-align:right;">
+55
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+tyres
+</td>
+<td style="text-align:right;">
+55
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+charging station
+</td>
+<td style="text-align:right;">
+52
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+craft
+</td>
+<td style="text-align:right;">
+52
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+art
+</td>
+<td style="text-align:right;">
+47
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ferry terminal
+</td>
+<td style="text-align:right;">
+47
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+kitchen
+</td>
+<td style="text-align:right;">
+47
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+newsagent
+</td>
+<td style="text-align:right;">
+46
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+bed
+</td>
+<td style="text-align:right;">
+44
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+e-cigarette
+</td>
+<td style="text-align:right;">
+44
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+paint
+</td>
+<td style="text-align:right;">
+42
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+pet grooming
+</td>
+<td style="text-align:right;">
+41
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+playground
+</td>
+<td style="text-align:right;">
+41
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+second hand
+</td>
+<td style="text-align:right;">
+41
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+wine
+</td>
+<td style="text-align:right;">
+40
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+party
+</td>
+<td style="text-align:right;">
+39
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+taxi
+</td>
+<td style="text-align:right;">
+39
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+car wash
+</td>
+<td style="text-align:right;">
+38
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+chocolate
+</td>
+<td style="text-align:right;">
+38
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+driving school
+</td>
+<td style="text-align:right;">
+38
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+video games
+</td>
+<td style="text-align:right;">
+38
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+beverages
+</td>
+<td style="text-align:right;">
+37
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+hospital
+</td>
+<td style="text-align:right;">
+37
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+parking entrance
+</td>
+<td style="text-align:right;">
+36
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+storage rental
+</td>
+<td style="text-align:right;">
+36
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+tailor
+</td>
+<td style="text-align:right;">
+36
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+travel agency
+</td>
+<td style="text-align:right;">
+35
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+wholesale
+</td>
+<td style="text-align:right;">
+35
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+doityourself
+</td>
+<td style="text-align:right;">
+34
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+pawnbroker
+</td>
+<td style="text-align:right;">
+34
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+perfumery
+</td>
+<td style="text-align:right;">
+34
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+charity
+</td>
+<td style="text-align:right;">
+33
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+frame
+</td>
+<td style="text-align:right;">
+33
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+interior decoration
+</td>
+<td style="text-align:right;">
+33
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+music
+</td>
+<td style="text-align:right;">
+33
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+antiques
+</td>
+<td style="text-align:right;">
+32
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+fashion accessories
+</td>
+<td style="text-align:right;">
+32
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+appliance
+</td>
+<td style="text-align:right;">
+31
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+college
+</td>
+<td style="text-align:right;">
+31
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+locksmith
+</td>
+<td style="text-align:right;">
+31
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+animal boarding
+</td>
+<td style="text-align:right;">
+30
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+university
+</td>
+<td style="text-align:right;">
+30
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+fabric
+</td>
+<td style="text-align:right;">
+29
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+music school
+</td>
+<td style="text-align:right;">
+28
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+drinking water
+</td>
+<td style="text-align:right;">
+27
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+bag
+</td>
+<td style="text-align:right;">
+26
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+food court
+</td>
+<td style="text-align:right;">
+26
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+coffee
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+herbalist
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+religion
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+computer
+</td>
+<td style="text-align:right;">
+24
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+medical supply
+</td>
+<td style="text-align:right;">
+23
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+musical instrument
+</td>
+<td style="text-align:right;">
+23
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+carpet
+</td>
+<td style="text-align:right;">
+21
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+courthouse
+</td>
+<td style="text-align:right;">
+21
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+erotic
+</td>
+<td style="text-align:right;">
+21
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+photo
+</td>
+<td style="text-align:right;">
+21
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+bus station
+</td>
+<td style="text-align:right;">
+20
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+pitch
+</td>
+<td style="text-align:right;">
+20
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+garden centre
+</td>
+<td style="text-align:right;">
+19
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+tea
+</td>
+<td style="text-align:right;">
+19
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+grave yard
+</td>
+<td style="text-align:right;">
+18
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+lighting
+</td>
+<td style="text-align:right;">
+18
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+baby goods
+</td>
+<td style="text-align:right;">
+17
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+health food
+</td>
+<td style="text-align:right;">
+17
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+watches
+</td>
+<td style="text-align:right;">
+17
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+tiles
+</td>
+<td style="text-align:right;">
+16
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+bureau de change
+</td>
+<td style="text-align:right;">
+15
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+general
+</td>
+<td style="text-align:right;">
+15
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+social centre
+</td>
+<td style="text-align:right;">
+15
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+townhall
+</td>
+<td style="text-align:right;">
+15
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+hairdresser supply
+</td>
+<td style="text-align:right;">
+14
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+bbq
+</td>
+<td style="text-align:right;">
+13
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+marina
+</td>
+<td style="text-align:right;">
+13
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+stripclub
+</td>
+<td style="text-align:right;">
+13
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+vending machine
+</td>
+<td style="text-align:right;">
+13
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+cheese
+</td>
+<td style="text-align:right;">
+12
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+fountain
+</td>
+<td style="text-align:right;">
+12
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+motorcycle
+</td>
+<td style="text-align:right;">
+12
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+outdoor
+</td>
+<td style="text-align:right;">
+12
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+sewing
+</td>
+<td style="text-align:right;">
+12
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+toilets
+</td>
+<td style="text-align:right;">
+12
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+window blind
+</td>
+<td style="text-align:right;">
+12
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+money lender
+</td>
+<td style="text-align:right;">
+11
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+telecommunication
+</td>
+<td style="text-align:right;">
+11
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ticket
+</td>
+<td style="text-align:right;">
+11
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+bathroom furnishing
+</td>
+<td style="text-align:right;">
+10
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+bicycle parking
+</td>
+<td style="text-align:right;">
+9
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+boat rental
+</td>
+<td style="text-align:right;">
+9
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+clock
+</td>
+<td style="text-align:right;">
+9
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+farm
+</td>
+<td style="text-align:right;">
+9
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+flooring
+</td>
+<td style="text-align:right;">
+9
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+language school
+</td>
+<td style="text-align:right;">
+9
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+vacant
+</td>
+<td style="text-align:right;">
+9
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+animal shelter
+</td>
+<td style="text-align:right;">
+8
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+biergarten
+</td>
+<td style="text-align:right;">
+8
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+collector
+</td>
+<td style="text-align:right;">
+8
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+escape game
+</td>
+<td style="text-align:right;">
+8
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+hackerspace
+</td>
+<td style="text-align:right;">
+8
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+shelter
+</td>
+<td style="text-align:right;">
+8
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+doors
+</td>
+<td style="text-align:right;">
+7
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+leather
+</td>
+<td style="text-align:right;">
+7
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+mall
+</td>
+<td style="text-align:right;">
+7
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+miniature golf
+</td>
+<td style="text-align:right;">
+7
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+vacuum cleaner
+</td>
+<td style="text-align:right;">
+7
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+games
+</td>
+<td style="text-align:right;">
+6
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+parcel locker
+</td>
+<td style="text-align:right;">
+6
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+slipway
+</td>
+<td style="text-align:right;">
+6
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+video
+</td>
+<td style="text-align:right;">
+6
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+car sharing
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+dog park
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+hearing aids
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ice rink
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+internet cafe
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+swimming pool
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+bench
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+camera
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+curtain
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+electrical
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+give box
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+military surplus
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+money transfer
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+music venue
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+nature reserve
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+nursing home
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+public bath
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+recycling
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+training
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+amusement arcade
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+fitness station
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+hifi
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+pasta
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+public building
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+security
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+trophy
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+anime
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+boat
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+boutique
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+common
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+fishing
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+fortune teller
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+frozen food
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+gambling
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+glaziery
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+monastery
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+motorcycle parking
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+prison
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+research institute
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+spices
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+waste basket
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+weapons
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+beach resort
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+bookmaker
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+brewing supplies
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+cafe;bar
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+casino
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+conference centre
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+dojo
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+driver training
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+graphic design
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+household linen
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+lottery
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+outpost
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+pest control
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+planetarium
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+post depot
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ranger station
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+spa
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+swingerclub
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+vehicle inspection
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+waste transfer station
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+wool
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>So now that we have a map and a scoring system, which blocks provide the most convenience to their inhabitants? If you limit your search to areas smaller than 200,000 square feet, so as to avoid useless answers like LaGuardia Airport, two Manhattan blocks surpass fifty points and take our top spots. In second place is the block between 32nd and 33rd Streets and 5th and Broadway avenues in the Koreatown neighborhood of Manhattan. As demonstrated below, this block has over a dozen food options – many of them Korean barbecue – and also cafes, convenience stores, four bars, both a Walgreens and a CVS, a bank, a bookstore, and a massage parlor. So packed with stores and restaurants is the segment along 32nd street that it’s often referred to as the heart of Koreatown and has even been nicknamed <a href="https://en.wikipedia.org/wiki/Koreatown,_Manhattan#Korea_Way" target="_blank">“Korea Way”</a>.</p>
+<p>Koreatown is more of a commercial area than a residential one though, so it’s harder to imagine actually living on top of this stretch of businesses. More intriguing is the first place finisher located in the East Village, a neighborhood overflowing with so much culture that young New Yorkers are willing to squeeze themselves into small, pricey, oddly-shaped apartments just to experience it. This block is surrounded by 9th St, 10th St, 1st Avenue, and 2nd Avenue and it too has plenty of dining options, but also a grocery store, a nail salon, a laundromat, a dentist, an optician, and even a butcher.</p>
+<figure>
+<center>
+<img src="/img/bestblock.PNG"/>
+</center>
+<figcaption>
+<i>The many businesses of our top ranked block</i>
+</figcaption>
+</figure>
+<p>Are the inhabitants of this block aware that they reside atop arguably the peak of New York City convenience? To answer that question, I had to engage in some field work, a rare task for a blogger. So on a cold Monday night in January, I posted up on 10th St and 2nd Avenue and asked some of the local residents if they had considered their block’s abundant resources and taken advantage of them accordingly.</p>
+<p>One man noted how easy it was to “go for a bite or a drink,” while another praised the convenience store that was just around the corner. Two people listed Madame Vo, a Vietnamese restaurant on 10th St, as a frequent destination. But overall they didn’t share the appreciation I had for their block’s top status, and were quick to list businesses that fell outside of their atomic rectangle, violating the constraints of my optimization. It appears that an obsession with extreme proximity might be reserved for people lucky enough to have lived around the corner from school.</p>
+<p>In any case, below are the top ten blocks in our dataset with additional details available if you expand the <code>locations</code> header. If you’d like to explore other areas or type in your own NYC zip code, take a look at the accompanying map (be patient with her – she is large and slow):</p>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+borough
+</th>
+<th style="text-align:left;">
+streets
+</th>
+<th style="text-align:left;">
+points
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Manhattan
+</td>
+<td style="text-align:left;">
+E 10th St, E 9th St, 1st Ave, 2nd Ave
+</td>
+<td style="text-align:left;">
+54
+<details>
+<summary>
+locations
+</summary>
+<table>
+<tr>
+<td>
+<nobr>restaurant (5): </nobr>
+</td>
+<td>
+Madame Vo, Shabu-Tatsu, Rai Rai Ken, Graffitti, Uluh
+</td>
+</tr>
+<tr>
+<td>
+<nobr>fast food (1): </nobr>
+</td>
+<td>
+Rowdy Rooster
+</td>
+</tr>
+<tr>
+<td>
+<nobr>cafe (3): </nobr>
+</td>
+<td>
+MUD, Hard to Explain, La Cabra
+</td>
+</tr>
+<tr>
+<td>
+<nobr>convenience (3): </nobr>
+</td>
+<td>
+Sweet Village Market Place, Beer &amp; Smoke Shop, Village Farm Grocery
+</td>
+</tr>
+<tr>
+<td>
+<nobr>bar (2): </nobr>
+</td>
+<td>
+The Immigrant, Stickett Inn
+</td>
+</tr>
+<tr>
+<td>
+<nobr>clothes (3): </nobr>
+</td>
+<td>
+Duo Nyc, Spark Pretty, Ibiza
+</td>
+</tr>
+<tr>
+<td>
+<nobr>hairdresser (3): </nobr>
+</td>
+<td>
+Uliana, Art+Ray, Kaminotech
+</td>
+</tr>
+<tr>
+<td>
+<nobr>beauty (1): </nobr>
+</td>
+<td>
+Yosei Nail
+</td>
+</tr>
+<tr>
+<td>
+<nobr>bank (1): </nobr>
+</td>
+<td>
+Chase
+</td>
+</tr>
+<tr>
+<td>
+<nobr>laundry (1): </nobr>
+</td>
+<td>
+New Sew Good Cleaners
+</td>
+</tr>
+<tr>
+<td>
+<nobr>dentist (1): </nobr>
+</td>
+<td>
+Terencia S. Q. Conejero, D.D.S, MPH
+</td>
+</tr>
+<tr>
+<td>
+<nobr>jewelry (1): </nobr>
+</td>
+<td>
+SHW
+</td>
+</tr>
+<tr>
+<td>
+<nobr>optician (2): </nobr>
+</td>
+<td>
+Eye &amp; Health, Fabulous Fanny’s
+</td>
+</tr>
+<tr>
+<td>
+<nobr>ice cream (1): </nobr>
+</td>
+<td>
+Davey’s Ice Cream
+</td>
+</tr>
+<tr>
+<td>
+<nobr>post office (1): </nobr>
+</td>
+<td>
+United Shipping and Packaging
+</td>
+</tr>
+<tr>
+<td>
+<nobr>gift (1): </nobr>
+</td>
+<td>
+Spooksvilla &amp; Friends
+</td>
+</tr>
+<tr>
+<td>
+<nobr>tobacco (1): </nobr>
+</td>
+<td>
+Vape N Smoke
+</td>
+</tr>
+<tr>
+<td>
+<nobr>theatre (1): </nobr>
+</td>
+<td>
+Theater for the New City
+</td>
+</tr>
+<tr>
+<td>
+<nobr>atm (1): </nobr>
+</td>
+<td>
+Chase
+</td>
+</tr>
+<tr>
+<td>
+<nobr>butcher (1): </nobr>
+</td>
+<td>
+Honest Chops
+</td>
+</tr>
+<tr>
+<td>
+<nobr>cannabis (1): </nobr>
+</td>
+<td>
+Pride Smokes
+</td>
+</tr>
+<tr>
+<td>
+<nobr>copyshop (1): </nobr>
+</td>
+<td>
+The Source Unltd
+</td>
+</tr>
+<tr>
+<td>
+<nobr>houseware (1): </nobr>
+</td>
+<td>
+Rosemary Home
+</td>
+</tr>
+<tr>
+<td>
+<nobr>fashion accessories (1): </nobr>
+</td>
+<td>
+Aliens of Brooklyn
+</td>
+</tr>
+</table>
+</details>
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Manhattan
+</td>
+<td style="text-align:left;">
+Broadway, W 32nd St, W 33rd St, 5th Ave
+</td>
+<td style="text-align:left;">
+52
+<details>
+<summary>
+locations
+</summary>
+<table>
+<tr>
+<td>
+<nobr>restaurant (14): </nobr>
+</td>
+<td>
+BCD Tofu House, Turntable Chicken Jazz, Gammeeok, UDON, New Wonjo, Five Senses, BB.Q Olive Chicken, Anytime NYC, Antoya Korean BBQ, The Press Club Grill, Nan Xiang Xiao Long Bao, Rib No. 7, Hutaoli, Seoul Salon
+</td>
+</tr>
+<tr>
+<td>
+<nobr>fast food (4): </nobr>
+</td>
+<td>
+Naya, Market Crates, Dunkin’, Panera Bread
+</td>
+</tr>
+<tr>
+<td>
+<nobr>cafe (5): </nobr>
+</td>
+<td>
+caffÃ© bene, Grace Street, Tea Makers, Machi machi, Early Edition Espresso Bar
+</td>
+</tr>
+<tr>
+<td>
+<nobr>convenience (1): </nobr>
+</td>
+<td>
+Herald Smoke Shop
+</td>
+</tr>
+<tr>
+<td>
+<nobr>bar (4): </nobr>
+</td>
+<td>
+Legends, Jack Demsey’s, Pocha 32, Sir John’s NY
+</td>
+</tr>
+<tr>
+<td>
+<nobr>clothes (1): </nobr>
+</td>
+<td>
+My.Suit
+</td>
+</tr>
+<tr>
+<td>
+<nobr>hairdresser (1): </nobr>
+</td>
+<td>
+Kakaboka
+</td>
+</tr>
+<tr>
+<td>
+<nobr>beauty (1): </nobr>
+</td>
+<td>
+Juvenex Spa
+</td>
+</tr>
+<tr>
+<td>
+<nobr>pharmacy (2): </nobr>
+</td>
+<td>
+Walgreens, CVS Pharmacy
+</td>
+</tr>
+<tr>
+<td>
+<nobr>bank (1): </nobr>
+</td>
+<td>
+Chase
+</td>
+</tr>
+<tr>
+<td>
+<nobr>bakery (1): </nobr>
+</td>
+<td>
+Tous les Jours
+</td>
+</tr>
+<tr>
+<td>
+<nobr>ice cream (1): </nobr>
+</td>
+<td>
+Pinkberry
+</td>
+</tr>
+<tr>
+<td>
+<nobr>gift (1): </nobr>
+</td>
+<td>
+Platform 32
+</td>
+</tr>
+<tr>
+<td>
+<nobr>massage (1): </nobr>
+</td>
+<td>
+Solle Spa
+</td>
+</tr>
+<tr>
+<td>
+<nobr>cosmetics (2): </nobr>
+</td>
+<td>
+Kosette Beauty Market, L’ovue Beauty &amp; Mask
+</td>
+</tr>
+<tr>
+<td>
+<nobr>books (1): </nobr>
+</td>
+<td>
+Koryo books
+</td>
+</tr>
+<tr>
+<td>
+<nobr>food court (1): </nobr>
+</td>
+<td>
+Food Gallery 32
+</td>
+</tr>
+</table>
+</details>
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Queens
+</td>
+<td style="text-align:left;">
+Horace Harding Expy, Springfield Blvd, NA
+</td>
+<td style="text-align:left;">
+49
+<details>
+<summary>
+locations
+</summary>
+<table>
+<tr>
+<td>
+<nobr>restaurant (6): </nobr>
+</td>
+<td>
+Chilsung Garden, Little Dumpling Bayside, New York Ban Jum, Empire Garden, Rolly Kimbab, Imperial Taste
+</td>
+</tr>
+<tr>
+<td>
+<nobr>fast food (5): </nobr>
+</td>
+<td>
+Slimâ€™s Bagels &amp; Deli, Kokio Chicken &amp; Beer, Thank you Donuts &amp; Corn Dogs, Subway, The Empanada Spot
+</td>
+</tr>
+<tr>
+<td>
+<nobr>cafe (2): </nobr>
+</td>
+<td>
+Starbucks, Anda Boba Tea
+</td>
+</tr>
+<tr>
+<td>
+<nobr>convenience (1): </nobr>
+</td>
+<td>
+Red Arrow Store
+</td>
+</tr>
+<tr>
+<td>
+<nobr>hairdresser (2): </nobr>
+</td>
+<td>
+Hair Sketch, Springfield Barber &amp; Hair Styling
+</td>
+</tr>
+<tr>
+<td>
+<nobr>beauty (2): </nobr>
+</td>
+<td>
+M &amp; M Beauty Box, Springfield Nail Spa
+</td>
+</tr>
+<tr>
+<td>
+<nobr>pharmacy (2): </nobr>
+</td>
+<td>
+Bayside Pharmacy, Walgreens
+</td>
+</tr>
+<tr>
+<td>
+<nobr>bank (1): </nobr>
+</td>
+<td>
+Chase
+</td>
+</tr>
+<tr>
+<td>
+<nobr>supermarket (1): </nobr>
+</td>
+<td>
+New Mart
+</td>
+</tr>
+<tr>
+<td>
+<nobr>laundry (1): </nobr>
+</td>
+<td>
+Bayside Laundromat
+</td>
+</tr>
+<tr>
+<td>
+<nobr>dry cleaning (1): </nobr>
+</td>
+<td>
+Skyview Cleaners
+</td>
+</tr>
+<tr>
+<td>
+<nobr>dentist (1): </nobr>
+</td>
+<td>
+United Dental Group
+</td>
+</tr>
+<tr>
+<td>
+<nobr>ice cream (1): </nobr>
+</td>
+<td>
+Red Mango
+</td>
+</tr>
+<tr>
+<td>
+<nobr>post office (2): </nobr>
+</td>
+<td>
+The UPS Store, USPS Oakland Garden Branch
+</td>
+</tr>
+<tr>
+<td>
+<nobr>atm (1): </nobr>
+</td>
+<td>
+Bank of America
+</td>
+</tr>
+<tr>
+<td>
+<nobr>car (1): </nobr>
+</td>
+<td>
+Motive Auto
+</td>
+</tr>
+<tr>
+<td>
+<nobr>sports (1): </nobr>
+</td>
+<td>
+Spring Golf
+</td>
+</tr>
+<tr>
+<td>
+<nobr>wine (1): </nobr>
+</td>
+<td>
+Springfield Wine &amp; Spirits
+</td>
+</tr>
+</table>
+</details>
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Queens
+</td>
+<td style="text-align:left;">
+70th Rd, Austin St, Queens Blvd, 71st Ave
+</td>
+<td style="text-align:left;">
+48
+<details>
+<summary>
+locations
+</summary>
+<table>
+<tr>
+<td>
+<nobr>restaurant (8): </nobr>
+</td>
+<td>
+MoCA Asian Bistro, (aged.), Cabana Restaurant &amp; Bar, Bangkok Cuisine, Numero 28, JK Wings &amp; Fish, Nan Xiang Soup Dumplings, Oba
+</td>
+</tr>
+<tr>
+<td>
+<nobr>fast food (1): </nobr>
+</td>
+<td>
+Dunkin’
+</td>
+</tr>
+<tr>
+<td>
+<nobr>convenience (1): </nobr>
+</td>
+<td>
+7-Eleven
+</td>
+</tr>
+<tr>
+<td>
+<nobr>bar (1): </nobr>
+</td>
+<td>
+The Billiard Company
+</td>
+</tr>
+<tr>
+<td>
+<nobr>clothes (1): </nobr>
+</td>
+<td>
+Fox’s Designer Off Price
+</td>
+</tr>
+<tr>
+<td>
+<nobr>hairdresser (1): </nobr>
+</td>
+<td>
+SIW
+</td>
+</tr>
+<tr>
+<td>
+<nobr>bank (3): </nobr>
+</td>
+<td>
+HSBC, Citibank, Flushing Bank
+</td>
+</tr>
+<tr>
+<td>
+<nobr>deli (1): </nobr>
+</td>
+<td>
+Mom &amp; Sonâ€™s Deli
+</td>
+</tr>
+<tr>
+<td>
+<nobr>bakery (2): </nobr>
+</td>
+<td>
+Fayda, Gotta Getta Bagel
+</td>
+</tr>
+<tr>
+<td>
+<nobr>mobile phone (1): </nobr>
+</td>
+<td>
+T-Mobile
+</td>
+</tr>
+<tr>
+<td>
+<nobr>fitness centre (2): </nobr>
+</td>
+<td>
+Orangetheory Fitness, Club Pilates
+</td>
+</tr>
+<tr>
+<td>
+<nobr>dentist (1): </nobr>
+</td>
+<td>
+Horizon Dental
+</td>
+</tr>
+<tr>
+<td>
+<nobr>clinic (2): </nobr>
+</td>
+<td>
+CityMD, Level Up MD
+</td>
+</tr>
+<tr>
+<td>
+<nobr>variety store (1): </nobr>
+</td>
+<td>
+Jenbro
+</td>
+</tr>
+<tr>
+<td>
+<nobr>optician (1): </nobr>
+</td>
+<td>
+American Vision Center
+</td>
+</tr>
+<tr>
+<td>
+<nobr>ice cream (1): </nobr>
+</td>
+<td>
+Red Mango
+</td>
+</tr>
+<tr>
+<td>
+<nobr>bicycle (1): </nobr>
+</td>
+<td>
+Trek
+</td>
+</tr>
+<tr>
+<td>
+<nobr>massage (1): </nobr>
+</td>
+<td>
+M Beauty Spa
+</td>
+</tr>
+<tr>
+<td>
+<nobr>cannabis (1): </nobr>
+</td>
+<td>
+Curaleaf
+</td>
+</tr>
+<tr>
+<td>
+<nobr>nutrition supplements (1): </nobr>
+</td>
+<td>
+The Vitamin Shoppe
+</td>
+</tr>
+</table>
+</details>
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Manhattan
+</td>
+<td style="text-align:left;">
+Cooper Sq, E 7th St, Saint Marks Pl, Taras Shevchenko Pl, 2nd Ave
+</td>
+<td style="text-align:left;">
+47
+<details>
+<summary>
+locations
+</summary>
+<table>
+<tr>
+<td>
+<nobr>restaurant (8): </nobr>
+</td>
+<td>
+Paul’s ‘Da Burger Joint’, Ise, Streecha Ukrainian Kitchen, B&amp;H Dairy, 886, Misoya, Four Four South Village, Mamoun’s Falafel
+</td>
+</tr>
+<tr>
+<td>
+<nobr>fast food (4): </nobr>
+</td>
+<td>
+Ray’s Pizza Bagel Cafe, Taqueria Diana, 2 Bros Pizza, Birria L.E.S.
+</td>
+</tr>
+<tr>
+<td>
+<nobr>cafe (2): </nobr>
+</td>
+<td>
+MÃ¶ge Tee, Poetica Coffee
+</td>
+</tr>
+<tr>
+<td>
+<nobr>convenience (1): </nobr>
+</td>
+<td>
+Village Happy House Convenience
+</td>
+</tr>
+<tr>
+<td>
+<nobr>bar (4): </nobr>
+</td>
+<td>
+Barcade, Standings, Burp Castle, McSorley’s Old Ale House
+</td>
+</tr>
+<tr>
+<td>
+<nobr>hairdresser (2): </nobr>
+</td>
+<td>
+Ace of Bladez, The Blackstones Collective
+</td>
+</tr>
+<tr>
+<td>
+<nobr>alcohol (1): </nobr>
+</td>
+<td>
+St. Marks Wine &amp; Liquor
+</td>
+</tr>
+<tr>
+<td>
+<nobr>bakery (1): </nobr>
+</td>
+<td>
+Bake Culture
+</td>
+</tr>
+<tr>
+<td>
+<nobr>fitness centre (1): </nobr>
+</td>
+<td>
+Yoga to the People
+</td>
+</tr>
+<tr>
+<td>
+<nobr>jewelry (2): </nobr>
+</td>
+<td>
+Elite Jewelry &amp; Piercing, Jewels
+</td>
+</tr>
+<tr>
+<td>
+<nobr>gift (1): </nobr>
+</td>
+<td>
+Funky Town East Village
+</td>
+</tr>
+<tr>
+<td>
+<nobr>tobacco (2): </nobr>
+</td>
+<td>
+Addiction NYC, Maze Convenience
+</td>
+</tr>
+<tr>
+<td>
+<nobr>theatre (1): </nobr>
+</td>
+<td>
+St. Mark’s Comedy Club
+</td>
+</tr>
+<tr>
+<td>
+<nobr>tattoo (1): </nobr>
+</td>
+<td>
+St. Marks Piercing &amp; Tattoo
+</td>
+</tr>
+<tr>
+<td>
+<nobr>arts centre (1): </nobr>
+</td>
+<td>
+Arts on Site
+</td>
+</tr>
+<tr>
+<td>
+<nobr>copyshop (1): </nobr>
+</td>
+<td>
+NY Copy Print &amp; Ship Center
+</td>
+</tr>
+<tr>
+<td>
+<nobr>e-cigarette (1): </nobr>
+</td>
+<td>
+i-vape
+</td>
+</tr>
+<tr>
+<td>
+<nobr>food court (1): </nobr>
+</td>
+<td>
+Vegan Food Court
+</td>
+</tr>
+</table>
+</details>
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Brooklyn
+</td>
+<td style="text-align:left;">
+Fulton St, Jay St, Lawrence St, Willoughby St
+</td>
+<td style="text-align:left;">
+46
+<details>
+<summary>
+locations
+</summary>
+<table>
+<tr>
+<td>
+<nobr>restaurant (2): </nobr>
+</td>
+<td>
+Yaso Tangbao, Lee’s Villa
+</td>
+</tr>
+<tr>
+<td>
+<nobr>fast food (11): </nobr>
+</td>
+<td>
+Greek Xpress, Mr. Fulton, Supreme Pizza, Pio Bagel, Papa John’s, Dunkin’, Xi’an Famous Foods, Hibachi King Express, Koufu, Hawa Smoothies &amp; Bubble Tea, Yummy Taco
+</td>
+</tr>
+<tr>
+<td>
+<nobr>cafe (2): </nobr>
+</td>
+<td>
+MÃ¶ge Tee, Gong Cha
+</td>
+</tr>
+<tr>
+<td>
+<nobr>convenience (1): </nobr>
+</td>
+<td>
+Sunrise Mini Mart
+</td>
+</tr>
+<tr>
+<td>
+<nobr>clothes (2): </nobr>
+</td>
+<td>
+Portabella, JD Sports
+</td>
+</tr>
+<tr>
+<td>
+<nobr>hairdresser (4): </nobr>
+</td>
+<td>
+Rakaha Spa Barber Shop, Bofanta African Hair Braiding, Fatima Professional African Hair Braiding, True Salon
+</td>
+</tr>
+<tr>
+<td>
+<nobr>beauty (3): </nobr>
+</td>
+<td>
+JA Nail, Long Nail, Bombay Beauty Salon
+</td>
+</tr>
+<tr>
+<td>
+<nobr>pharmacy (1): </nobr>
+</td>
+<td>
+Faith Pharmacy
+</td>
+</tr>
+<tr>
+<td>
+<nobr>alcohol (1): </nobr>
+</td>
+<td>
+G &amp; I Wine &amp; Spirits
+</td>
+</tr>
+<tr>
+<td>
+<nobr>clinic (1): </nobr>
+</td>
+<td>
+CityMD
+</td>
+</tr>
+<tr>
+<td>
+<nobr>jewelry (2): </nobr>
+</td>
+<td>
+Giovanni Jewelers, Nucastle Jewelers
+</td>
+</tr>
+<tr>
+<td>
+<nobr>optician (2): </nobr>
+</td>
+<td>
+Elite Eye Care, DNA Optical
+</td>
+</tr>
+<tr>
+<td>
+<nobr>tobacco (1): </nobr>
+</td>
+<td>
+Jay St. Convenience
+</td>
+</tr>
+<tr>
+<td>
+<nobr>social facility (1): </nobr>
+</td>
+<td>
+SCO Family of Services
+</td>
+</tr>
+<tr>
+<td>
+<nobr>community centre (1): </nobr>
+</td>
+<td>
+The Solidarity Room Project
+</td>
+</tr>
+<tr>
+<td>
+<nobr>art (1): </nobr>
+</td>
+<td>
+Faith Art Gallery
+</td>
+</tr>
+<tr>
+<td>
+<nobr>video games (1): </nobr>
+</td>
+<td>
+GameStop
+</td>
+</tr>
+<tr>
+<td>
+<nobr>beverages (1): </nobr>
+</td>
+<td>
+Beer Barrel
+</td>
+</tr>
+<tr>
+<td>
+<nobr>fashion accessories (1): </nobr>
+</td>
+<td>
+Wallalde
+</td>
+</tr>
+<tr>
+<td>
+<nobr>health food (1): </nobr>
+</td>
+<td>
+Downtown Natural Market
+</td>
+</tr>
+</table>
+</details>
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Queens
+</td>
+<td style="text-align:left;">
+40th Rd, Main St, Prince St, Roosevelt Ave
+</td>
+<td style="text-align:left;">
+45
+<details>
+<summary>
+locations
+</summary>
+<table>
+<tr>
+<td>
+<nobr>restaurant (12): </nobr>
+</td>
+<td>
+Fu Run, White Bear, Shanghai You Garden Restaurant, King Crab House, 8 Pots Mini Hot Pot, Tian Jin, New Fuzhou Style, Yin Traditional Hot Pot, Malay Restaurant Inc, Legend Chicken, Curry Leaves Restaurant, Oidu Restaurant
+</td>
+</tr>
+<tr>
+<td>
+<nobr>fast food (2): </nobr>
+</td>
+<td>
+Popeyes, McDonald’s
+</td>
+</tr>
+<tr>
+<td>
+<nobr>cafe (3): </nobr>
+</td>
+<td>
+Yi Fang Tea, Tiger Sugar, Maxin Bakery
+</td>
+</tr>
+<tr>
+<td>
+<nobr>convenience (1): </nobr>
+</td>
+<td>
+New York Food &amp; Herbs
+</td>
+</tr>
+<tr>
+<td>
+<nobr>clothes (1): </nobr>
+</td>
+<td>
+Custom Fitted Bras
+</td>
+</tr>
+<tr>
+<td>
+<nobr>hairdresser (3): </nobr>
+</td>
+<td>
+I Beauty House, Sai Kay 21 Beauty Skincare, A &amp; A Beauty Salon
+</td>
+</tr>
+<tr>
+<td>
+<nobr>beauty (3): </nobr>
+</td>
+<td>
+Beauty Cosmetics, Yi Pian Yun Beauty Salon, Beauty Skincare Center
+</td>
+</tr>
+<tr>
+<td>
+<nobr>pharmacy (2): </nobr>
+</td>
+<td>
+All Rx Pharmacy, Rainbow Care Pharmacy
+</td>
+</tr>
+<tr>
+<td>
+<nobr>bank (2): </nobr>
+</td>
+<td>
+Cathay Bank, Cathay Bank
+</td>
+</tr>
+<tr>
+<td>
+<nobr>bakery (2): </nobr>
+</td>
+<td>
+Eggcellent SoufflÃ© Pancake, Eggcellent Pancakes
+</td>
+</tr>
+<tr>
+<td>
+<nobr>mobile phone (1): </nobr>
+</td>
+<td>
+T-Mobile
+</td>
+</tr>
+<tr>
+<td>
+<nobr>jewelry (1): </nobr>
+</td>
+<td>
+Ngan Ping Jewelry
+</td>
+</tr>
+<tr>
+<td>
+<nobr>ice cream (1): </nobr>
+</td>
+<td>
+Flushing Ice Cream Factory
+</td>
+</tr>
+<tr>
+<td>
+<nobr>shoes (1): </nobr>
+</td>
+<td>
+Jai Mei Shoe Store
+</td>
+</tr>
+<tr>
+<td>
+<nobr>tattoo (1): </nobr>
+</td>
+<td>
+Tattoo Studio
+</td>
+</tr>
+<tr>
+<td>
+<nobr>marketplace (2): </nobr>
+</td>
+<td>
+East Mall, Shopping Mall
+</td>
+</tr>
+<tr>
+<td>
+<nobr>travel agency (5): </nobr>
+</td>
+<td>
+Sincere Travel, Fei Yang Travel, Selectravel &amp; Tour, LLC, VIP Travel Services, Asian American Travel
+</td>
+</tr>
+<tr>
+<td>
+<nobr>tea (1): </nobr>
+</td>
+<td>
+With Sugar &amp; Tea
+</td>
+</tr>
+</table>
+</details>
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Manhattan
+</td>
+<td style="text-align:left;">
+Bowery, Chrystie St, Grand St, Hester St
+</td>
+<td style="text-align:left;">
+44
+<details>
+<summary>
+locations
+</summary>
+<table>
+<tr>
+<td>
+<nobr>restaurant (7): </nobr>
+</td>
+<td>
+Ming Kee Kitchen, Phá»Ÿ 87, Nam Son, Lao Jie Hot Pot &amp; BBQ, New Kim Tuong, Jiang Nan, Kitchen CÃ´ Ãšt
+</td>
+</tr>
+<tr>
+<td>
+<nobr>fast food (4): </nobr>
+</td>
+<td>
+Go Believe Bakery, Wah Fung Fast Food, Good Century Cafe, Chi Dumpling House
+</td>
+</tr>
+<tr>
+<td>
+<nobr>cafe (2): </nobr>
+</td>
+<td>
+Kung Fu Tea, New Kamboat Bakery &amp; Cafe
+</td>
+</tr>
+<tr>
+<td>
+<nobr>convenience (1): </nobr>
+</td>
+<td>
+Grand Advance Trading
+</td>
+</tr>
+<tr>
+<td>
+<nobr>bar (1): </nobr>
+</td>
+<td>
+Grand Master 95
+</td>
+</tr>
+<tr>
+<td>
+<nobr>beauty (2): </nobr>
+</td>
+<td>
+Vanity Projects, Aroma Beauty
+</td>
+</tr>
+<tr>
+<td>
+<nobr>pharmacy (1): </nobr>
+</td>
+<td>
+Bowery Pharmacy
+</td>
+</tr>
+<tr>
+<td>
+<nobr>bank (1): </nobr>
+</td>
+<td>
+Hanover Bank
+</td>
+</tr>
+<tr>
+<td>
+<nobr>supermarket (2): </nobr>
+</td>
+<td>
+Tan Tin Hung Supermarket, Super A Mart
+</td>
+</tr>
+<tr>
+<td>
+<nobr>mobile phone (1): </nobr>
+</td>
+<td>
+101
+</td>
+</tr>
+<tr>
+<td>
+<nobr>furniture (2): </nobr>
+</td>
+<td>
+Cozy Living Furniture, International Furniture Company
+</td>
+</tr>
+<tr>
+<td>
+<nobr>hardware (1): </nobr>
+</td>
+<td>
+T &amp; Y Hardware
+</td>
+</tr>
+<tr>
+<td>
+<nobr>sports centre (1): </nobr>
+</td>
+<td>
+Tak Wah Kung Fu Club
+</td>
+</tr>
+<tr>
+<td>
+<nobr>seafood (2): </nobr>
+</td>
+<td>
+Bor Kee Food Market, CT Seafood Marts
+</td>
+</tr>
+<tr>
+<td>
+<nobr>trade (1): </nobr>
+</td>
+<td>
+L &amp; J Restaurant Mfg.
+</td>
+</tr>
+<tr>
+<td>
+<nobr>herbalist (1): </nobr>
+</td>
+<td>
+F &amp; R Trading
+</td>
+</tr>
+</table>
+</details>
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Manhattan
+</td>
+<td style="text-align:left;">
+E 84th St, E 85th St, 2nd Ave, 3rd Ave
+</td>
+<td style="text-align:left;">
+44
+<details>
+<summary>
+locations
+</summary>
+<table>
+<tr>
+<td>
+<nobr>restaurant (7): </nobr>
+</td>
+<td>
+Gracie’s Diner, Budapest CafÃ© &amp; Restaurant, Jacques Brasserie, Green Kitchen, Elio’s, Vanessa’s Dumpling House, Giacomo’s Pizza
+</td>
+</tr>
+<tr>
+<td>
+<nobr>fast food (2): </nobr>
+</td>
+<td>
+McDonald’s, Chipotle
+</td>
+</tr>
+<tr>
+<td>
+<nobr>cafe (1): </nobr>
+</td>
+<td>
+Caroline’s Donuts
+</td>
+</tr>
+<tr>
+<td>
+<nobr>bar (3): </nobr>
+</td>
+<td>
+Ethyl’s Alcohol &amp; Food, Trinity Pub, Brandy’s Piano Bar
+</td>
+</tr>
+<tr>
+<td>
+<nobr>hairdresser (1): </nobr>
+</td>
+<td>
+Davidâ€™s Barber Shop
+</td>
+</tr>
+<tr>
+<td>
+<nobr>beauty (1): </nobr>
+</td>
+<td>
+Glosslab
+</td>
+</tr>
+<tr>
+<td>
+<nobr>laundry (1): </nobr>
+</td>
+<td>
+Cleaners &amp; Laundry
+</td>
+</tr>
+<tr>
+<td>
+<nobr>fitness centre (1): </nobr>
+</td>
+<td>
+Rumble
+</td>
+</tr>
+<tr>
+<td>
+<nobr>dry cleaning (1): </nobr>
+</td>
+<td>
+Wendy Laundry &amp; Dry Cleaning
+</td>
+</tr>
+<tr>
+<td>
+<nobr>clinic (1): </nobr>
+</td>
+<td>
+Tisch Center for Women’s Health
+</td>
+</tr>
+<tr>
+<td>
+<nobr>optician (1): </nobr>
+</td>
+<td>
+Cohen’s Fashion Optical
+</td>
+</tr>
+<tr>
+<td>
+<nobr>ice cream (2): </nobr>
+</td>
+<td>
+Van Leeuwen, Spoonable Spirits
+</td>
+</tr>
+<tr>
+<td>
+<nobr>hardware (1): </nobr>
+</td>
+<td>
+Hercules Plumbing Electrical &amp; Hardware Supply
+</td>
+</tr>
+<tr>
+<td>
+<nobr>massage (1): </nobr>
+</td>
+<td>
+Amenity Spa 85
+</td>
+</tr>
+<tr>
+<td>
+<nobr>cosmetics (1): </nobr>
+</td>
+<td>
+Discount Depot
+</td>
+</tr>
+<tr>
+<td>
+<nobr>veterinary (1): </nobr>
+</td>
+<td>
+Yorkville Animal Hospital
+</td>
+</tr>
+<tr>
+<td>
+<nobr>cannabis (1): </nobr>
+</td>
+<td>
+Smoke Shop
+</td>
+</tr>
+<tr>
+<td>
+<nobr>paint (1): </nobr>
+</td>
+<td>
+Janovic Paint &amp; Decorating Center
+</td>
+</tr>
+</table>
+</details>
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Queens
+</td>
+<td style="text-align:left;">
+38th St, Broadway, Steinway St, 34th Ave
+</td>
+<td style="text-align:left;">
+42
+<details>
+<summary>
+locations
+</summary>
+<table>
+<tr>
+<td>
+<nobr>restaurant (2): </nobr>
+</td>
+<td>
+Slice, Luna Asian Bistro
+</td>
+</tr>
+<tr>
+<td>
+<nobr>cafe (3): </nobr>
+</td>
+<td>
+Love CafÃ©, CaffÃ© bene, Kinship Coffee
+</td>
+</tr>
+<tr>
+<td>
+<nobr>bar (3): </nobr>
+</td>
+<td>
+Raven’s Head Public House, Brik, Cronin And Phelan
+</td>
+</tr>
+<tr>
+<td>
+<nobr>beauty (1): </nobr>
+</td>
+<td>
+Lyn’s Nail &amp; Threading
+</td>
+</tr>
+<tr>
+<td>
+<nobr>pharmacy (2): </nobr>
+</td>
+<td>
+Athena’s Pharmacy, Athena’s Pharmacy
+</td>
+</tr>
+<tr>
+<td>
+<nobr>deli (2): </nobr>
+</td>
+<td>
+Steinway Gourmet Deli, KLM Deli
+</td>
+</tr>
+<tr>
+<td>
+<nobr>mobile phone (2): </nobr>
+</td>
+<td>
+T-Mobile, Metro by T-Mobile
+</td>
+</tr>
+<tr>
+<td>
+<nobr>fitness centre (2): </nobr>
+</td>
+<td>
+Shotojuku, Lucille Roberts
+</td>
+</tr>
+<tr>
+<td>
+<nobr>dentist (1): </nobr>
+</td>
+<td>
+Steinway Family Dental
+</td>
+</tr>
+<tr>
+<td>
+<nobr>clinic (2): </nobr>
+</td>
+<td>
+Laserklinic, Pediatric Clinic
+</td>
+</tr>
+<tr>
+<td>
+<nobr>variety store (1): </nobr>
+</td>
+<td>
+99 Cents And Up NYC
+</td>
+</tr>
+<tr>
+<td>
+<nobr>furniture (4): </nobr>
+</td>
+<td>
+US Furniture, American Design Furniture Corp., Dhaka Furniture, Astoria Furniture
+</td>
+</tr>
+<tr>
+<td>
+<nobr>dance (1): </nobr>
+</td>
+<td>
+Wild Heart Performing Arts Studio
+</td>
+</tr>
+<tr>
+<td>
+<nobr>second hand (1): </nobr>
+</td>
+<td>
+Steinway Thrift Shop
+</td>
+</tr>
+<tr>
+<td>
+<nobr>driving school (1): </nobr>
+</td>
+<td>
+Ferrari Driving School
+</td>
+</tr>
+</table>
+</details>
+</td>
+</tr>
+</tbody>
+</table>
+<iframe src="/html/map.html" frameBorder="0" width="100%" height="900px" data-external="1">
+</iframe>
+<p>All code used to analyze the data and display the results can be found below. Thanks for reading!</p>
+<details>
+<summary>
+Code
+</summary>
+<pre class="r"><code>library(tidyverse)
+library(patchwork)
+library(sf)
+library(osmdata)
+library(leaflet)
+library(leaflet.extras)
+library(htmltools)
+library(knitr)
+library(kableExtra)
+
+options(dplyr.summarise.inform = FALSE)
+expand.grid.df &lt;- function(...) Reduce(function(...) merge(..., by=NULL), list(...))
+
+coord_sys &lt;- 4326
+
+# shape files
+boros &lt;- read_sf(&quot;Borough Boundaries&quot;)
+streets &lt;- read_sf(&quot;SimplifiedStreets.shp&quot;)
+zips &lt;- read_sf(&quot;ZIP_CODE_040114&quot;) 
+zips &lt;- zips %&gt;% st_transform(coord_sys) %&gt;% select(geometry, zip = ZIPCODE) 
+
+# location grading system
+points_sys &lt;- read_csv(&quot;points_sys.csv&quot;)
+points_sys &lt;- points_sys %&gt;% mutate(category = str_replace_all(category, &quot;_&quot;, &quot; &quot;))
+
+boro_names &lt;- c(&quot;New York&quot;, &quot;Bronx&quot;, &quot;Queens&quot;, &quot;Kings&quot;)
+
+# take out SI (too suburban), and only take largest land mass of remaining four
+boros &lt;- boros %&gt;%
+  filter(boro_name != &quot;Staten Island&quot;) %&gt;%
+  st_cast(&quot;POLYGON&quot;) %&gt;%
+  mutate(area = st_area(.)) %&gt;%
+  arrange(desc(area)) %&gt;%
+  group_by(boro_name) %&gt;%
+  slice(1) %&gt;%
+  select(geometry, borough = boro_name)
+
+# we only want NYC streets
+streets_nyc &lt;- streets %&gt;% 
+  filter(LeftCounty %in% boro_names | RightCount %in% boro_names) %&gt;%
+  select(Label, geometry) %&gt;%
+  arrange(str_detect(Label, &quot;Ave&quot;))
+
+# share a coordinate system so we can compare/intersect them
+boros &lt;- st_transform(boros, st_crs(streets))
+
+# grids are what remains after we remove the (buffed) streets
+grids_nyc &lt;- st_difference(
+  boros, 
+  streets_nyc %&gt;% st_buffer(10) %&gt;% st_union()
+) %&gt;%
+  st_cast(&quot;POLYGON&quot;) %&gt;%
+  mutate(area = round(st_area(.))) %&gt;%
+  # area restrictions should limit us to true blocks
+  mutate(grid_idx = row_number()) %&gt;%
+  # add the street intersections for identification purposes
+  {.$streets &lt;- (.) %&gt;%
+    st_intersects(streets_nyc %&gt;% 
+                    st_buffer(10 + 1)) %&gt;%
+    # paste together the indexed labels
+    map(~streets_nyc$Label[.x])
+  .
+  } %&gt;%
+  st_transform(crs = st_crs(coord_sys))
+
+
+
+# bounding box for NYC
+nyc_bb &lt;- c(-74.2588430, 40.4765780, -73.7002330, 40.9176300)
+
+# places recognized by OSM
+all_points &lt;- opq(bbox = nyc_bb, nodes_only = TRUE, timeout = 60*60)
+
+# get every location that falls into any of amenity, shop, leisure
+amenity_points &lt;- all_points %&gt;%
+  add_osm_feature(&quot;amenity&quot;, available_tags(&quot;amenity&quot;)) %&gt;%
+  osmdata_sf()
+
+shop_points &lt;- all_points %&gt;%
+  add_osm_feature(&quot;shop&quot;, available_tags(&quot;shop&quot;)) %&gt;%
+  osmdata_sf()
+
+leisure_points &lt;- all_points %&gt;%
+  add_osm_feature(&quot;leisure&quot;, available_tags(&quot;leisure&quot;)) %&gt;%
+  osmdata_sf()
+
+combo_points &lt;- bind_rows(
+  leisure_points$osm_points,
+  shop_points$osm_points,
+  amenity_points$osm_points
+) %&gt;%
+  select(name, amenity, leisure, shop, geometry) %&gt;%
+  filter(!is.na(name)) %&gt;%
+  distinct() %&gt;%
+  transmute(name, category = coalesce(amenity, leisure, shop)) %&gt;%
+  # combine some very similar categories
+  mutate(category = case_when(
+    category == &quot;pub&quot; ~ &quot;bar&quot;,
+    category == &quot;chemist&quot; ~ &quot;pharmacy&quot;,
+    category == &quot;pastry&quot; ~ &quot;bakery&quot;,
+    TRUE ~ category
+  ))
+
+# intersections between grid squares and points
+grid_point_ix &lt;- grids_nyc %&gt;% 
+  # get coordinates of overlap
+  st_intersects(combo_points) %&gt;%
+  # cross join each grid to its overlapping points
+  imap_dfr(~{
+    
+    grids_nyc[.y, ] %&gt;% 
+      rename(geometry_grid = geometry) %&gt;%
+      as.data.frame() %&gt;%
+      expand.grid.df(combo_points %&gt;%
+                       slice(.x) %&gt;% 
+                       rename(geometry_pt = geometry) %&gt;%
+                       as.data.frame()
+      )
+  }
+  )
+
+save(grids_nyc, grid_point_ix, file = &quot;grid_items.Rdata&quot;)
+load(&quot;grid_items.Rdata&quot;)
+
+
+
+# giant pipe chain that formats blocks for mapping
+g &lt;- grid_point_ix %&gt;%
+  group_by(grid_idx, category) %&gt;%
+  # total points and list by grid and category
+  summarize(n = n(), locs = list(name)) %&gt;%
+  mutate(category = str_replace_all(category, &quot;_&quot;, &quot; &quot;)) %&gt;%
+  inner_join(points_sys %&gt;% select(-n), by = &quot;category&quot;) %&gt;%
+  mutate(points = pmin(max, n*per)) %&gt;%
+  group_by(grid_idx) %&gt;%
+  # total points and distinct categories by grid
+  mutate(total_points = sum(points), distinct_cat = n_distinct(category)) %&gt;%
+  mutate(category = factor(category, levels = points_sys$category)) %&gt;%
+  arrange(grid_idx, category) %&gt;%
+  group_by(grid_idx, category) %&gt;%
+  # gluing together html labels
+  mutate(cell1 = paste0(category, &quot; (&quot;, n, &quot;): &quot;),
+         cell2 = paste0(unlist(locs), collapse = &quot;, &quot;),
+         both_cells = paste0(&quot;&lt;td&gt;&lt;nobr&gt;&quot;, cell1, &quot;&lt;/nobr&gt;&lt;/td&gt;&quot;, &quot;&lt;td&gt;&quot;, cell2, &quot;&lt;/td&gt;&quot;),
+         full_row = paste0(&quot;&lt;tr&gt;&quot;, both_cells, &quot;&lt;/tr&gt;&quot;)) %&gt;%
+  group_by(grid_idx, total_points, distinct_cat) %&gt;%
+  # collapsing into html table for each grid
+  summarize(full_table = paste0(&quot;&lt;table&gt;&quot;, paste0(full_row, collapse = &quot;&quot;), &quot;&lt;/table&gt;&quot;)) %&gt;%
+  ungroup() %&gt;%
+  left_join(grids_nyc, ., by = c(&quot;grid_idx&quot;)) %&gt;%
+  mutate(total_points = coalesce(total_points, 0),
+         distinct_cat = coalesce(distinct_cat, 0),
+         full_table = coalesce(full_table, &quot;&quot;)) %&gt;%
+  # various ranks
+  mutate(percentile = ntile(total_points, 100),
+         rank = rank(-total_points, ties.method = &quot;min&quot;),
+         max_rank = max(rank)) %&gt;%
+  group_by(grid_idx) %&gt;%
+  # convert area to sq ft for text
+  mutate(area_text = formattable::comma(as.numeric(area)*10.764, digits = 0)) %&gt;%
+  # final html blob
+  mutate(summary = paste0(
+    &quot;&lt;b&gt;Block #&quot;, grid_idx, &quot; in &quot;, borough, &quot; (&quot;, area_text, &quot; sq ft)&lt;/b&gt;&lt;br&gt;&quot;,
+    &quot;Enclosed by &quot;, paste0(head(unlist(streets), 6), collapse = &quot;, &quot;), &quot;&lt;br&gt;&lt;br&gt;&quot;,
+    distinct_cat, &quot; location types, &quot;, total_points, &quot; total points (&quot;, toOrdinal::toOrdinal(rank), &quot; out of &quot;, max_rank, &quot;)&lt;br&gt;&lt;br&gt;&quot;)) %&gt;%
+  mutate(popup = paste0(summary, full_table)) %&gt;%
+  arrange(desc(total_points)) %&gt;%
+  # best binning for colors
+  group_by(five_plus = total_points &gt;= 5) %&gt;%
+  mutate(points_bin = ifelse(!five_plus, 
+                             as.numeric(total_points &gt; 0), 
+                             ntile(total_points, 13) + 1)) %&gt;%
+  ungroup()
+
+colfunc &lt;- colorRampPalette(c(&quot;gray&quot;,
+                              &quot;darkolivegreen4&quot;,
+                              &quot;lawngreen&quot;,
+                              &quot;yellow&quot;,
+                              &quot;orange&quot;,
+                              &quot;firebrick1&quot;,
+                              &quot;darkred&quot;))
+
+factpal &lt;- colorFactor(colfunc(15), sort(unique(g$points_bin)))
+
+block_map &lt;- leaflet() %&gt;% 
+  addProviderTiles(providers$Stadia.StamenTonerLite) %&gt;% 
+  addCircles(data = grid_point_ix %&gt;% 
+               filter(grid_idx == 15883) %&gt;%
+               slice(-22) %&gt;% # chase dupe
+               st_set_geometry(&quot;geometry_pt&quot;),
+             label = ~name, radius = 1,
+             labelOptions = labelOptions(noHide = TRUE, textOnly = TRUE, offset = c(-6, 0),
+                                         direction = &quot;left&quot;,
+                                         textsize = &quot;15px&quot;))
+
+big_map &lt;- leaflet() %&gt;% 
+  addProviderTiles(providers$Stadia.StamenTonerLite) %&gt;% 
+  # zip data for search function
+  addPolygons(data = zips,
+              label = ~zip, group = &quot;hidden&quot;,
+              stroke = 0, fillOpacity = 0,
+              labelOptions = labelOptions(opacity = 0)) %&gt;%
+  # primary block data
+  addPolygons(data = g[, ],
+              popup = ~popup,
+              color = ~factpal(points_bin),
+              stroke = FALSE,
+              fillOpacity = 0.7,
+              popupOptions = popupOptions(minWidth = 500)) %&gt;%
+  # center at NYC
+  setView(lng = -73.95, lat = 40.75, zoom = 13) %&gt;%
+  # settings for the zip search functionality
+  addSearchFeatures(targetGroups  = &#39;hidden&#39;,
+                    options = searchFeaturesOptions(
+                      textPlaceholder = &#39;Search by ZIP&#39;,
+                      zoom = 15,
+                      collapsed = FALSE)
+  ) %&gt;%
+  addResetMapButton()
+
+htmlwidgets::saveWidget(big_map, file = &quot;map.html&quot;)
+
+table &lt;- g %&gt;%
+  # only want real blocks no huge lots
+  filter(as.numeric(area)*10.764 &lt; 2e5) %&gt;% 
+  head(10) %&gt;% 
+  st_set_geometry(NULL) %&gt;%
+  # can&#39;t remember why double quotes don&#39;t work
+  mutate(full_table = str_replace_all(full_table, &#39;&quot;&#39;, &quot;&#39;&quot;)) %&gt;%
+  select(borough, streets, points = total_points, full_table) %&gt;%
+  rowwise() %&gt;%
+  mutate(streets = paste0(unlist(streets), collapse = &quot;, &quot;)) %&gt;%
+  ungroup() %&gt;%
+  # details element allows for accordion reveal
+  mutate(points = paste0(points, &quot;&lt;details&gt;&lt;summary&gt;locations&lt;/summary&gt;&quot;, full_table, &quot;&lt;/details&gt;&quot;)) %&gt;%
+  select(-full_table) %&gt;%
+  kbl(escape = FALSE) %&gt;%
+  kable_styling()
+
+save(table, big_map, file = &quot;page_elements.Rdata&quot;) </code></pre>
+</details>

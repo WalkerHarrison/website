@@ -1,0 +1,353 @@
+---
+title: "Greatness within the Grid: Can I find the Best Block in New York City?"
+author: Walker Harrison
+date: '2024-01-28'
+slug: best_block
+categories: []
+tags: []
+lastmod: '2023-04-08T01:37:15-04:00'
+layout: post
+type: post
+summary: They say you can find anything in New York, but can you find anything on a single block without crossing the street?
+highlight: yes
+---
+
+
+```{css, echo=FALSE}
+.maptab td {
+  padding:5px 10px 5px 10px;
+}
+
+.maptab table td {
+  border-top: thin solid; 
+  border-bottom: thin solid;
+}
+
+.maptab table td:first-child {
+  border-left: thin solid;
+}
+
+.maptab table td:last-child {
+  border-right: thin solid;
+}
+
+figure figcaption {
+  text-align: center;
+}
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+```
+
+The house I grew up in was so close to my high school that if I poked my head out of our bathroom window on the top floor, I could actually see my fellow students scampering around the yard during their PE classes. On occasion I'd daydream about how much time I might save if I could somehow string a zipline between the two endpoints and glide onto campus every morning.
+
+Not that my three-minute commute was at all unmanageable. Because our house and the school occupied the same Brooklyn block, I could get from breakfast to Biology simply by tracing the perimeter of our shared rectangle, no crosswalks required. This level of self-containment comforted me — I liked knowing that if all of the surrounding streets spontaneously sunk to the center of the earth, separating each block into its own island, well then I could still get to school everyday, and even pick up a croissant from Ozzie’s along the way.
+
+<figure>
+<center><img src="/img/myblock.jpeg"/></center>
+<figcaption><i>My little island growing up</i></figcaption>
+</figure>
+
+
+I’ve carried this appreciation for proximity into my adulthood, during which I’ve lived in a handful of apartments across various Manhattan neighborhoods. There’s something extra satisfying about being able to procure a coffee, a beer, a roll of toilet paper without straying from your block of origin. And so I wondered: which block in New York City has the most resources? **If you wanted to get the most out of life without ever crossing the street, where should you live? In a city more or less devoid of traditional malls, can we recreate one in the aggregate on a single block?**
+
+To answer this question we need to first divide the city up into the blocks created by its signature grid pattern. To do so, we take a shapefile of New York City streets (sourced from [NY.gov](https://data.gis.ny.gov/){target="_blank"}) and remove that area from a larger shapefile of the five boroughs (sourced from [NYC OpenData](https://data.cityofnewyork.us/City-Government/Borough-Boundaries/tqmj-j8zm){target="_blank"}). It's kind of like the streets are a giant cookie cutter that we're using to press out individual biscuits from the city's terrain. 
+
+Next, we need to list and locate as many of the city's businesses -- restaurants, bars, supermarkets, gyms, laundromats, etc. -- as we can. Thankfully, the folks at Open Street Maps provide their [Overpass API](https://wiki.openstreetmap.org/wiki/Overpass_API){target="_blank"}, which, given a geographical bounding box, will tell you exactly what they can find within it, down to park benches and bike racks. (It should be noted that there appears to be some missing locations from this dataset, especially as you stray further from Manhattan; while I was able to verify the map's accuracy in regions close to my Upper East Side apartment, I couldn't find some of my go-to lunch spots near my office in the Bronx.)
+
+Here is where the the analysis tips over into unavoidable subjectivity. How do we define a utility function to grade the resources available at each city block? As far as I'm concerned, a Chipotle, a Dunkin', two bars, a laundromat, and a gym would more than suffice (if you can't tell, I'm a man of culture). But my mom would probably like a yoga studio, a sushi restaurant, and a flower store. And beyond preference, there's the question of saturation -- at what point is the marginal value of another restaurant eclipsed by something less exciting, like a post office?
+
+Understanding that I can't please everybody (or maybe even anybody), I've assigned the following points for each category as displayed in the table below. Blocks accumulate `points per location` for each instance of a particular category, but are also capped at `max points` in that category -- so that, for example, seven restaurants would be no more valuable than six. The most important rows are the high frequency ones, like cafes, bars, and supermarkets, but for the sake of thoroughness I evaluated the utility of every last category available. Yes, I think a "swingerclub" is worth a point (and probably more, to be quite honest).
+
+```{r, echo = FALSE}
+library(tidyverse)
+library(leaflet)
+library(sf)
+library(knitr)
+library(kableExtra)
+
+#getwd()
+
+points_sys <- read_csv("points_sys.csv")
+
+points_sys %>%
+  #slice(1:25) %>%
+  mutate(category = str_replace_all(category, "_", " ")) %>%
+  set_names(c("category", "frequency", "points per location", "max points")) %>%
+  kable() %>%
+  scroll_box(height = "300px")
+
+```
+
+So now that we have a map and a scoring system, which blocks provide the most convenience to their inhabitants? If you limit your search to areas smaller than 200,000 square feet, so as to avoid useless answers like LaGuardia Airport, two Manhattan blocks surpass fifty points and take our top spots. In second place is the block between 32nd and 33rd Streets and 5th and Broadway avenues in the Koreatown neighborhood of Manhattan. As demonstrated below, this block has over a dozen food options -- many of them Korean barbecue -- and also cafes, convenience stores, four bars, both a Walgreens and a CVS, a bank, a bookstore, and a massage parlor. So packed with stores and restaurants is the segment along 32nd street that it's often referred to as the heart of Koreatown and has even been nicknamed ["Korea Way"](https://en.wikipedia.org/wiki/Koreatown,_Manhattan#Korea_Way){target="_blank"}.
+
+Koreatown is more of a commercial area than a residential one though, so it's harder to imagine actually living on top of this stretch of businesses. More intriguing is the first place finisher located in the East Village, a neighborhood overflowing with so much culture that young New Yorkers are willing to squeeze themselves into small, pricey, oddly-shaped apartments just to experience it. This block is  surrounded by 9th St, 10th St, 1st Avenue, and 2nd Avenue and it too has plenty of dining options, but also a grocery store, a nail salon, a laundromat, a dentist, an optician, and even a butcher.
+
+<figure>
+<center><img src="/img/bestblock.PNG"/></center>
+<figcaption><i>The many businesses of our top ranked block</i></figcaption>
+</figure>
+
+Are the inhabitants of this block aware that they reside atop arguably the peak of New York City convenience? To answer that question, I had to engage in some field work, a rare task for a blogger. So on a cold Monday night in January, I posted up on 10th St and 2nd Avenue and asked some of the local residents if they had considered their block's abundant resources and taken advantage of them accordingly.
+
+One man noted how easy it was to "go for a bite or a drink," while another praised the convenience store that was just around the corner. Two people listed Madame Vo, a Vietnamese restaurant on 10th St, as a frequent destination. But overall they didn't share the appreciation I had for their block's top status, and were quick to list businesses that fell outside of their atomic rectangle, violating the constraints of my optimization. It appears that an obsession with extreme proximity might be reserved for people lucky enough to have lived around the corner from school. 
+
+In any case, below are the top ten blocks in our dataset with additional details available if you expand the `locations` header. If you'd like to explore other areas or type in your own NYC zip code, take a look at the accompanying map (be patient with her -- she is large and slow):
+
+```{r, echo = FALSE}
+load("page_elements.Rdata")
+table
+```
+
+<iframe src="/html/map.html" frameBorder = "0" width = "100%" height = "900px" data-external = "1"></iframe> 
+
+All code used to analyze the data and display the results can be found below. Thanks for reading!
+
+<details>
+<summary>Code</summary>
+```{r, eval = FALSE}
+library(tidyverse)
+library(patchwork)
+library(sf)
+library(osmdata)
+library(leaflet)
+library(leaflet.extras)
+library(htmltools)
+library(knitr)
+library(kableExtra)
+
+options(dplyr.summarise.inform = FALSE)
+expand.grid.df <- function(...) Reduce(function(...) merge(..., by=NULL), list(...))
+
+coord_sys <- 4326
+
+# shape files
+boros <- read_sf("Borough Boundaries")
+streets <- read_sf("SimplifiedStreets.shp")
+zips <- read_sf("ZIP_CODE_040114") 
+zips <- zips %>% st_transform(coord_sys) %>% select(geometry, zip = ZIPCODE) 
+
+# location grading system
+points_sys <- read_csv("points_sys.csv")
+points_sys <- points_sys %>% mutate(category = str_replace_all(category, "_", " "))
+
+boro_names <- c("New York", "Bronx", "Queens", "Kings")
+
+# take out SI (too suburban), and only take largest land mass of remaining four
+boros <- boros %>%
+  filter(boro_name != "Staten Island") %>%
+  st_cast("POLYGON") %>%
+  mutate(area = st_area(.)) %>%
+  arrange(desc(area)) %>%
+  group_by(boro_name) %>%
+  slice(1) %>%
+  select(geometry, borough = boro_name)
+
+# we only want NYC streets
+streets_nyc <- streets %>% 
+  filter(LeftCounty %in% boro_names | RightCount %in% boro_names) %>%
+  select(Label, geometry) %>%
+  arrange(str_detect(Label, "Ave"))
+
+# share a coordinate system so we can compare/intersect them
+boros <- st_transform(boros, st_crs(streets))
+
+# grids are what remains after we remove the (buffed) streets
+grids_nyc <- st_difference(
+  boros, 
+  streets_nyc %>% st_buffer(10) %>% st_union()
+) %>%
+  st_cast("POLYGON") %>%
+  mutate(area = round(st_area(.))) %>%
+  # area restrictions should limit us to true blocks
+  mutate(grid_idx = row_number()) %>%
+  # add the street intersections for identification purposes
+  {.$streets <- (.) %>%
+    st_intersects(streets_nyc %>% 
+                    st_buffer(10 + 1)) %>%
+    # paste together the indexed labels
+    map(~streets_nyc$Label[.x])
+  .
+  } %>%
+  st_transform(crs = st_crs(coord_sys))
+
+
+
+# bounding box for NYC
+nyc_bb <- c(-74.2588430, 40.4765780, -73.7002330, 40.9176300)
+
+# places recognized by OSM
+all_points <- opq(bbox = nyc_bb, nodes_only = TRUE, timeout = 60*60)
+
+# get every location that falls into any of amenity, shop, leisure
+amenity_points <- all_points %>%
+  add_osm_feature("amenity", available_tags("amenity")) %>%
+  osmdata_sf()
+
+shop_points <- all_points %>%
+  add_osm_feature("shop", available_tags("shop")) %>%
+  osmdata_sf()
+
+leisure_points <- all_points %>%
+  add_osm_feature("leisure", available_tags("leisure")) %>%
+  osmdata_sf()
+
+combo_points <- bind_rows(
+  leisure_points$osm_points,
+  shop_points$osm_points,
+  amenity_points$osm_points
+) %>%
+  select(name, amenity, leisure, shop, geometry) %>%
+  filter(!is.na(name)) %>%
+  distinct() %>%
+  transmute(name, category = coalesce(amenity, leisure, shop)) %>%
+  # combine some very similar categories
+  mutate(category = case_when(
+    category == "pub" ~ "bar",
+    category == "chemist" ~ "pharmacy",
+    category == "pastry" ~ "bakery",
+    TRUE ~ category
+  ))
+
+# intersections between grid squares and points
+grid_point_ix <- grids_nyc %>% 
+  # get coordinates of overlap
+  st_intersects(combo_points) %>%
+  # cross join each grid to its overlapping points
+  imap_dfr(~{
+    
+    grids_nyc[.y, ] %>% 
+      rename(geometry_grid = geometry) %>%
+      as.data.frame() %>%
+      expand.grid.df(combo_points %>%
+                       slice(.x) %>% 
+                       rename(geometry_pt = geometry) %>%
+                       as.data.frame()
+      )
+  }
+  )
+
+save(grids_nyc, grid_point_ix, file = "grid_items.Rdata")
+load("grid_items.Rdata")
+
+
+
+# giant pipe chain that formats blocks for mapping
+g <- grid_point_ix %>%
+  group_by(grid_idx, category) %>%
+  # total points and list by grid and category
+  summarize(n = n(), locs = list(name)) %>%
+  mutate(category = str_replace_all(category, "_", " ")) %>%
+  inner_join(points_sys %>% select(-n), by = "category") %>%
+  mutate(points = pmin(max, n*per)) %>%
+  group_by(grid_idx) %>%
+  # total points and distinct categories by grid
+  mutate(total_points = sum(points), distinct_cat = n_distinct(category)) %>%
+  mutate(category = factor(category, levels = points_sys$category)) %>%
+  arrange(grid_idx, category) %>%
+  group_by(grid_idx, category) %>%
+  # gluing together html labels
+  mutate(cell1 = paste0(category, " (", n, "): "),
+         cell2 = paste0(unlist(locs), collapse = ", "),
+         both_cells = paste0("<td><nobr>", cell1, "</nobr></td>", "<td>", cell2, "</td>"),
+         full_row = paste0("<tr>", both_cells, "</tr>")) %>%
+  group_by(grid_idx, total_points, distinct_cat) %>%
+  # collapsing into html table for each grid
+  summarize(full_table = paste0("<table>", paste0(full_row, collapse = ""), "</table>")) %>%
+  ungroup() %>%
+  left_join(grids_nyc, ., by = c("grid_idx")) %>%
+  mutate(total_points = coalesce(total_points, 0),
+         distinct_cat = coalesce(distinct_cat, 0),
+         full_table = coalesce(full_table, "")) %>%
+  # various ranks
+  mutate(percentile = ntile(total_points, 100),
+         rank = rank(-total_points, ties.method = "min"),
+         max_rank = max(rank)) %>%
+  group_by(grid_idx) %>%
+  # convert area to sq ft for text
+  mutate(area_text = formattable::comma(as.numeric(area)*10.764, digits = 0)) %>%
+  # final html blob
+  mutate(summary = paste0(
+    "<b>Block #", grid_idx, " in ", borough, " (", area_text, " sq ft)</b><br>",
+    "Enclosed by ", paste0(head(unlist(streets), 6), collapse = ", "), "<br><br>",
+    distinct_cat, " location types, ", total_points, " total points (", toOrdinal::toOrdinal(rank), " out of ", max_rank, ")<br><br>")) %>%
+  mutate(popup = paste0(summary, full_table)) %>%
+  arrange(desc(total_points)) %>%
+  # best binning for colors
+  group_by(five_plus = total_points >= 5) %>%
+  mutate(points_bin = ifelse(!five_plus, 
+                             as.numeric(total_points > 0), 
+                             ntile(total_points, 13) + 1)) %>%
+  ungroup()
+
+colfunc <- colorRampPalette(c("gray",
+                              "darkolivegreen4",
+                              "lawngreen",
+                              "yellow",
+                              "orange",
+                              "firebrick1",
+                              "darkred"))
+
+factpal <- colorFactor(colfunc(15), sort(unique(g$points_bin)))
+
+block_map <- leaflet() %>% 
+  addProviderTiles(providers$Stadia.StamenTonerLite) %>% 
+  addCircles(data = grid_point_ix %>% 
+               filter(grid_idx == 15883) %>%
+               slice(-22) %>% # chase dupe
+               st_set_geometry("geometry_pt"),
+             label = ~name, radius = 1,
+             labelOptions = labelOptions(noHide = TRUE, textOnly = TRUE, offset = c(-6, 0),
+                                         direction = "left",
+                                         textsize = "15px"))
+
+big_map <- leaflet() %>% 
+  addProviderTiles(providers$Stadia.StamenTonerLite) %>% 
+  # zip data for search function
+  addPolygons(data = zips,
+              label = ~zip, group = "hidden",
+              stroke = 0, fillOpacity = 0,
+              labelOptions = labelOptions(opacity = 0)) %>%
+  # primary block data
+  addPolygons(data = g[, ],
+              popup = ~popup,
+              color = ~factpal(points_bin),
+              stroke = FALSE,
+              fillOpacity = 0.7,
+              popupOptions = popupOptions(minWidth = 500)) %>%
+  # center at NYC
+  setView(lng = -73.95, lat = 40.75, zoom = 13) %>%
+  # settings for the zip search functionality
+  addSearchFeatures(targetGroups  = 'hidden',
+                    options = searchFeaturesOptions(
+                      textPlaceholder = 'Search by ZIP',
+                      zoom = 15,
+                      collapsed = FALSE)
+  ) %>%
+  addResetMapButton()
+
+htmlwidgets::saveWidget(big_map, file = "map.html")
+
+table <- g %>%
+  # only want real blocks no huge lots
+  filter(as.numeric(area)*10.764 < 2e5) %>% 
+  head(10) %>% 
+  st_set_geometry(NULL) %>%
+  # can't remember why double quotes don't work
+  mutate(full_table = str_replace_all(full_table, '"', "'")) %>%
+  select(borough, streets, points = total_points, full_table) %>%
+  rowwise() %>%
+  mutate(streets = paste0(unlist(streets), collapse = ", ")) %>%
+  ungroup() %>%
+  # details element allows for accordion reveal
+  mutate(points = paste0(points, "<details><summary>locations</summary>", full_table, "</details>")) %>%
+  select(-full_table) %>%
+  kbl(escape = FALSE) %>%
+  kable_styling()
+
+save(table, big_map, file = "page_elements.Rdata") 
+```
+
+</details>
+
