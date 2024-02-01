@@ -1,7 +1,7 @@
 ---
 title: "Greatness within the Grid: Can I find the Best Block in New York City?"
 author: Walker Harrison
-date: '2024-02-03'
+date: '2024-01-03'
 slug: best_block
 categories: []
 tags: []
@@ -9,7 +9,7 @@ lastmod: '2023-04-08T01:37:15-04:00'
 layout: post
 type: post
 summary: They say you can find anything in New York, but can you find anything on a single block without crossing the street?
-highlight: yes 
+highlight: yes
 ---
 
 
