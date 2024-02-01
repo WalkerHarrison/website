@@ -24,6 +24,8 @@ FiveThirtyEight did not design RAPTOR in order to create accurate betting lines 
 
 All of that is to say that I don't expect RAPTOR to be good at predicting NBA games, especially if they don't have up-to-the-minute injury news. But if you're going to throw up point spreads, I can't help but see how accurate they are and compare them to the lines that Vegas offers, which are usually nearly impossible to beat. 
 
+### Overstated Homecourt Advantage
+
 Aggregating and parsing all of FiveThirtyEight's predictions for the 2021-2022 season is pretty straightforward once you click "Show More Games" on the aforementioned page and then download the HTML. All 1,230 regular season games are successfully accounted for; unspool the code below if you're interested in the mechanics.
 
 <details>
@@ -34,6 +36,8 @@ library(lubridate)
 library(rvest)
 library(patchwork)
 library(knitr)
+library(boot)
+
 options(dplyr.summarise.inform = FALSE)
 
 odds_to_prob <- function(odds){
@@ -163,7 +167,9 @@ raptor %>%
   labs(x = "RAPTOR Spread", y = "Actual Point Differential")
 ```
 
-It would appear that RAPTOR spreads and win probabilities could use a bump toward the away team. Let's now compare them to the famously sharp lines offered by sportsbooks, which I'm sourcing from [sportsbooksreviewsonline.com](https://www.sportsbookreviewsonline.com/scoresoddsarchives/nba/nbaoddsarchives.htm){target="_blank"}. While spreads will vary by as much as a point between different sportsbooks, they're typically close enough that consensus lines like these will be sufficient for the analysis. Two of the 1,230 regular season games were missing lines, but I used Action Network spreads to fill those in.
+It would appear that RAPTOR spreads and win probabilities could use a bump toward the away team. As a recently as the 2019-2020 season, however, the calibration of their predictions was quite healthy, at least [according to a review](https://projects.fivethirtyeight.com/checking-our-work/nba-games/){target="_blank"} the website did of their own forecasts. One wonders if the COVID pandemic that led first to empty arenas and then to limited capacity events threw off their models' grasp of homecourt advantage.
+
+Let's now compare them to the famously sharp lines offered by sportsbooks, which I'm sourcing from [sportsbooksreviewsonline.com](https://www.sportsbookreviewsonline.com/scoresoddsarchives/nba/nbaoddsarchives.htm){target="_blank"}. While spreads will vary by as much as a point between different sportsbooks, they're typically close enough that consensus lines like these will be sufficient for the analysis. Two of the 1,230 regular season games were missing lines, but I used Action Network spreads to fill those in.
 
 Again, all data cleaning code below for those interested. 
 
@@ -242,6 +248,8 @@ sportsbook <- sportsbook_raw %>%
          team_home = Team.h,
          spread,
          prob = wp_home,
+         ML_home.sb = ML.h,
+         ML_away.sb = ML.v,
          total,
          score_away = Final.v,
          score_home = Final.h) %>%
@@ -433,7 +441,7 @@ kelly_ML <- combo %>%
 rbind(kelly_spreads, kelly_ML) %>% 
   mutate_at(c('wagered', 'profit'), ~formattable::currency(.x, digits = 0L)) %>%
   mutate(ROI = formattable::percent(ROI)) %>%
-  kable(caption = "Kelly Bet with $1000 Bankroll")
+  kable(caption = "Kelly Bet vs. RAPTOR with $1000 Bankroll")
 ```
 
 None of this analysis is meant to denigrate the work done on the RAPTOR metric or in general at FiveThirtyEight, a website that has consistently published a high standard of data journalism since its inception. As noted before, FiveThirtyEight did not create RAPTOR to predict individual games, so pretending that they would lose vs. Vegas in doing so isn't exactly a radical observation.
@@ -442,6 +450,121 @@ Plus, I assume that much of the sportsbooks' advantage comes from letting their 
 
 For example, the biggest disagreement between the two datasets is a December 15th game between the Lakers, who sportsbooks saw as a 4 point favorite, and the Mavs, who RAPTOR saw as a 7 point favorite. Luka Doncic was scratched from this game, probably without enough time for RAPTOR to bake his absence into their line, which accounts for the difference. In that sense, maybe it's impressive that one could *only* get away with about 16% ROI on their spreads.
 
-I do find it curious that they haven't calibrated their models to eliminate the home team bias, since that seems like a simple enough fix. But as long as they don't open up a sportsbook, I guess it doesn't really matter that much...
+### Better Together
 
+So RAPTOR figures don't beat Vegas -- does that mean they're useless? Not necessarily. It's possible that a blend of RAPTOR and sportsbook lines might actually be the optimal solution. It's not hard to formulate a narrative for why this might be the case. If RAPTOR expresses raw player talent, then it's possible that sportsbook lines overreact to injuries or spurious recent trends and need to be regressed toward the true skill of the collective team. 
+
+Let's split the data into the first and second halves of the season and fit a handful of models on the former. First we remove the home team bias from both the RAPTOR spreads and the win probabilities with simple slope-intercept models. The adjustments are simple, as you can see in both graphs that the lines are shifted toward the away team to varying degrees:
+
+```{r}
+
+combo_train <- combo %>% filter(date <= "2022-01-12")
+combo_test <- combo %>% filter(date > "2022-01-12")
+
+raptor_spread_adj_model <- lm(diff ~ spread.538, data = combo_train)
+raptor_wp_adj_model <- glm(home_win ~ logit(prob.538), data = combo_train, family = binomial())
+
+combo_train$spread.538_adj <- predict(raptor_spread_adj_model)
+combo_train$prob.538_adj <- predict(raptor_wp_adj_model, type = "response")
+
+adj1 <- combo_train %>%
+  ggplot(aes(spread.538, spread.538_adj)) +
+  geom_point() +
+  geom_abline(col = "red") +
+  theme_bw() +
+  labs(x = "Raptor Spread", y = "Adjusted RAPTOR Spread")
+
+adj2 <- combo_train %>%
+  ggplot(aes(prob.538, prob.538_adj)) +
+  geom_point() +
+  geom_abline(col = "red") +
+  theme_bw() +
+  labs(x = "Raptor Home Win Probability", y = "Adjusted RAPTOR Home Win Probability")
+
+adj1 + adj2
+```
+Next we regress the results (point differential for spreads, binary won/loss for win probabilities) onto the inputs from both the sportsbooks and RAPTOR. These models are intentionally simple, with no non-linear effects or even interactions between the predictors, since it would be easy to chase noise for something as uncertain as NBA results.
+
+Looking at the coefficients, we see that while the sportsbooks' info is preferred in both cases, the results are still drawing some predictive power from the RAPTOR lines:
+```{r}
+spread_blend_model <- lm(diff ~ spread.sb + spread.538_adj, data = combo_train)
+prob_blend_model <- glm(home_win ~ logit(prob.sb) + logit(prob.538_adj), data = combo_train, family = binomial())
+spread_blend_model %>% broom::tidy() %>% mutate_if(is.numeric, ~round(.x, 2)) %>% kable(caption = "Spread Blend Model")
+```
+
+```{r}
+prob_blend_model %>% broom::tidy() %>% mutate_if(is.numeric, ~round(.x, 2)) %>% kable(caption = "Home Win Probability Blend Model")
+```
+
+Is this approach profitable? It's not good enough to simply outperform the sportsbooks' lines, since we have to make up their house advantage too, so the blended outputs' edge has to be somewhat significant.
+
+Using the 600 or so games from the hold-out set that our models have not seen and applying the same Kelly Criterion from above, we get mixed results. The spread bets go a balanced 137-137-4 for a grand total of -$7, or effectively net even given that we're wagering about \$14,000. Note that while our game sample has only been cut in half, our amount wagered has dwindled to about 10% as compared to the original scenario, which tells us that our edge is much smaller.
+
+The moneyline bets actually yield 8% ROI, though, which is a very respectable figure in an industry with razor-thin margins. These results would imply that even though the RAPTOR lines aren't very predictive in isolation, they can be used to sharpen sportsbook lines.
+
+```{r}
+combo_test$spread.538_adj <- predict(raptor_spread_adj_model, newdata = combo_test)
+combo_test$prob.538_adj <- predict(raptor_wp_adj_model, type = "response", newdata = combo_test)
+
+combo_test$spread.blend <- predict(spread_blend_model, newdata = combo_test)
+combo_test$prob.blend <- predict(prob_blend_model, type = "response", newdata = combo_test)
+
+bank_roll <- 1000
+
+kelly_spreads <- combo_test %>%
+  filter(spread.sb != spread.blend) %>%
+  mutate(b = kelly_bet(abs(spread.blend - spread.sb)*.03 + 0.5, -110)) %>%
+  filter(b > 0) %>%
+  mutate(bet_size = b*bank_roll) %>%
+  rowwise() %>%
+  mutate(result = case_when(
+    diff == spread.sb ~ 0,
+    spread.blend < spread.sb & diff < spread.sb ~ odds_to_payout(-110, bet_size),
+    spread.blend < spread.sb & diff > spread.sb ~ -bet_size,
+    spread.blend > spread.sb & diff > spread.sb ~ odds_to_payout(-110, bet_size),
+    spread.blend > spread.sb & diff < spread.sb ~ -bet_size,
+  )) %>%
+  ungroup() %>%
+  summarize(bets = n(),
+            wagered = sum(bet_size),
+            wins = sum(result > 0),
+            losses = sum(result < 0),
+            push = sum(result == 0),
+            profit = sum(result)) %>%
+  mutate(ROI = (wagered + profit)/(wagered) - 1,
+         type = "spreads") %>%
+  select(type, everything())
+
+kelly_ML <- combo_test %>%
+  mutate(b = ifelse(prob.blend > prob.sb, kelly_bet(prob.blend, ML_home.sb), kelly_bet(1-prob.blend, ML_away.sb))) %>% 
+  filter(b > 0) %>%
+  mutate(bet_size = b*bank_roll) %>%
+  rowwise() %>%
+  mutate(result = case_when(
+    prob.blend > prob.sb & home_win ~ odds_to_payout(ML_home.sb, bet_size),
+    prob.blend > prob.sb & !home_win ~ -bet_size,
+    prob.blend < prob.sb & !home_win ~ odds_to_payout(ML_away.sb, bet_size),
+    prob.blend < prob.sb & home_win ~ -bet_size
+  )) %>%
+  ungroup() %>%
+  summarize(bets = n(),
+            wagered = sum(bet_size),
+            wins = sum(result > 0),
+            losses = sum(result < 0),
+            push = sum(result == 0),
+            profit = sum(result)) %>%
+  mutate(ROI = (wagered + profit)/(wagered) - 1,
+         type = "moneyline") %>%
+  select(type, everything())
+
+rbind(kelly_spreads, kelly_ML) %>% 
+  mutate_at(c('wagered', 'profit'), ~formattable::currency(.x, digits = 0L)) %>%
+  mutate(ROI = formattable::percent(ROI)) %>%
+  kable(caption = "Kelly Bet vs. Vegas with $1000 Bankroll")
+
+```
+
+I should finish by stating the usual disclaimers made by any financial advisor: past performance is no guarantee of future results. The advantage on moneylines seen in the second half of the season by blending sportsbooks with RAPTOR may have been luck to begin with. And even if it were real, edges in the gambling world are often only temporary as sportsbooks and bettors alike re-calibrate their strategies. If anyone at FanDuel is reading this right now, that person has all summer to take this analysis into account.
+
+In which case, maybe I should have kept this all to myself... 🙃
 

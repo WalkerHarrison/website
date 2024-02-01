@@ -1,81 +1,55 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
-  
   <url>
     <loc>https://walker-harrison.com/posts/</loc>
-    <lastmod>2022-05-27T00:45:29-04:00</lastmod>
-  </url>
-  
-  <url>
+    <lastmod>2023-06-01T15:13:02-04:00</lastmod>
+  </url><url>
+    <loc>https://walker-harrison.com/posts/game_of_runs/</loc>
+    <lastmod>2023-06-01T15:13:02-04:00</lastmod>
+  </url><url>
+    <loc>https://walker-harrison.com/</loc>
+    <lastmod>2023-06-01T15:13:02-04:00</lastmod>
+  </url><url>
+    <loc>https://walker-harrison.com/posts/text-messages/</loc>
+    <lastmod>2022-07-24T10:58:47-04:00</lastmod>
+  </url><url>
     <loc>https://walker-harrison.com/posts/2022-05-27-evaluating-the-point-spreads-produced-by-538-s-raptor-metric/</loc>
     <lastmod>2022-05-27T00:45:29-04:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://walker-harrison.com/</loc>
-    <lastmod>2022-05-27T00:45:29-04:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://walker-harrison.com/posts/2022-01-09-abolish-overtime-an-argument-in-favor-of-more-ties-in-the-nfl/</loc>
     <lastmod>2021-12-30T00:15:29-05:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://walker-harrison.com/posts/2021-12-18-analyzing-the-groupme-to-prove-i-m-the-most-popular/</loc>
     <lastmod>2021-12-15T23:34:34-05:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://walker-harrison.com/posts/2021-11-13-unraveling-nfl-win-probability-graphs-to-find-the-best-games/</loc>
     <lastmod>2021-11-12T14:58:55-05:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://walker-harrison.com/posts/2021-06-27-stop-taking-l-s-when-walking-to-your-destination/</loc>
     <lastmod>2021-06-27T13:18:29-04:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://walker-harrison.com/posts/2021-03-21-figuring-out-when-citibike-rolled-out-e-bikes/</loc>
     <lastmod>2021-03-21T00:38:29-04:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://walker-harrison.com/posts/2021-02-13-visualizing-how-a-kernel-draws-a-smooth-line/</loc>
     <lastmod>2021-02-13T13:19:38-05:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://walker-harrison.com/posts/2021-01-23-gradient-ascent-finding-uphill-routes-for-my-long-walks/</loc>
     <lastmod>2021-01-17T18:33:22-05:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://walker-harrison.com/posts/2021-01-07-avoiding-variance-on-my-morning-commute/</loc>
     <lastmod>2020-12-29T12:28:19-05:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://walker-harrison.com/posts/2020-12-17-pushing-google-s-autocorrect-to-the-limit/</loc>
     <lastmod>2020-12-14T15:18:41-05:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://walker-harrison.com/about/</loc>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://walker-harrison.com/categories/</loc>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://walker-harrison.com/consulting/</loc>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://walker-harrison.com/tags/</loc>
   </url>
-  
 </urlset>

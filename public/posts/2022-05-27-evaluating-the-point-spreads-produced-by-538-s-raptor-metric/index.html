@@ -16,7 +16,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <!-- Enable responsiveness on mobile devices -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
-<meta name="generator" content="Hugo 0.79.0" />
+<meta name="generator" content="Hugo 0.121.2">
 
     
     
@@ -28,10 +28,10 @@
 <meta property="og:title" content="Evaluating the NBA point spreads produced by FiveThirtyEight&#39;s RAPTOR metric" />
 <meta property="og:description" content="FiveThirtyEight posts win probabilities and point spreads for every NBA game based on RAPTOR, their home-brewed player value metric. Are they any good?" />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="https://walker-harrison.com/posts/2022-05-27-evaluating-the-point-spreads-produced-by-538-s-raptor-metric/" />
-<meta property="og:image" content="https://walker-harrison.com/img/site-feature-image.jpeg"/>
-<meta property="article:published_time" content="2022-05-29T00:00:00+00:00" />
+<meta property="og:url" content="https://walker-harrison.com/posts/2022-05-27-evaluating-the-point-spreads-produced-by-538-s-raptor-metric/" /><meta property="og:image" content="https://walker-harrison.com/img/site-feature-image.jpeg" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2022-05-30T00:00:00+00:00" />
 <meta property="article:modified_time" content="2022-05-27T00:45:29-04:00" /><meta property="og:site_name" content="Title" />
+
 
 
     
@@ -46,7 +46,7 @@
 
 
 
-<link rel="stylesheet" href="/scss/hyde-hyde.7bbd1ff21eaa0bd4f72bc8c7deb96ae5ac8a3372852f89c1e7fad1290d1f74fe.css" integrity="sha256-e70f8h6qC9T3K8jH3rlq5ayKM3KFL4nB5/rRKQ0fdP4=">
+<link rel="stylesheet" href="/scss/hyde-hyde.05ad18f81da385d507a64344cf827ca5ab46c1c965d54179b47974ddd12cfcc8.css" integrity="sha256-Ba0Y&#43;B2jhdUHpkNEz4J8patGwcll1UF5tHl03dEs/Mg=">
 
 
 <link rel="stylesheet" href="/scss/print.03403d6699c303fba50f9bbd95f2810b3b0d125e1d67b107e4aff69cec69a2d7.css" integrity="sha256-A0A9ZpnDA/ulD5u9lfKBCzsNEl4dZ7EH5K/2nOxpotc=" media="print">
@@ -65,7 +65,7 @@
     
 
     
-<script type="application/javascript">
+<script>
 var doNotTrack = false;
 if (!doNotTrack) {
 	(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
@@ -77,9 +77,8 @@ if (!doNotTrack) {
 	ga('send', 'pageview');
 }
 </script>
-
     
-<script type="application/javascript">
+<script>
 var doNotTrack = false;
 if (!doNotTrack) {
 	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
@@ -193,7 +192,7 @@ if (!doNotTrack) {
     </div>
     
 <div class="copyright">
-  &copy; 2019 - 2022 htr3n
+  &copy; 2019 - 2024 htr3n
   
     <a href="https://creativecommons.org/licenses/by-sa/4.0">CC BY-SA 4.0</a>
   
@@ -219,14 +218,14 @@ Built with <a href="https://gohugo.io">Hugo</a> ❤️ <a href="https://github.c
 <div class="post__meta">
     
     
-      <i class="fas fa-calendar-alt"></i> May 29, 2022
+      <i class="fas fa-calendar-alt"></i> May 30, 2022
     
     
     
     
     
     <br/>
-    <i class="fas fa-clock"></i> 9 min read
+    <i class="fas fa-clock"></i> 12 min read
 </div>
 
 
@@ -243,6 +242,8 @@ Built with <a href="https://gohugo.io">Hugo</a> ❤️ <a href="https://github.c
 </center>
 <p>FiveThirtyEight did not design RAPTOR in order to create accurate betting lines for single NBA games. Rather it’s a <a href="https://fivethirtyeight.com/features/how-our-raptor-metric-works/" target="_blank">metric used to evaluate individual players</a> by updating Box Plus-Minus with player tracking data and then combining it with another established basketball statistic, On/Off Ratings. To arrive at a point spread for a particular game, FiveThirtyEight aggregates the average RAPTOR across a roster (weighted by projected playing time), and compares it with that of an opponent.</p>
 <p>All of that is to say that I don’t expect RAPTOR to be good at predicting NBA games, especially if they don’t have up-to-the-minute injury news. But if you’re going to throw up point spreads, I can’t help but see how accurate they are and compare them to the lines that Vegas offers, which are usually nearly impossible to beat.</p>
+<div id="overstated-homecourt-advantage" class="section level3">
+<h3>Overstated Homecourt Advantage</h3>
 <p>Aggregating and parsing all of FiveThirtyEight’s predictions for the 2021-2022 season is pretty straightforward once you click “Show More Games” on the aforementioned page and then download the HTML. All 1,230 regular season games are successfully accounted for; unspool the code below if you’re interested in the mechanics.</p>
 <details>
 <p><summary>Code</summary></p>
@@ -251,6 +252,8 @@ library(lubridate)
 library(rvest)
 library(patchwork)
 library(knitr)
+library(boot)
+
 options(dplyr.summarise.inform = FALSE)
 
 odds_to_prob &lt;- function(odds){
@@ -355,7 +358,8 @@ raptor &lt;- raptor_long_cleaned %&gt;%
 <p><img src="index_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
 <p>There’s a similar albeit more understated theme when comparing point spreads to the ultimate point differentials in each game. Note that the spread and differential are again always in terms of the home team, so that -5 would indicate a 5-point home favorite (or a 5-point home win). It’s subtle, but the gap below the blue smooth trend line and above the red identity line indicates that the spreads in general should be more positive (i.e. favor the home team less), especially for home dogs.</p>
 <p><img src="index_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
-<p>It would appear that RAPTOR spreads and win probabilities could use a bump toward the away team. Let’s now compare them to the famously sharp lines offered by sportsbooks, which I’m sourcing from <a href="https://www.sportsbookreviewsonline.com/scoresoddsarchives/nba/nbaoddsarchives.htm" target="_blank">sportsbooksreviewsonline.com</a>. While spreads will vary by as much as a point between different sportsbooks, they’re typically close enough that consensus lines like these will be sufficient for the analysis. Two of the 1,230 regular season games were missing lines, but I used Action Network spreads to fill those in.</p>
+<p>It would appear that RAPTOR spreads and win probabilities could use a bump toward the away team. As a recently as the 2019-2020 season, however, the calibration of their predictions was quite healthy, at least <a href="https://projects.fivethirtyeight.com/checking-our-work/nba-games/" target="_blank">according to a review</a> the website did of their own forecasts. One wonders if the COVID pandemic that led first to empty arenas and then to limited capacity events threw off their models’ grasp of homecourt advantage.</p>
+<p>Let’s now compare them to the famously sharp lines offered by sportsbooks, which I’m sourcing from <a href="https://www.sportsbookreviewsonline.com/scoresoddsarchives/nba/nbaoddsarchives.htm" target="_blank">sportsbooksreviewsonline.com</a>. While spreads will vary by as much as a point between different sportsbooks, they’re typically close enough that consensus lines like these will be sufficient for the analysis. Two of the 1,230 regular season games were missing lines, but I used Action Network spreads to fill those in.</p>
 <p>Again, all data cleaning code below for those interested.</p>
 <details>
 <p><summary>Code</summary></p>
@@ -431,6 +435,8 @@ sportsbook &lt;- sportsbook_raw %&gt;%
          team_home = Team.h,
          spread,
          prob = wp_home,
+         ML_home.sb = ML.h,
+         ML_away.sb = ML.v,
          total,
          score_away = Final.v,
          score_home = Final.h) %&gt;%
@@ -446,6 +452,7 @@ sportsbook &lt;- sportsbook_raw %&gt;%
 <p><img src="index_files/figure-html/unnamed-chunk-5-1.png" width="672" />
 Putting two and two together, you’d expect the RAPTOR win probabilities to be higher than the sportsbooks’, and their spreads to favor the home team more – at least when they’re underdogs, which we do indeed observe. As a technical note, RAPTOR spreads of +0.5 and -0.5 were converted to 0 (“pick ’em”) to match the sportsbooks, since functionally there’s no difference in games that can’t end in ties.</p>
 <p><img src="index_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+</div>
 <div id="the-mythical-fivethirtyeight-raptor-sportsbook" class="section level3">
 <h3>The Mythical FiveThirtyEight RAPTOR Sportsbook</h3>
 <p>So what if FiveThirtyEight opened a sportsbook and offered their RAPTOR lines to the public? Let’s pretend they posted the standard -110 odds for either side of their spreads and converted their win probabilities into moneylines with an extra 5% juice:</p>
@@ -496,7 +503,7 @@ Putting two and two together, you’d expect the RAPTOR win probabilities to be 
 <p>We could compare point differentials in our existing datasets, or we could examine alternative spreads on sportsbooks that are offered at various prices besides -110. Either approach yields a similar answer: each additional point is worth about 3% of expected value, so we will proceed with that assumption.</p>
 <p>Applying Kelly bets on a $1000 bankroll yields even better results. You’d make over $21,000 on spread bets or 16% ROI on about $133,000 of bets. On the moneyline bets, you’d make over $42,000, or close to 34% ROI on about $126,000 of bets:</p>
 <table>
-<caption><span id="tab:unnamed-chunk-8">Table 2: </span>Kelly Bet with $1000 Bankroll</caption>
+<caption><span id="tab:unnamed-chunk-8">Table 2: </span>Kelly Bet vs. RAPTOR with $1000 Bankroll</caption>
 <thead>
 <tr class="header">
 <th align="left">type</th>
@@ -535,7 +542,126 @@ Putting two and two together, you’d expect the RAPTOR win probabilities to be 
 <p>None of this analysis is meant to denigrate the work done on the RAPTOR metric or in general at FiveThirtyEight, a website that has consistently published a high standard of data journalism since its inception. As noted before, FiveThirtyEight did not create RAPTOR to predict individual games, so pretending that they would lose vs. Vegas in doing so isn’t exactly a radical observation.</p>
 <p>Plus, I assume that much of the sportsbooks’ advantage comes from letting their lines move up until the opening tip, either by manual intervention or via balancing incoming money from bettors.</p>
 <p>For example, the biggest disagreement between the two datasets is a December 15th game between the Lakers, who sportsbooks saw as a 4 point favorite, and the Mavs, who RAPTOR saw as a 7 point favorite. Luka Doncic was scratched from this game, probably without enough time for RAPTOR to bake his absence into their line, which accounts for the difference. In that sense, maybe it’s impressive that one could <em>only</em> get away with about 16% ROI on their spreads.</p>
-<p>I do find it curious that they haven’t calibrated their models to eliminate the home team bias, since that seems like a simple enough fix. But as long as they don’t open up a sportsbook, I guess it doesn’t really matter that much…</p>
+</div>
+<div id="better-together" class="section level3">
+<h3>Better Together</h3>
+<p>So RAPTOR figures don’t beat Vegas – does that mean they’re useless? Not necessarily. It’s possible that a blend of RAPTOR and sportsbook lines might actually be the optimal solution. It’s not hard to formulate a narrative for why this might be the case. If RAPTOR expresses raw player talent, then it’s possible that sportsbook lines overreact to injuries or spurious recent trends and need to be regressed toward the true skill of the collective team.</p>
+<p>Let’s split the data into the first and second halves of the season and fit a handful of models on the former. First we remove the home team bias from both the RAPTOR spreads and the win probabilities with simple slope-intercept models. The adjustments are simple, as you can see in both graphs that the lines are shifted toward the away team to varying degrees:</p>
+<p><img src="index_files/figure-html/unnamed-chunk-9-1.png" width="672" />
+Next we regress the results (point differential for spreads, binary won/loss for win probabilities) onto the inputs from both the sportsbooks and RAPTOR. These models are intentionally simple, with no non-linear effects or even interactions between the predictors, since it would be easy to chase noise for something as uncertain as NBA results.</p>
+<p>Looking at the coefficients, we see that while the sportsbooks’ info is preferred in both cases, the results are still drawing some predictive power from the RAPTOR lines:</p>
+<table>
+<caption><span id="tab:unnamed-chunk-10">Table 3: </span>Spread Blend Model</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">0.35</td>
+<td align="right">0.58</td>
+<td align="right">0.60</td>
+<td align="right">0.55</td>
+</tr>
+<tr class="even">
+<td align="left">spread.sb</td>
+<td align="right">0.60</td>
+<td align="right">0.21</td>
+<td align="right">2.84</td>
+<td align="right">0.00</td>
+</tr>
+<tr class="odd">
+<td align="left">spread.538_adj</td>
+<td align="right">0.44</td>
+<td align="right">0.22</td>
+<td align="right">2.01</td>
+<td align="right">0.04</td>
+</tr>
+</tbody>
+</table>
+<table>
+<caption><span id="tab:unnamed-chunk-11">Table 4: </span>Home Win Probability Blend Model</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-0.08</td>
+<td align="right">0.09</td>
+<td align="right">-0.87</td>
+<td align="right">0.39</td>
+</tr>
+<tr class="even">
+<td align="left">logit(prob.sb)</td>
+<td align="right">0.74</td>
+<td align="right">0.26</td>
+<td align="right">2.88</td>
+<td align="right">0.00</td>
+</tr>
+<tr class="odd">
+<td align="left">logit(prob.538_adj)</td>
+<td align="right">0.27</td>
+<td align="right">0.28</td>
+<td align="right">0.97</td>
+<td align="right">0.33</td>
+</tr>
+</tbody>
+</table>
+<p>Is this approach profitable? It’s not good enough to simply outperform the sportsbooks’ lines, since we have to make up their house advantage too, so the blended outputs’ edge has to be somewhat significant.</p>
+<p>Using the 600 or so games from the hold-out set that our models have not seen and applying the same Kelly Criterion from above, we get mixed results. The spread bets go a balanced 137-137-4 for a grand total of -$7, or effectively net even given that we’re wagering about $14,000. Note that while our game sample has only been cut in half, our amount wagered has dwindled to about 10% as compared to the original scenario, which tells us that our edge is much smaller.</p>
+<p>The moneyline bets actually yield 8% ROI, though, which is a very respectable figure in an industry with razor-thin margins. These results would imply that even though the RAPTOR lines aren’t very predictive in isolation, they can be used to sharpen sportsbook lines.</p>
+<table>
+<caption><span id="tab:unnamed-chunk-12">Table 5: </span>Kelly Bet vs. Vegas with $1000 Bankroll</caption>
+<thead>
+<tr class="header">
+<th align="left">type</th>
+<th align="right">bets</th>
+<th align="right">wagered</th>
+<th align="right">wins</th>
+<th align="right">losses</th>
+<th align="right">push</th>
+<th align="right">profit</th>
+<th align="right">ROI</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">spreads</td>
+<td align="right">278</td>
+<td align="right">$13,757</td>
+<td align="right">137</td>
+<td align="right">137</td>
+<td align="right">4</td>
+<td align="right">$-7</td>
+<td align="right">-0.05%</td>
+</tr>
+<tr class="even">
+<td align="left">moneyline</td>
+<td align="right">384</td>
+<td align="right">$11,113</td>
+<td align="right">149</td>
+<td align="right">235</td>
+<td align="right">0</td>
+<td align="right">$869</td>
+<td align="right">7.82%</td>
+</tr>
+</tbody>
+</table>
+<p>I should finish by stating the usual disclaimers made by any financial advisor: past performance is no guarantee of future results. The advantage on moneylines seen in the second half of the season by blending sportsbooks with RAPTOR may have been luck to begin with. And even if it were real, edges in the gambling world are often only temporary as sportsbooks and bettors alike re-calibrate their strategies. If anyone at FanDuel is reading this right now, that person has all summer to take this analysis into account.</p>
+<p>In which case, maybe I should have kept this all to myself… 🙃</p>
 </div>
 
   </div>
@@ -548,6 +674,11 @@ Putting two and two together, you’d expect the RAPTOR win probabilities to be 
       <span class="navigation-tittle">Abolish Overtime! An Argument in Favor of More Ties in the NFL</span>
     </a>
     
+    
+    <a href="/posts/text-messages/" class="navigation-next">
+      <span class="navigation-tittle">I&#39;ve Got The Receipts! Sifting Through My Own Personal iMessage History</span>
+      <i aria-hidden="true" class="fa fa-chevron-right"></i>
+    </a>
     
 </div>
 
@@ -587,7 +718,7 @@ Putting two and two together, you’d expect the RAPTOR win probabilities to be 
 
   
   
-<script type="application/javascript">
+<script>
 var doNotTrack = false;
 if (!doNotTrack) {
 	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
@@ -605,6 +736,7 @@ if (!doNotTrack) {
 <script type="text/javascript" id="MathJax-script" async
   src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
 </script>
+
 
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/highlight.min.js"></script>

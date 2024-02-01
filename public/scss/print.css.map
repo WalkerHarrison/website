@@ -1,7 +1,7 @@
 {
 	"version": 3,
 	"file": "print.css",
-	"sourceRoot": "/Users/walkerharrison/Desktop/website_wrapper/website",
+	"sourceRoot": "C:/Users/Walker Harrison/Documents/GitHub/website",
 	"sources": [
 		"themes/hyde-hyde/assets/scss/print.scss",
 		"themes/hyde-hyde/assets/scss/hyde-hyde/_variables.scss",
