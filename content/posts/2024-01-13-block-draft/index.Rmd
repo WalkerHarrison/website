@@ -1,7 +1,7 @@
 ---
 title: "Greatness within the Grid: Can I find the Best Block in New York City?"
 author: Walker Harrison
-date: '2024-01-28'
+date: '2024-02-03'
 slug: best_block
 categories: []
 tags: []
@@ -14,25 +14,34 @@ highlight: yes
 
 
 ```{css, echo=FALSE}
-.maptab td {
+.leaflet td {
   padding:5px 10px 5px 10px;
 }
 
-.maptab table td {
+.leaflet table td {
   border-top: thin solid; 
   border-bottom: thin solid;
 }
 
-.maptab table td:first-child {
+.leaflet table td:first-child {
   border-left: thin solid;
 }
 
-.maptab table td:last-child {
+.leaflet table td:last-child {
   border-right: thin solid;
 }
 
 figure figcaption {
   text-align: center;
+}
+
+.scrollable {
+    height: 200px; /* or any value */
+    overflow-y: auto;
+}
+
+div.leaflet-popup-content {
+  max-width:300px !important;
 }
 ```
 
@@ -66,6 +75,7 @@ library(leaflet)
 library(sf)
 library(knitr)
 library(kableExtra)
+library(htmltools)
 
 #getwd()
 
@@ -89,7 +99,7 @@ Koreatown is more of a commercial area than a residential one though, so it's ha
 <figcaption><i>The many businesses of our top ranked block</i></figcaption>
 </figure>
 
-Are the inhabitants of this block aware that they reside atop arguably the peak of New York City convenience? To answer that question, I had to engage in some field work, a rare task for a blogger. So on a cold Monday night in January, I posted up on 10th St and 2nd Avenue and asked some of the local residents if they had considered their block's abundant resources and taken advantage of them accordingly.
+Are this block's inhabitants aware that they reside atop arguably the peak of New York City convenience? To answer that question, I had to engage in some field work, a rare task for the sedentary blogger. So on a cold Monday night in January, I posted up on 10th St and 2nd Avenue and asked some of the local residents if they had considered their block's abundant resources and taken advantage of them accordingly.
 
 One man noted how easy it was to "go for a bite or a drink," while another praised the convenience store that was just around the corner. Two people listed Madame Vo, a Vietnamese restaurant on 10th St, as a frequent destination. But overall they didn't share the appreciation I had for their block's top status, and were quick to list businesses that fell outside of their atomic rectangle, violating the constraints of my optimization. It appears that an obsession with extreme proximity might be reserved for people lucky enough to have lived around the corner from school. 
 
@@ -100,9 +110,49 @@ load("page_elements.Rdata")
 table
 ```
 
-<iframe src="/html/map.html" frameBorder = "0" width = "100%" height = "900px" data-external = "1"></iframe> 
+```{r, echo = FALSE}
+map_css <- "
+.leaflet td {
+  padding:5px 10px 5px 10px;
+}
 
-All code used to analyze the data and display the results can be found below. Thanks for reading!
+.leaflet table td {
+  border-top: thin solid; 
+  border-bottom: thin solid;
+}
+
+.leaflet table td:first-child {
+  border-left: thin solid;
+}
+
+.leaflet table td:last-child {
+  border-right: thin solid;
+}
+
+figure figcaption {
+  text-align: center;
+}
+
+.scrollable {
+    height: 200px; /* or any value */
+    overflow-y: auto;
+}
+
+div.leaflet-popup-content {
+  max-width:300px !important;
+}
+
+"
+
+browsable(
+  tagList(list(
+    tags$head(tags$style(map_css)),
+    big_map
+  ))
+)
+```
+
+All code used to analyze the data and display the results can be found below. Thanks for reading! 
 
 <details>
 <summary>Code</summary>
@@ -254,7 +304,7 @@ g <- grid_point_ix %>%
          full_row = paste0("<tr>", both_cells, "</tr>")) %>%
   group_by(grid_idx, total_points, distinct_cat) %>%
   # collapsing into html table for each grid
-  summarize(full_table = paste0("<table>", paste0(full_row, collapse = ""), "</table>")) %>%
+  summarize(full_table = paste0('<div class="scrollable">', '<table>', paste0(full_row, collapse = ""), '</table>', '</div>')) %>%
   ungroup() %>%
   left_join(grids_nyc, ., by = c("grid_idx")) %>%
   mutate(total_points = coalesce(total_points, 0),
@@ -302,7 +352,7 @@ block_map <- leaflet() %>%
                                          direction = "left",
                                          textsize = "15px"))
 
-big_map <- leaflet() %>% 
+big_map <- leaflet(height = "900px") %>% 
   addProviderTiles(providers$Stadia.StamenTonerLite) %>% 
   # zip data for search function
   addPolygons(data = zips,
@@ -323,11 +373,10 @@ big_map <- leaflet() %>%
                     options = searchFeaturesOptions(
                       textPlaceholder = 'Search by ZIP',
                       zoom = 15,
-                      collapsed = FALSE)
+                      collapsed = FALSE,
+                      position = "topright")
   ) %>%
   addResetMapButton()
-
-htmlwidgets::saveWidget(big_map, file = "map.html")
 
 table <- g %>%
   # only want real blocks no huge lots
@@ -346,7 +395,7 @@ table <- g %>%
   kbl(escape = FALSE) %>%
   kable_styling()
 
-save(table, big_map, file = "page_elements.Rdata") 
+save(table, big_map, file = "page_elements.Rdata")
 ```
 
 </details>
