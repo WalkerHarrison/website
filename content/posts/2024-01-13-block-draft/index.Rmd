@@ -36,7 +36,7 @@ figure figcaption {
 }
 
 .scrollable {
-    height: 200px; /* or any value */
+  height: 200px; /* or any value */
     overflow-y: auto;
 }
 
@@ -103,12 +103,14 @@ Are this block's inhabitants aware that they reside atop arguably the peak of Ne
 
 One man noted how easy it was to "go for a bite or a drink," while another praised the convenience store that was just around the corner. Two people listed Madame Vo, a Vietnamese restaurant on 10th St, as a frequent destination. But overall they didn't share the appreciation I had for their block's top status, and were quick to list businesses that fell outside of their atomic rectangle, violating the constraints of my optimization. It appears that an obsession with extreme proximity might be reserved for people lucky enough to have lived around the corner from school. 
 
-In any case, below are the top ten blocks in our dataset with additional details available if you expand the `locations` header. If you'd like to explore other areas or type in your own NYC zip code, take a look at the accompanying map (be patient with her -- she is large and slow):
+In any case, below are the top ten blocks in our dataset with additional details available if you expand the `locations` header:
 
 ```{r, echo = FALSE}
 load("page_elements.Rdata")
 table
 ```
+
+If you'd like to explore other areas or type in your own NYC zip code, take a look at the accompanying map (be patient with her -- she is large and slow):
 
 ```{r, echo = FALSE}
 map_css <- "
@@ -166,6 +168,7 @@ library(leaflet.extras)
 library(htmltools)
 library(knitr)
 library(kableExtra)
+library(stringi)
 
 options(dplyr.summarise.inform = FALSE)
 expand.grid.df <- function(...) Reduce(function(...) merge(..., by=NULL), list(...))
@@ -281,11 +284,19 @@ grid_point_ix <- grids_nyc %>%
 save(grids_nyc, grid_point_ix, file = "grid_items.Rdata")
 load("grid_items.Rdata")
 
+# OSM string encoding came in wonky (Latin1?)
+fix_string <- function(strings) {
+  map_chr(strings, ~
+            # no clue why this works
+            rawToChar(charToRaw(stri_encode(charToRaw(.x), from = "UTF-8", to = "latin1")))
+          )
+}
 
 
 # giant pipe chain that formats blocks for mapping
 g <- grid_point_ix %>%
   group_by(grid_idx, category) %>%
+  mutate(name = fix_string(name)) %>%
   # total points and list by grid and category
   summarize(n = n(), locs = list(name)) %>%
   mutate(category = str_replace_all(category, "_", " ")) %>%
@@ -341,6 +352,9 @@ colfunc <- colorRampPalette(c("gray",
 
 factpal <- colorFactor(colfunc(15), sort(unique(g$points_bin)))
 
+simple_levels <- factor(c('0', '5', '10', '15', '20+'), levels =  c('0', '5', '10', '15', '20+'))
+factpal2 <- colorFactor(colfunc(length(simple_levels)), simple_levels)
+
 block_map <- leaflet() %>% 
   addProviderTiles(providers$Stadia.StamenTonerLite) %>% 
   addCircles(data = grid_point_ix %>% 
@@ -352,7 +366,7 @@ block_map <- leaflet() %>%
                                          direction = "left",
                                          textsize = "15px"))
 
-big_map <- leaflet(height = "900px") %>% 
+big_map <- leaflet(height = "700px") %>% 
   addProviderTiles(providers$Stadia.StamenTonerLite) %>% 
   # zip data for search function
   addPolygons(data = zips,
@@ -376,7 +390,11 @@ big_map <- leaflet(height = "900px") %>%
                       collapsed = FALSE,
                       position = "topright")
   ) %>%
-  addResetMapButton()
+  addResetMapButton() %>%
+  addLegend("bottomright", pal = factpal2, values = simple_levels,
+            title = "total points",
+            opacity = 1
+  )
 
 table <- g %>%
   # only want real blocks no huge lots
@@ -395,6 +413,7 @@ table <- g %>%
   kbl(escape = FALSE) %>%
   kable_styling()
 
+#save(table, big_map, file = "C:/Users/Walker Harrison/Documents/GitHub/website/content/posts/2024-01-13-block-draft/page_elements.Rdata")
 save(table, big_map, file = "page_elements.Rdata")
 ```
 
