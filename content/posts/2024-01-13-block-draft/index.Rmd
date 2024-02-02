@@ -47,6 +47,7 @@ div.leaflet-popup-content {
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+knitr::opts_knit$set(root.dir = 'C:/Users/Walker Harrison/Documents/GitHub/website/content/posts/2024-01-13-block-draft')
 ```
 
 The house I grew up in was so close to my high school that if I poked my head out of our bathroom window on the top floor, I could actually see my fellow students scampering around the yard during their PE classes. On occasion I'd daydream about how much time I might save if I could somehow string a zipline between the two endpoints and glide onto campus every morning.
@@ -109,9 +110,9 @@ In any case, below are the top ten blocks in our dataset with additional details
 load("page_elements.Rdata")
 table
 ```
-
+<br>
 If you'd like to explore other areas or type in your own NYC zip code, take a look at the accompanying map (be patient with her -- she is large and slow):
-
+<br>
 ```{r, echo = FALSE}
 map_css <- "
 .leaflet td {
