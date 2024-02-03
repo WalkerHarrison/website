@@ -1,7 +1,7 @@
 ---
-title: "Greatness within the Grid: Can I find the Best Block in New York City?"
+title: "Grid Search: Finding the Most Convenient Block to Live on in New York City"
 author: Walker Harrison
-date: '2024-01-03'
+date: '2024-02-03'
 slug: best_block
 categories: []
 tags: []
