@@ -2,108 +2,115 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Walker Harrison</title>
-    <link>https://walker-harrison.com/</link>
+    <link>http://localhost:6849/</link>
     <description>Recent content on Walker Harrison</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Sun, 04 Jun 2023 00:00:00 +0000</lastBuildDate>
-    <atom:link href="https://walker-harrison.com/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 01 Jun 2023 15:13:02 -0400</lastBuildDate>
+    <atom:link href="http://localhost:6849/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Grid Search: Finding the Most Convenient Block to Live on in New York City</title>
+      <link>http://localhost:6849/posts/best_block/</link>
+      <pubDate>Sat, 03 Feb 2024 00:00:00 +0000</pubDate>
+      <guid>http://localhost:6849/posts/best_block/</guid>
+      <description>They say you can find anything in New York, but can you find anything on a single block without crossing the street?</description>
+    </item>
     <item>
       <title>Is every Run Random? Investigating Momentum and Streaky Scoring in NBA Basketball</title>
-      <link>https://walker-harrison.com/posts/game_of_runs/</link>
+      <link>http://localhost:6849/posts/game_of_runs/</link>
       <pubDate>Sun, 04 Jun 2023 00:00:00 +0000</pubDate>
-      <guid>https://walker-harrison.com/posts/game_of_runs/</guid>
+      <guid>http://localhost:6849/posts/game_of_runs/</guid>
       <description>NBA players often refer to their sport as a &amp;ldquo;game of runs,&amp;rdquo; but is there anything to that term beyond describing a simple random process?</description>
     </item>
     <item>
       <title>I&#39;ve Got The Receipts! Sifting Through My Own Personal iMessage History</title>
-      <link>https://walker-harrison.com/posts/text-messages/</link>
+      <link>http://localhost:6849/posts/text-messages/</link>
       <pubDate>Sun, 24 Jul 2022 00:00:00 +0000</pubDate>
-      <guid>https://walker-harrison.com/posts/text-messages/</guid>
+      <guid>http://localhost:6849/posts/text-messages/</guid>
       <description>Discovering that five years&amp;rsquo; worth of text messages were sitting on my MacBook allowed me to profile myself as a communicator and track the changes in my personal network.</description>
     </item>
     <item>
       <title>Evaluating the NBA point spreads produced by FiveThirtyEight&#39;s RAPTOR metric</title>
-      <link>https://walker-harrison.com/posts/2022-05-27-evaluating-the-point-spreads-produced-by-538-s-raptor-metric/</link>
+      <link>http://localhost:6849/posts/2022-05-27-evaluating-the-point-spreads-produced-by-538-s-raptor-metric/</link>
       <pubDate>Mon, 30 May 2022 00:00:00 +0000</pubDate>
-      <guid>https://walker-harrison.com/posts/2022-05-27-evaluating-the-point-spreads-produced-by-538-s-raptor-metric/</guid>
+      <guid>http://localhost:6849/posts/2022-05-27-evaluating-the-point-spreads-produced-by-538-s-raptor-metric/</guid>
       <description>FiveThirtyEight posts win probabilities and point spreads for every NBA game based on RAPTOR, their home-brewed player value metric. Are they any good?</description>
     </item>
     <item>
       <title>Abolish Overtime! An Argument in Favor of More Ties in the NFL</title>
-      <link>https://walker-harrison.com/posts/2022-01-09-abolish-overtime-an-argument-in-favor-of-more-ties-in-the-nfl/</link>
+      <link>http://localhost:6849/posts/2022-01-09-abolish-overtime-an-argument-in-favor-of-more-ties-in-the-nfl/</link>
       <pubDate>Sat, 08 Jan 2022 00:00:00 +0000</pubDate>
-      <guid>https://walker-harrison.com/posts/2022-01-09-abolish-overtime-an-argument-in-favor-of-more-ties-in-the-nfl/</guid>
+      <guid>http://localhost:6849/posts/2022-01-09-abolish-overtime-an-argument-in-favor-of-more-ties-in-the-nfl/</guid>
       <description>As unappealing as ties are to the average American sports fan, creating more of them in the NFL by eliminating the overtime period has a handful of advantages.</description>
     </item>
     <item>
       <title>Who&#39;s the Funny One? Analyzing 7 Years of Messages from my College GroupMe</title>
-      <link>https://walker-harrison.com/posts/2021-12-18-analyzing-the-groupme-to-prove-i-m-the-most-popular/</link>
+      <link>http://localhost:6849/posts/2021-12-18-analyzing-the-groupme-to-prove-i-m-the-most-popular/</link>
       <pubDate>Tue, 21 Dec 2021 00:00:00 +0000</pubDate>
-      <guid>https://walker-harrison.com/posts/2021-12-18-analyzing-the-groupme-to-prove-i-m-the-most-popular/</guid>
+      <guid>http://localhost:6849/posts/2021-12-18-analyzing-the-groupme-to-prove-i-m-the-most-popular/</guid>
       <description>A group of nine friends and I have sent over 100,000 messages on GroupMe in the last seven years. Such a sizable corpus gives us a chance to figure out when the chat is most active, who receives and gets the most likes, and what unique terms define each participant.</description>
     </item>
     <item>
       <title>Unraveling NFL Win Probability Graphs to Find the Best Games</title>
-      <link>https://walker-harrison.com/posts/2021-11-13-unraveling-nfl-win-probability-graphs-to-find-the-best-games/</link>
+      <link>http://localhost:6849/posts/2021-11-13-unraveling-nfl-win-probability-graphs-to-find-the-best-games/</link>
       <pubDate>Sat, 13 Nov 2021 00:00:00 +0000</pubDate>
-      <guid>https://walker-harrison.com/posts/2021-11-13-unraveling-nfl-win-probability-graphs-to-find-the-best-games/</guid>
+      <guid>http://localhost:6849/posts/2021-11-13-unraveling-nfl-win-probability-graphs-to-find-the-best-games/</guid>
       <description>How do you determine how good a game is from its win probability graph? You could compute the Excitement Index by adding up all the changes, or you could take a visual approach and &amp;ldquo;pull&amp;rdquo; all the slack out of the chart.</description>
     </item>
     <item>
       <title>Stop Taking L&#39;s When Walking to Your Destination </title>
-      <link>https://walker-harrison.com/posts/2021-06-27-stop-taking-l-s-when-walking-to-your-destination/</link>
+      <link>http://localhost:6849/posts/2021-06-27-stop-taking-l-s-when-walking-to-your-destination/</link>
       <pubDate>Sun, 27 Jun 2021 00:00:00 +0000</pubDate>
-      <guid>https://walker-harrison.com/posts/2021-06-27-stop-taking-l-s-when-walking-to-your-destination/</guid>
+      <guid>http://localhost:6849/posts/2021-06-27-stop-taking-l-s-when-walking-to-your-destination/</guid>
       <description>We&amp;rsquo;re often directed to get from one point in a grid to another by taking a single turn and otherwise walking in two long segments. But the Walk/Don&amp;rsquo;t Walk signs that dictate our travel make this approach very inefficent, and motivate a better strategy that may save you a few minutes.</description>
     </item>
     <item>
       <title>Estimating When CitiBike Rolled Out E-Bikes Using Change Point Detection</title>
-      <link>https://walker-harrison.com/posts/2021-03-21-figuring-out-when-citibike-rolled-out-e-bikes/</link>
+      <link>http://localhost:6849/posts/2021-03-21-figuring-out-when-citibike-rolled-out-e-bikes/</link>
       <pubDate>Sun, 21 Mar 2021 00:00:00 +0000</pubDate>
-      <guid>https://walker-harrison.com/posts/2021-03-21-figuring-out-when-citibike-rolled-out-e-bikes/</guid>
+      <guid>http://localhost:6849/posts/2021-03-21-figuring-out-when-citibike-rolled-out-e-bikes/</guid>
       <description>If electric bikes allow their riders to travel at greater speeds, will there be a corresponding dip in average trip duration between bikeshare docks that we can find in the data? We try to answer that question by applying a change point model to a notoriously difficult uphill route.</description>
     </item>
     <item>
       <title>Visualizing How a Kernel Draws a Smooth Line</title>
-      <link>https://walker-harrison.com/posts/2021-02-13-visualizing-how-a-kernel-draws-a-smooth-line/</link>
+      <link>http://localhost:6849/posts/2021-02-13-visualizing-how-a-kernel-draws-a-smooth-line/</link>
       <pubDate>Sat, 13 Feb 2021 00:00:00 +0000</pubDate>
-      <guid>https://walker-harrison.com/posts/2021-02-13-visualizing-how-a-kernel-draws-a-smooth-line/</guid>
+      <guid>http://localhost:6849/posts/2021-02-13-visualizing-how-a-kernel-draws-a-smooth-line/</guid>
       <description>How does software like Excel or R trace a smooth line through a series of points? It&amp;rsquo;s easier to understand by visualizing how new values are created as a weighted mean of the existing data.</description>
     </item>
     <item>
       <title>Gradient Ascent: Finding Uphill Routes for my Long Walks</title>
-      <link>https://walker-harrison.com/posts/2021-01-23-gradient-ascent-finding-uphill-routes-for-my-long-walks/</link>
+      <link>http://localhost:6849/posts/2021-01-23-gradient-ascent-finding-uphill-routes-for-my-long-walks/</link>
       <pubDate>Sat, 23 Jan 2021 00:00:00 +0000</pubDate>
-      <guid>https://walker-harrison.com/posts/2021-01-23-gradient-ascent-finding-uphill-routes-for-my-long-walks/</guid>
+      <guid>http://localhost:6849/posts/2021-01-23-gradient-ascent-finding-uphill-routes-for-my-long-walks/</guid>
       <description>An old back injury makes it so that walking uphill is much more comfortable for me than walking downhill. A programmatic search for uphill routes reveals how strict constraints and &amp;ldquo;greedy&amp;rdquo; decisions can lead to sub-optimal results.</description>
     </item>
     <item>
       <title>Avoiding Variance on my Morning Commute</title>
-      <link>https://walker-harrison.com/posts/2021-01-07-avoiding-variance-on-my-morning-commute/</link>
+      <link>http://localhost:6849/posts/2021-01-07-avoiding-variance-on-my-morning-commute/</link>
       <pubDate>Sun, 10 Jan 2021 00:00:00 +0000</pubDate>
-      <guid>https://walker-harrison.com/posts/2021-01-07-avoiding-variance-on-my-morning-commute/</guid>
+      <guid>http://localhost:6849/posts/2021-01-07-avoiding-variance-on-my-morning-commute/</guid>
       <description>Sacrificing value for certainty is a common tradeoff in life. Is this what I was (accidentally) doing when I started walking the first part of my daily commute instead of taking the subway? Some historical MTA data can help answer that question.</description>
     </item>
     <item>
       <title>Pushing Google&#39;s Autocorrect to the Limit</title>
-      <link>https://walker-harrison.com/posts/2020-12-17-pushing-google-s-autocorrect-to-the-limit/</link>
+      <link>http://localhost:6849/posts/2020-12-17-pushing-google-s-autocorrect-to-the-limit/</link>
       <pubDate>Sat, 26 Dec 2020 00:00:00 +0000</pubDate>
-      <guid>https://walker-harrison.com/posts/2020-12-17-pushing-google-s-autocorrect-to-the-limit/</guid>
+      <guid>http://localhost:6849/posts/2020-12-17-pushing-google-s-autocorrect-to-the-limit/</guid>
       <description>Everyone makes errors sometimes when hastily typing a query into a search bar, and most of the time Google is able to recognize your mistake and offer a suggestion. But what is this algorithm&amp;rsquo;s breaking point? How badly can you mis-type a word before even Google doesn&amp;rsquo;t know what you mean anymore?</description>
     </item>
     <item>
       <title>About Me!</title>
-      <link>https://walker-harrison.com/about/</link>
+      <link>http://localhost:6849/about/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      <guid>https://walker-harrison.com/about/</guid>
+      <guid>http://localhost:6849/about/</guid>
       <description>Hello! My name is Walker Harrison and I&amp;rsquo;m a data scientist.&#xA;I graduated from Columbia University in 2014 with a double major in mathematics and creative writing. After working in marketing and business development roles for several years at IBM and The Practical Dev, I got my Master&amp;rsquo;s degree in statistics from Duke University. Since 2018 I have been working as a quantitative analyst for the New York Yankees.&#xA;This website will be used primarily to publish blogposts that explore some of the ways statistics intersect with our everyday lives.</description>
     </item>
     <item>
       <title>Consulting</title>
-      <link>https://walker-harrison.com/consulting/</link>
+      <link>http://localhost:6849/consulting/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      <guid>https://walker-harrison.com/consulting/</guid>
+      <guid>http://localhost:6849/consulting/</guid>
       <description>If you or your company need assistance somewhere along the data analysis pipeline, I may be a good fit.&#xA;I have experience in data extraction and retrieval, including web scraping of both static and dynamic content. I am well versed in SQL and have set up relational databases for various personal projects, including ones that required &amp;ldquo;big data.&amp;rdquo; I do most of my data cleaning and manipulation in R, and enjoy helping others wrangle their data via Stack Overflow questions.</description>
     </item>
   </channel>
