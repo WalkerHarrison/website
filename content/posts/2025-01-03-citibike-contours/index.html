@@ -8,21 +8,21 @@ tags: []
 lastmod: '2025-01-03T18:25:19-05:00'
 layout: post
 type: post
-summary: lorem ipsum
+summary: It's no secret that going uphill is harder than going downhill. Can we apply that concept to public CitiBike rider data to estimate Brooklyn's peaks and valleys?
 highlight: yes
 ---
 
 
 
 <p>Legend has it that mere moments after inventing the bicycle in 1817, Karl von Drais tried riding it up a steep hill and, after recognizing how miserable a task he’d embarked upon, exclaimed, “Well, this freakin’ sucks.”</p>
-<p>It’s possible von Drais didn’t actually say that, but I certainly thought it recently when I tried riding a CitiBike uphill in my hometown of Park Slope, a neigborhood quite literally named after the distinct descent that characterizes it. I imagined how free and easy the opposite route would be – I could probably coast down the gradient from Prospect Park without even pedaling.</p>
-<p>Indeed, if you query the data that CitiBike makes available, you’ll find that riders making my same arduous journey up Third Street across three avenues did so in about three and a half minutes, while riders going in the other direction between those two stations took only about two and a half minutes on average. This data only provides ride duration and no actual time series of position or velocity, but we can still calculate effective “straight-line” speeds of 5.8 and 7.6 miles per hour, respectively, once we determine the stations are 0.33 miles apart.</p>
+<p>It’s possible von Drais didn’t actually say that, but I certainly thought it recently when I tried riding a CitiBike uphill in my hometown of Park Slope, a neigborhood quite literally named after its characteristic gradient. I imagined how free and easy the opposite route would be – I could probably coast down the descent from Prospect Park without even pedaling.</p>
+<p>Indeed, if you query the data that CitiBike makes available, you’ll find that riders making my same arduous journey up Third Street across several avenues did so in about three and a half minutes, while riders going in the other direction between those two stations took only about two and a half minutes on average. This data only provides ride duration and no actual time series of position or velocity, but we can still calculate effective “straight-line” speeds of 5.8 and 7.6 miles per hour, respectively, once we determine the stations are 0.33 miles apart.</p>
 <figure>
 <center>
-<img src="/img/z1.png"/>
+<img src="/img/z1_cropped.png"/>
 </center>
 </figure>
-<p>How well does this idea scale, though? If the hill between Prospect Park West and 7th Avenue leaves a signature in CitiBike data, is the difference in elevation between any two endpoints embedded in the net speed achieved by bikers riding between them? Nearly half of Brooklyn is covered in a dense lattice of over 700 CitiBike stations that accounted for X rides in 2024. Is the data that system generates enough to reverse-engineer a topographic map of the borough?</p>
+<p>How well does this idea scale, though? If the hill between Prospect Park West and 7th Avenue leaves a signature in CitiBike data, is the difference in elevation between any two endpoints embedded in the net speed achieved by bikers riding between them? Nearly half of Brooklyn is covered in a dense lattice of over 700 CitiBike stations that accounted for millions of rides in 2024. <strong>Is the data that system generates enough to reverse-engineer a topographic map of the borough?</strong></p>
 <p>First, let’s examine an actual topographic map of Brooklyn overlaid with the locations of CitiBike stations. The aforementioned hill that peaks along the west side of Prospect Park is part of a larger ridge that starts in Sunset Park, extends northeast into Prospect Heights, and then turns east through Crown Heights. There are also more isolated patches of elevation in Carroll Gardens, Downtown Brooklyn, and Williamsburg. The map bottoms out along the waterfront and in the Gowanus region. Any elevation patterns in the southeast corner will not be recoverable in our experiment since there are no stations there.</p>
 <figure>
 <center>
@@ -35,15 +35,15 @@ highlight: yes
 <li><p>Rides must be on the old-school manual bikes. The new, increasingly popular e-bikes make it much easier to resist the pull of gravity, which risks muting the very pattern we’re looking for.</p></li>
 <li><p>Rides must be taken by subscribers and not single-pass users. Repeat riders are more likely to be using the bike for practical reasons while the one-off renters might be tourists looking for a leisurely, scenic ride.</p></li>
 <li><p>Distances between stations cannot be longer than a mile. This constraint helps us reduce the data size and also likely protects us from longer journeys which could feature more indirect routes or less precise elevation changes.</p></li>
-<li><p>Rides must achieve a straight-line speed of at least 3 MPH and at most 30 MPH are counted. If you are going slower than that, you’re likely not trying to get from Point A to Point B with any haste (in fact many renters return their bike at or near the starting point after meandering around the local area). If you’re going faster than that, the data is likely corrupt or you’re a world-class cyclist ripping through crowded urban areas – please slow down, sir.</p></li>
+<li><p>Rides must achieve a straight-line speed of at least 3 MPH and at most 30 MPH. If you are going slower than that, you’re likely not trying to get from Point A to Point B with any haste (in fact many renters return their bike at or near the starting point after meandering around the local area). If you’re going faster than that, the data is likely corrupt or you’re a world-class cyclist ripping through crowded urban areas – please slow down, sir.</p></li>
 </ol>
-<p>Below is a vector field of net speeds in Park Slope. The arrows point through the gridded streets instead of exclusively along them thanks to Rule # 1, which pretends that bikers ride “as the crow flies.” In any case, they generally point down hill, which is a good early sign.</p>
+<p>Once we’ve applied these filters, speeds in both directions between any pair of stations are easy to calculate. Below is a vector field of net speeds in Park Slope. The arrows point through the gridded streets instead of exclusively along them thanks to Rule # 1, which pretends that bikers ride “as the crow flies.” In any case, they generally point down hill, which is a good early sign.</p>
 <figure>
 <center>
-<img src="/img/mps.png"/>
+<img src="/img/mps_cropped.png"/>
 </center>
 </figure>
-<p>So how are we going to back into elevation coordinates from these speed comparisons? The key is to assume that there’s some sort of positive relationship between going downhill and going faster, and then iteratively increase that correlation by adjusting the elevation data until we can no longer make any meaningful improvements.</p>
+<p>So how are we going to back into elevation coordinates for CitiBike stations from these speed comparisons? The key is to assume that there’s some sort of positive relationship between going downhill and going faster, and then iteratively increase that correlation by adjusting the elevation data until we can no longer make any meaningful improvements.</p>
 <p>In more technical terms, this is a high-dimensional optimization problem. Our unknown parameters are the 700 or so elevations of our CitiBike stations. The loss function is the goodness of fit (in our case, the average squared residual) for a linear model regressing the difference in average speed between stations on the difference in elevation implied by those input parameters.</p>
 <p>Here is a composite visualization of the optimization’s first 200 iterations. From left to right, the elevations are updated, leading to an increasingly precise relationship between the elevation difference and net speed achieved between all pairs of stations, which drives down our assessment criteria and informs the algorithm how to further update the elevations.</p>
 <figure>
@@ -51,17 +51,762 @@ highlight: yes
 <img src="/img/combo.gif"/>
 </center>
 </figure>
-<p>After a thousand iterations and many hours of torching my processor with parallel computing, the optimization is complete, or at least good enough. The results are surprisingly accurate. Once you put the optimized parameters on the same scale as the actual figures, 69% of our estimates are within five feet of their true elevations, good for 87% correlation.</p>
+<p>After a thousand iterations and many hours of torching my processor with parallel computing, the optimization is complete, or at least good enough. The results are surprisingly accurate. Once you put the optimized parameters on the same scale as the actual CitiBike elevations (whch we can look up), 69% of our estimates are within five meters of the true figures, good for 87% correlation.</p>
 <p>The big misses, such as the conspicuous one in the bottom right of the scatterplot, are intriguing in their own right. The algorithm thinks the station on Johnson St. and Brooklyn Bridge Boulevard sits atop a 42-meter peak based on the high speed achieved by bikers riding away from it. But in reality, the routes leading into that station are simply much more indirect thanks to one-way streets, confusing the model into thinking they are uphill. Errors like this would be reduced if we had access to actual traveling speeds of the bikes instead of just trip durations.</p>
 <figure>
 <center>
 <img src="/img/c1.png"/>
 </center>
 </figure>
-<p>And finally, if we use these implied elevations to build a contour map, we get something that’s a good bit smoother than the actual topographic map, which makes sense when building something from a coarser data set, but still pretty similar to the original. Here are the two side-by-side.</p>
+<p>And finally, we can plug these implied station elevations into a 2D-smoother to build a contour map. We get something that’s a good bit smoother than the actual topographic map, which makes sense when relying on a coarser data set, but still pretty similar to the original. Here are the two side-by-side.</p>
 <figure>
 <center>
-<img src="/img/comp_wide.png"/>
+<img src="/img/comp_wide_cropped.png"/>
 </center>
 </figure>
 <p>Functionally there’s no use for this map when real elevations are readily available. But I find the idea that we could recreate a topographic map with just CitiBike data at once simple and also fascinating. The concept of gravity is so fundamental that it’s actually hidden in a dataset that has no explicit definition of gradient or elevation. And so, CitiBike engineers, in an attempt to share a fun, useful log of a public transportation resource, have accidentally handed over a contour map of the city.</p>
+<p><em>All code used to analyze the data and display the results can be found below. Thanks for reading!</em></p>
+<details>
+<summary>
+Code
+</summary>
+<pre class="r"><code>########## setup ##########
+
+library(tidyverse)
+library(data.table)
+library(glue)
+library(ggmap)
+library(sf)
+library(httr)
+library(mgcv)
+library(optimParallel)
+library(gridExtra)
+library(gganimate)
+library(magick)
+
+# ways to make dplyr stfu
+options(dplyr.summarise.inform = FALSE)
+inner_join &lt;- function(...) dplyr::inner_join(relationship = &quot;many-to-many&quot;, ...)
+
+# necessary when downloading files from internet
+temp_file_path &lt;- tempfile(fileext = &quot;.zip&quot;)
+temp_dir &lt;- tempdir()
+
+# api keys
+google_elevation_key &lt;- &quot;xXxXxXxXxXxX&quot;
+register_stadiamaps(key = &quot;yYyYyYyYyYyY&quot;)
+
+cl &lt;- makeCluster(detectCores())     # set the number of processor cores
+setDefaultCluster(cl = cl) # set &#39;cl&#39; as default cluster
+
+# update and save this list throughout script
+# only use for stuff that takes a long time or might not be accessible later (url or APIs)
+# imagine needing to run it in 5 minutes without the internet
+
+important_stuff &lt;- list()
+if(file.exists(&quot;important_stuff.Rdata&quot;)) load(&quot;important_stuff.Rdata&quot;)
+list2env(important_stuff, globalenv())
+
+########## retrieve data from online ##########
+
+# brooklyn coordinates
+left &lt;- -74.05
+bottom &lt;- 40.63
+right &lt;- -73.9
+top &lt;- 40.74
+
+# zoomed brooklyn coordinates
+leftz &lt;- -73.99
+bottomz &lt;- 40.66
+rightz &lt;- -73.97
+topz &lt;- 40.675
+
+if(!exists(&quot;maps&quot;)){
+  
+  map_bk &lt;- get_map(c(left = left,
+                      bottom = bottom,
+                      right = right,
+                      top = top),
+                    source = &quot;stadia&quot;,
+                    maptype = &quot;stamen_toner_lite&quot;)
+  
+  map_bk_zoom &lt;- get_map(c(left = leftz,
+                           bottom = bottomz,
+                           right = rightz,
+                           top = topz),
+                         source = &quot;stadia&quot;,
+                         maptype = &quot;stamen_toner_lite&quot;)
+  
+  maps &lt;- list(map_bk = map_bk, map_bk_zoom = map_bk_zoom)
+  
+  
+  important_stuff$maps &lt;- maps
+}
+
+
+if(!exists(&quot;brooklyn&quot;)){
+  
+  # read in borough shape files from govt site
+  
+  boro_url &lt;- &quot;https://data.cityofnewyork.us/api/geospatial/tqmj-j8zm?method=export&amp;format=Shapefile&quot;
+  download.file(boro_url, destfile = temp_file_path, mode = &quot;wb&quot;)
+  unzip(temp_file_path, exdir = temp_dir)
+  
+  boros &lt;- read_sf(temp_dir)
+  brooklyn &lt;- boros %&gt;% filter(boro_name == &quot;Brooklyn&quot;)
+  
+  important_stuff$brooklyn &lt;- brooklyn
+}
+
+
+if(!exists(&quot;trips_raw_classic&quot;)){
+  
+  # create urls, accounting for crappy naming convention
+  months &lt;- str_pad(1:11, width = 2, pad = &quot;0&quot;)
+  extra &lt;- rep(&quot;&quot;, length(months))
+  extra[1:4] &lt;- &quot;.csv&quot;
+  urls &lt;- glue(&quot;https://s3.amazonaws.com/tripdata/2024{months}-citibike-tripdata{extra}.zip&quot;)
+  
+  # must unzip file of CSVs for every url
+  trips_raw &lt;- map(urls, ~{
+    
+    download.file(.x, destfile = temp_file_path, mode = &quot;wb&quot;)
+    unzip(temp_file_path, exdir = temp_dir)
+    
+    csvs &lt;- list.files(temp_dir, recursive = TRUE, full.names = TRUE) %&gt;% keep(~str_detect(.x, &quot;csv&quot;)) 
+    d &lt;- csvs %&gt;% map(fread) %&gt;% bind_rows()
+    
+    file.remove(csvs)
+    gc()
+    
+    d
+    
+  }) %&gt;%
+    bind_rows()
+  
+  # only care about manual member rides, ditch rest for memory purposes
+  trips_raw_classic &lt;- trips_raw %&gt;% filter(rideable_type == &quot;classic_bike&quot;, member_casual == &quot;member&quot;)
+  rm(trips_raw)
+  gc()
+  
+  important_stuff$trips_raw_classic &lt;- trips_raw_classic
+}
+
+########## summarize trip data ##########
+
+stations &lt;- trips_raw_classic %&gt;%
+  group_by(station_id = start_station_id, station_name = start_station_name) %&gt;%
+  summarize(
+    # slight variation in coordinates within station
+    lng = mean(start_lng),
+    lat = mean(start_lat)
+  ) %&gt;%
+  ungroup()
+
+# convert stations to sf object
+stations_sf &lt;- stations %&gt;%
+  select(lat, lng) %&gt;%
+  st_as_sf(coords = c(&quot;lng&quot;, &quot;lat&quot;),
+           crs = st_crs(brooklyn)
+  )
+
+# find which stations intersect w brooklyn shape file
+ix_idx &lt;- unlist(st_intersects(brooklyn, stations_sf))
+stations_bk &lt;- stations %&gt;% slice(ix_idx) 
+stations_bk_sf &lt;- stations_sf %&gt;% slice(ix_idx)
+
+# calculate distances between each and convert to miles
+dist_matrix &lt;- geosphere::distm(stations_bk %&gt;% select(lat, lng), fun = geosphere::distHaversine)
+
+station_pairs &lt;- stations_bk %&gt;%
+  set_names(paste0(&quot;start_&quot;, names(.))) %&gt;%
+  crossing(stations_bk %&gt;% set_names(paste0(&quot;end_&quot;, names(.)))) %&gt;%
+  mutate(distance = 3.28084*as.numeric(matrix(dist_matrix, ncol = 1))/5280)
+
+# filter for reasonably fast trips of less than a mile
+trips &lt;- trips_raw_classic %&gt;%
+  mutate(duration = as.numeric(ended_at - started_at)) %&gt;%
+  inner_join(station_pairs, by = c(&#39;start_station_name&#39;, &#39;start_station_id&#39;, &#39;end_station_name&#39;, &#39;end_station_id&#39;)) %&gt;%
+  mutate(speed = distance/(duration/3600)) %&gt;%
+  filter(speed &gt;= 3, speed &lt;= 30, distance &lt; 1)
+
+trips_by_station &lt;- trips %&gt;% 
+  group_by(start_station_id, start_station_name, end_station_id, end_station_name, distance) %&gt;%
+  summarize(n = n(), mean_speed = mean(speed)
+  ) %&gt;%
+  ungroup()
+
+# bilateral vereion of routes dataframe include both possible directions
+trips_by_station_bd &lt;- trips_by_station %&gt;%
+  inner_join(trips_by_station, 
+             by = c(&#39;start_station_id&#39; = &#39;end_station_id&#39;,
+                    &#39;start_station_name&#39; = &#39;end_station_name&#39;,
+                    &#39;end_station_id&#39; = &#39;start_station_id&#39;,
+                    &#39;end_station_name&#39; = &#39;start_station_name&#39;,
+                    &#39;distance&#39;),
+             suffix = c(&#39;_fromA&#39;, &#39;_fromB&#39;)
+  ) %&gt;%
+  rename(station_id_A = start_station_id,
+         station_name_A = start_station_name,
+         station_id_B = end_station_id,
+         station_name_B = end_station_name) %&gt;%
+  # de-dupe rows by only taking the fast direction
+  mutate(speed_diff = mean_speed_fromA - mean_speed_fromB,
+         n_h = 2*n_fromA*n_fromB/(n_fromA + n_fromB)) %&gt;%
+  filter(speed_diff &gt; 0)
+
+
+# only need to consider stations that are actually used
+stations_n &lt;- trips_by_station_bd %&gt;%
+  group_by(station_id = station_id_A,
+           station_name = station_name_A) %&gt;%
+  summarize(n_h_A = sum(n_h)) %&gt;%
+  full_join(
+    trips_by_station_bd %&gt;%
+      group_by(station_id = station_id_B,
+               station_name = station_name_B) %&gt;%
+      summarize(n_h_B = sum(n_h)),
+    by = c(&quot;station_id&quot;, &quot;station_name&quot;)) %&gt;%
+  transmute(station_id, station_name, n_h_station = coalesce(n_h_A, 0) + coalesce(n_h_B, 0))
+
+stations_bk_used &lt;- stations_bk %&gt;%
+  inner_join(stations_n, by = c(&quot;station_id&quot;, &quot;station_name&quot;)) %&gt;%
+  mutate(station_idx = row_number())
+
+# some better naming conventions
+trips_by_station_bd &lt;- trips_by_station_bd %&gt;%
+  inner_join(stations_bk_used, by = c(&#39;station_id_A&#39; = &#39;station_id&#39;, &#39;station_name_A&#39; = &#39;station_name&#39;)) %&gt;%
+  inner_join(stations_bk_used, by = c(&#39;station_id_B&#39; = &#39;station_id&#39;, &#39;station_name_B&#39; = &#39;station_name&#39;), 
+             suffix = c(&quot;_A&quot;, &quot;_B&quot;))
+
+########## add real elevation data ##########
+
+if(!exists(&quot;brooklyn_grid&quot;)){
+  
+  # 10k point grid for finding actual elevations
+  brooklyn_grid_box &lt;- expand.grid(
+    lng = seq(left, right, length.out = 100),
+    lat = seq(bottom, top, length.out = 100)
+  )
+  
+  # chunk into 200 since google API has limits per request
+  brooklyn_grid &lt;- brooklyn_grid_box %&gt;%
+    st_as_sf(coords = c(&quot;lng&quot;, &quot;lat&quot;),
+             crs = st_crs(brooklyn)
+    ) %&gt;%
+    st_intersects(brooklyn, .) %&gt;%
+    unlist() %&gt;%
+    slice(brooklyn_grid_box, .) %&gt;%
+    mutate(google_group = ceiling(row_number()/200))
+  
+  elev_reqs_bk &lt;- brooklyn_grid %&gt;%
+    group_split(google_group) %&gt;%
+    map(~{
+      
+      print(.x$google_group[1])
+      Sys.sleep(3)
+      
+      locations &lt;- .x %&gt;%
+        mutate(location = paste0(lat, &quot;,&quot;, lng)) %&gt;%
+        pull(location) %&gt;%
+        paste0(collapse = &quot;|&quot;)
+      
+      elev_req &lt;- GET(
+        url = &quot;https://maps.googleapis.com/maps/api/elevation/json&quot;,
+        query = list(
+          locations = locations,
+          key = google_elevation_key
+        )
+      )
+      
+    })
+  
+  
+  brooklyn_grid$elev &lt;- elev_reqs_bk %&gt;%
+    map(~map_dbl(content(.x)$results, ~.x$elevation)) %&gt;%
+    unlist()
+  
+  important_stuff$brooklyn_grid &lt;- brooklyn_grid
+}
+
+if(!exists(&quot;brooklyn_grid2&quot;)){
+  
+  # wildly overfit surface to create smoothed topographic map
+  contour_real &lt;- bam(elev ~ s(lng, lat, k = 500), data = brooklyn_grid, cluster = cl)
+  
+  # 1m point grid for smooth contours along brooklyn border/water
+  brooklyn_grid2_box &lt;- expand.grid(
+    lng = seq(left, right, length.out = 1000),
+    lat = seq(bottom, top, length.out = 1000)
+  )
+  
+  brooklyn_grid2 &lt;- brooklyn_grid2_box %&gt;%
+    st_as_sf(coords = c(&quot;lng&quot;, &quot;lat&quot;),
+             crs = st_crs(brooklyn)
+    ) %&gt;%
+    st_intersects(brooklyn, .) %&gt;%
+    unlist() %&gt;%
+    slice(brooklyn_grid2_box, .) 
+  
+  brooklyn_grid2$pred_real &lt;- predict(contour_real, newdata = brooklyn_grid2, cluster = cl)
+  
+  important_stuff$brooklyn_grid2 &lt;- brooklyn_grid2
+  
+}
+
+m1 &lt;- ggmap(maps$map_bk) +
+  geom_contour_filled(data = brooklyn_grid2,
+                      aes(lng, lat, z = pred_real),
+                      alpha = 0.8) +
+  labs(fill = &quot;elevation (m)&quot;) +
+  theme_bw() +
+  theme(axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank()) +
+  theme(legend.title=element_text(size = 18),
+        legend.text=element_text(size = 14))
+
+m1_pts &lt;- m1 +
+  geom_point(data = stations_bk_used,
+             aes(lng, lat),
+             alpha = 0.5)
+
+if(!exists(&quot;sbue&quot;)){
+  
+  # chunk into 200 since google API has limits per request
+  sbue &lt;- stations_bk_used %&gt;% mutate(google_group = ceiling(row_number()/200))
+  
+  # getting actual elevations for the stations
+  elev_reqs_citi &lt;- sbue %&gt;%
+    group_split(google_group) %&gt;%
+    map(~{
+      
+      print(.x$google_group[1])
+      Sys.sleep(3)
+      
+      locations &lt;- .x %&gt;%
+        mutate(location = paste0(lat, &quot;,&quot;, lng)) %&gt;%
+        pull(location) %&gt;%
+        paste0(collapse = &quot;|&quot;)
+      
+      elev_req &lt;- GET(
+        url = &quot;https://maps.googleapis.com/maps/api/elevation/json&quot;,
+        query = list(
+          locations = locations,
+          key = google_elevation_key
+        )
+      )
+      
+    })
+  
+  
+  sbue$elev &lt;- elev_reqs_citi %&gt;%
+    map(~map_dbl(content(.x)$results, ~.x$elevation)) %&gt;%
+    unlist()
+  
+  important_stuff$sbue &lt;- sbue
+}
+
+# contour based on actual elevations will give us sense of best possible map
+contour_citi_actual &lt;- gam(elev ~ s(lng, lat), data = sbue)
+
+brooklyn_grid2 &lt;- brooklyn_grid2 %&gt;%
+  mutate(pred_citi_actual = predict(contour_citi_actual, newdata = .))
+
+m2 &lt;- ggmap(maps$map_bk) +
+  geom_contour_filled(data = brooklyn_grid2,
+                      aes(lng, lat, z = pred_citi_actual),
+                      alpha = 0.8)
+
+########## optimization ##########
+
+if(!exists(&quot;sbue2&quot;) | !exists(&quot;interm_vals&quot;)){
+  
+  sbue2 &lt;- sbue %&gt;% mutate(z = NA)
+  
+  clusterEvalQ(cl, library(&quot;tidyverse&quot;))
+  clusterExport(cl, c(&#39;sbue2&#39;, &#39;trips_by_station_bd&#39;))
+  
+  # initiate with random values
+  set.seed(1)
+  x &lt;- rnorm(nrow(sbue2) - 1)
+  
+  interm_vals_text &lt;- capture.output(find_elev &lt;- optimParallel(x, fn = function(x){
+    
+    # exponentiating to make elevation above ground (0)
+    sbue2$z &lt;- exp(c(x, 0))
+    
+    # look up height diff between pairs of stations
+    tt &lt;- trips_by_station_bd %&gt;% 
+      mutate(zdiff = sbue2$z[station_idx_A] - sbue2$z[station_idx_B])
+    
+    s &lt;- tryCatch({
+      
+      # fit a linear model regressing log of speed diff on height diff
+      # constrain positive so that elevations aren&#39;t flipped
+      mod &lt;- nls(I(log(speed_diff)) ~ b0 + exp(b1)*zdiff,
+                 data = tt,
+                 weights = tt$n_h,
+                 start = list(b0 = -1, b1 = 0))
+      
+      weighted.mean(residuals(mod)^2, mod$weights)
+      
+    },
+    
+    # if nls fails, return ridiculously high value to steer optimizer away
+    error = function(cond) {
+      return(1e10)
+    })
+    
+    return(s)
+    
+  }, control = list(trace = 6, maxit = 1e1), method = &quot;L-BFGS-B&quot;, lower = rep(-10, length(x)), upper = rep(7, length(x)))
+  )
+  
+  # parse text for intermediate values
+  interm_vals &lt;- interm_vals_text %&gt;%
+    map(~str_extract(.x, &quot;(?&lt;=X =  ).+&quot;)) %&gt;%
+    keep(~!is.na(.x)) %&gt;%
+    map(~as.numeric(unlist(str_split(str_trim(.x), &quot; &quot;)))) %&gt;%
+    do.call(rbind, .)
+  
+  # final parameter
+  sbue2$z &lt;- exp(c(find_elev$par, 0))
+  
+  important_stuff$sbue2 &lt;- sbue2
+  important_stuff$interm_vals &lt;- interm_vals
+}
+
+# put estimate on correct scale
+sbue2 &lt;- sbue2 %&gt;%
+  mutate(elev_est = predict(lm(elev ~ z, data = .)))
+
+# compare estimates with actual elevations
+c1 &lt;- sbue2 %&gt;%
+  # summarize(cor(z, elev),
+  #           mean(abs(elev_est - elev) &lt; 5))
+  ggplot(aes(elev_est, elev)) +
+  geom_point() +
+  geom_smooth(se = F) +
+  geom_abline(col = &quot;red&quot;, linetype = &quot;dashed&quot;, linewidth = 2) +
+  labs(x = &quot;estimated elevation&quot;,
+       y = &quot;true elevation&quot;) +
+  scale_x_continuous(breaks = c(0, 20, 40)) +
+  scale_y_continuous(breaks = c(0, 20, 40)) +
+  theme_bw() +
+  theme(axis.title=element_text(size = 18),
+        axis.text=element_text(size = 14))
+
+# build final contour map using our estimates
+contour_citi_est &lt;- gam(elev_est ~ s(lng, lat), data = sbue2)
+
+brooklyn_grid2 &lt;- brooklyn_grid2 %&gt;%
+  mutate(pred_citi_est = predict(contour_citi_est, newdata = .))
+
+# put predictions on same scale (preserve min, median, max of real pred)
+brooklyn_grid2 &lt;- brooklyn_grid2 %&gt;%
+  mutate(pred_citi_est2 = pred_citi_est - median(pred_citi_est)) %&gt;%
+  mutate(pred_citi_est2 = ifelse(pred_citi_est2 &gt; 0, pred_citi_est2/max(pred_citi_est2), pred_citi_est2/abs(min(pred_citi_est2)))) %&gt;%
+  mutate(pred_citi_est2 = ifelse(pred_citi_est2 &gt; 0, pred_citi_est2*(max(pred_real) - median(pred_real)), pred_citi_est2*(median(pred_real) - min(pred_real)))) %&gt;%
+  mutate(pred_citi_est2 = pred_citi_est2 + median(pred_real))
+
+# comparison of real topographic map vs. our one from our estimates
+b2l &lt;- bind_rows(
+  brooklyn_grid2 %&gt;% transmute(lat, lng, type = &quot;Actual&quot;, z = pred_real),
+  brooklyn_grid2 %&gt;% transmute(lat, lng, type = &quot;CitiBike estimate&quot;, z = pred_citi_est2)
+)
+
+comp_wide &lt;- ggmap(maps$map_bk) +
+  geom_contour_filled(data = b2l,
+                      aes(lng, lat, z = z),
+                      alpha = 0.8) +
+  facet_wrap(~type, nrow = 1) + labs(fill = &quot;elevation (m)&quot;)  +
+  theme_bw() +
+  theme(axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank()) +
+  theme(legend.title=element_text(size = 18),
+        legend.text=element_text(size = 14),
+        strip.text = element_text(size = 18))
+
+
+comp_long &lt;- ggmap(maps$map_bk) +
+  geom_contour_filled(data = b2l,
+                      aes(lng, lat, z = z),
+                      alpha = 0.8) +
+  facet_wrap(~type, nrow = 2) + labs(fill = &quot;elevation (m)&quot;)  +
+  theme_bw() +
+  theme(axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank()) +
+  theme(legend.title=element_text(size = 18),
+        legend.text=element_text(size = 14),
+        strip.text = element_text(size = 18))
+
+########## animations ##########
+
+gif_files &lt;- c(&quot;anim_bg.gif&quot;, &quot;anim_tt.gif&quot;, &quot;anim_loss.gif&quot;)
+# eventually progress is minimal
+stop &lt;- 200
+
+if(sum(map_lgl(gif_files, file.exists)) &lt; 3){
+  
+  tts &lt;- coefs &lt;- bgs &lt;- loss &lt;- list()
+  
+  for(i in 1:stop){
+    
+    # plug intermediate values through optim process
+    
+    x &lt;- interm_vals[i, ]
+    
+    sbue_temp &lt;- sbue2
+    brooklyn_grid_temp &lt;- brooklyn_grid
+    
+    sbue_temp$z &lt;- exp(c(x, 0))
+    
+    tt &lt;- trips_by_station_bd %&gt;% mutate(zdiff = sbue_temp$z[station_idx_A] - sbue_temp$z[station_idx_B])
+    
+    
+    mod &lt;- nls(I(log(speed_diff)) ~ b0 + exp(b1)*zdiff,
+               data = tt,
+               weights = tt$n_h,
+               start = list(b0 = -1, b1 = 0))
+    
+    contour_citi_est_temp &lt;- gam(z ~ s(lng, lat), data = sbue_temp)
+    
+    brooklyn_grid_temp &lt;- brooklyn_grid_temp %&gt;%
+      mutate(pred_citi_actual = predict(contour_citi_est_temp, newdata = .))
+    
+    # extract implied trips, contour map, coefficients, and loss
+    bgs[[i]] &lt;- brooklyn_grid_temp %&gt;% mutate(iter = i)
+    tts[[i]] &lt;- tt %&gt;% mutate(iter = i)
+    coefs[[i]] &lt;- c(coef(mod), &quot;iter&quot; = i)
+    loss[[i]] &lt;- c(&#39;resid&#39; = weighted.mean(residuals(mod)^2, mod$weights), &quot;iter&quot; = i)
+    
+  }
+  
+  bgs_df &lt;- bind_rows(bgs)
+  tts_df &lt;- bind_rows(tts)
+  coefs_df &lt;- bind_rows(coefs) %&gt;% mutate(iter = as.integer(iter))
+  
+  # loss data needs progressive rows to show tail
+  loss_df &lt;- bind_rows(loss) %&gt;% mutate(iter = as.integer(iter)) %&gt;%
+    arrange(desc(iter)) %&gt;%
+    slice(rep(1:nrow(.), 1:nrow(.))) %&gt;%
+    arrange(iter) %&gt;%
+    group_by(iter) %&gt;%
+    mutate(iter0 = stop - row_number() + 1) %&gt;%
+    {
+      bind_rows(
+        filter(., iter0 &gt;= 2),
+        filter(., iter0 == 2) %&gt;% mutate(iter0 = 1)
+      )
+    }
+  
+  # create animations of contours, scatter plots, and loss function by iteration
+  
+  theme_bw2 &lt;- theme_bw() +
+    theme(axis.title = element_text(size = 25),
+          plot.title = element_text(size = 30)) +
+    theme(plot.margin = margin(5.5, 25.5, 5.5, 5.5, unit = &quot;pt&quot;))
+  
+  anim_bg &lt;- {
+    bgs_df %&gt;%
+      group_by(iter) %&gt;%
+      # need to normalize colors by frame
+      mutate(pred_citi_actual = (pred_citi_actual - mean(pred_citi_actual))/sd(pred_citi_actual)) %&gt;%
+      ungroup() %&gt;%
+      ggplot(aes(lng, lat, z = pred_citi_actual)) +
+      geom_contour_filled() +
+      labs(title = &#39;Iteration {frame_time}&#39;,
+           x = &#39;longitude&#39;,
+           y = &#39;latitude&#39;) +
+      theme_bw2 +
+      transition_time(iter)
+  } %&gt;%
+    animate(nframes = stop, height = 400, width = 400)  
+  
+  anim_tt &lt;- {
+    tts_df %&gt;%
+      ggplot(aes(zdiff, log(speed_diff), size = n_h)) +
+      geom_point(alpha = 0.1) +
+      geom_abline(aes(intercept = b0, slope = exp(b1)),
+                  data = coefs_df,
+                  col = &quot;red&quot;) +
+      labs(title = &#39;Iteration {frame_time}&#39;,
+           x = &quot;elevation difference&quot;, 
+           y = &quot;net speed&quot;) +
+      theme_bw2 +
+      transition_time(iter) +
+      view_follow()
+  } %&gt;%
+    animate(nframes = stop, height = 400, width = 400)
+  
+  anim_loss &lt;- {
+    loss_df %&gt;%
+      ggplot(aes(iter, resid)) +
+      geom_line(col = &quot;blue&quot;, linewidth = 2) +
+      labs(title = &#39;Iteration {frame_time}&#39;,
+           x = &quot;iteration&quot;, 
+           y = &quot;error&quot;) +
+      theme_bw2 +
+      theme(plot.margin = margin(5.5, 25.5, 5.5, 5.5, unit = &quot;pt&quot;)) +
+      transition_time(iter0)
+  } %&gt;%
+    animate(nframes = stop, height = 400, width = 400)
+  
+  anim_save(gif_files[1], anim_bg)
+  anim_save(gif_files[2], anim_tt)
+  anim_save(gif_files[3], anim_loss)
+  
+}
+
+combo_file &lt;- &quot;combo.gif&quot;
+
+if(!file.exists(combo_file)){
+  # combine gifs into triptych 
+  anim_bg &lt;- image_read(gif_files[1])
+  anim_tt &lt;- image_read(gif_files[2])
+  anim_loss &lt;- image_read(gif_files[3])
+  
+  combo_gif &lt;- image_append(c(anim_bg[1], anim_tt[1], anim_loss[1]))
+  
+  for(i in 2:stop){
+    combined &lt;- image_append(c(anim_bg[i], anim_tt[i], anim_loss[i]))
+    combo_gif &lt;- c(combo_gif, combined)
+  }
+  
+  anim_save(combo_file, combo_gif)
+}
+
+combo_gif &lt;- image_read(combo_file)
+
+
+########## extra graphs ##########
+
+# two end points for park slope example
+s1 &lt;- &quot;3865.05&quot;
+s2 &lt;- &quot;3905.15&quot;
+
+t &lt;- trips_by_station %&gt;%
+  filter((start_station_id == s1 &amp; end_station_id == s2) |
+           (end_station_id == s1 &amp; start_station_id == s2)
+  ) %&gt;%
+  inner_join(trips_by_station, 
+             by = c(&#39;start_station_id&#39; = &#39;end_station_id&#39;,
+                    &#39;end_station_id&#39; = &#39;start_station_id&#39;,
+                    &#39;distance&#39;),
+             suffix = c(&#39;_fromA&#39;, &#39;_fromB&#39;)
+  ) %&gt;%
+  rename(station_id_A = start_station_id,
+         station_id_B = end_station_id) %&gt;%
+  inner_join(stations_bk_used, by = c(&#39;station_id_A&#39; = &#39;station_id&#39;)) %&gt;%
+  inner_join(stations_bk_used, by = c(&#39;station_id_B&#39; = &#39;station_id&#39;), suffix = c(&quot;_A&quot;, &quot;_B&quot;))
+
+# a lot of this code is gross/hard-coded
+# not easy to create custom visualizations without a package
+
+# jittering points around so arrows don&#39;t overlap
+tt &lt;- t %&gt;% mutate(lat_A = lat_A + (-1)^(row_number()) * 0.0003,
+                   lat_B = lat_B + (-1)^(row_number()) * 0.0003) %&gt;%
+  # don&#39;t want full length
+  mutate(lat_B2 = lat_A + 0.75*(lat_B - lat_A),
+         lng_B2 = lng_A + 0.75*(lng_B - lng_A)) %&gt;%
+  # 5-10 degree adjustment since global coords screws it up a little
+  mutate(angle = 180/pi*atan((lat_B - lat_A)/(lng_B - lng_A)) - 6)
+
+l &lt;- stations_bk_used %&gt;%
+  filter(station_id %in% c(s1, s2))
+
+# putting text coordinates near middle and angling them in right direction
+text_coords &lt;- tt %&gt;%
+  transmute(lng_mid = lng_A + 0.6*(lng_B2 - lng_A),
+            lat_mid = lat_A + 0.6*(lat_B2 - lat_A),
+            angle,
+            mean_speed_fromA
+  ) %&gt;%
+  arrange(mean_speed_fromA)
+
+# creating triangles since geom_segment is so ugly
+width &lt;- 0.0003
+
+tris &lt;- tt %&gt;%
+  select(station_id_A, lng_A, lat_A, lng_B2, lat_B2, angle) %&gt;%
+  # number of triangles
+  crossing(tri = c(0, 3)) %&gt;%
+  # four points (repeat tip to close)
+  crossing(data.frame(point = 0:3, tip = c(1, 0, 0, 1), anglediff = c(0, 90, -90, 0))) %&gt;%
+  mutate(anglep = angle + anglediff) %&gt;%
+  # this works just leave it alone
+  mutate(lng_t = lng_A + (tri/3 + 0.15*tip-0.01)*(lng_B2 - lng_A) + (!tip)*width*cos((anglep * pi) / 180),
+         lat_t = lat_A + (tri/3 + 0.15*tip-0.01)*(lat_B2 - lat_A) + (!tip)*width*sin((anglep * pi) / 180))
+
+
+l$station_name &lt;- str_replace_all(l$station_name, &quot;&amp; &quot;, &quot;&amp;\n&quot;)
+
+z1 &lt;- ggmap(maps$map_bk_zoom) +
+  geom_segment(data = tt, aes(x = lng_A, xend = lng_B2, y = lat_A, yend = lat_B2, col = as.factor(station_id_A)),
+               linewidth = 10
+  ) +
+  geom_polygon(data = tris, aes(x = lng_t, y = lat_t, group = paste0(tri, station_id_A), fill = as.factor(station_id_A)), col = &quot;black&quot;) +
+  geom_point(aes(lng, lat), data = l, size = 6) +
+  geom_label(aes(lng, lat, label = station_name), 
+             data = l %&gt;% mutate(lng = lng + (-1)^(row_number()+1) * 0.0002),
+             hjust = c(0, 1)) +
+  scale_x_continuous(limits = c(-73.9795, -73.9715)) +
+  scale_y_continuous(limits = c(40.6674, 40.6715)) +
+  scale_color_manual(values = c(&quot;springgreen2&quot;, &quot;tomato&quot;)) +
+  scale_fill_manual(values = c(&quot;springgreen2&quot;, &quot;tomato&quot;)) +
+  theme(legend.position = &quot;none&quot;) +
+  theme(axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank())
+
+for(i in 1:nrow(text_coords)){
+  z1 &lt;- z1 + annotate(&quot;text&quot;, x=text_coords$lng_mid[i], y=text_coords$lat_mid[i], 
+                      label = paste0(round(text_coords$mean_speed_fromA[i], 1), &quot; mph&quot;), color = &quot;black&quot;, 
+                      angle = text_coords$angle[i], size = 6, fontface = &quot;bold&quot;)
+}
+
+###############################################################
+
+park_slope_stations &lt;- c(4010.15, 3865.05, 3722.04, 3651.04, # ppw
+                         3978.13, 3620.02, # 8th ave
+                         3905.15, 3834.10, 3762.08, 3731.11, 3660.07, # 7th ave
+                         4019.06, 3946.07, 3874.01, 3803.09, 3803.05, # 6th ave
+                         3987.06, 3914.02, 3842.08, 3771.06, # 5th ave
+                         4028.04, 3955.05, 3882.05) %&gt;% # 4th ave
+  as.character()
+
+t &lt;- trips_by_station_bd %&gt;%
+  filter(station_id_A %in% park_slope_stations, station_id_B %in% park_slope_stations,
+         speed_diff &gt; 1) %&gt;%
+  transmute(lat_A, lat_B, lng_A, lng_B, speed_diff,
+            angle = atan((lat_B - lat_A)/(lng_B - lng_A))) %&gt;%
+  # new endpoints creating vectors of equal length
+  mutate(lat_B2 = lat_A - 2/1000*sin(angle),
+         lng_B2 = lng_A - 2/1000*cos(angle))
+
+mps &lt;- ggmap(maps$map_bk_zoom) +
+  geom_segment(data = t, aes(x = lng_A, xend = lng_B2, y = lat_A, yend = lat_B2, col = speed_diff),
+               linewidth = 1.25,
+               arrow = arrow(length = unit(0.4, &quot;cm&quot;))
+  )  +
+  geom_point(data = stations_bk_used %&gt;% filter(station_id %in% park_slope_stations), aes(lng, lat), 
+             size = 6, col = &quot;black&quot;, fill = &quot;black&quot;, pch = 21, alpha = 0.5) +
+  scale_color_gradient(high = &quot;springgreen4&quot;, low = &quot;springgreen&quot;,
+                       labels = scales::label_number(style_positive = c(&quot;plus&quot;)))+
+  labs(col = &quot;net speed&quot;) +
+  theme(axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank()) +
+  theme(legend.title=element_text(size = 18),
+        legend.text=element_text(size = 14))
+
+blog_graphs &lt;- list(
+  z1 = z1, m1_pts = m1_pts, mps = mps, c1 = c1, comp_wide = comp_wide, comp_long = comp_long
+)
+
+save(blog_graphs, file = &quot;blog_graphs.Rdata&quot;)
+save(important_stuff, file = &quot;important_stuff.Rdata&quot;)</code></pre>
+</details>
