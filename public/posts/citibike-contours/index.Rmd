@@ -27,7 +27,7 @@ How well does this idea scale, though? If the hill between Prospect Park West an
 First, let's examine an actual topographic map of Brooklyn overlaid with the locations of CitiBike stations. The aforementioned hill that peaks along the west side of Prospect Park is part of a larger ridge that starts in Sunset Park, extends northeast into Prospect Heights, and then turns east through Crown Heights. There are also more isolated patches of elevation in Carroll Gardens, Downtown Brooklyn, and Williamsburg. The map bottoms out along the waterfront and in the Gowanus region. Any elevation patterns in the southeast corner will not be recoverable in our experiment since there are no stations there.
 
 <figure>
-<center><img src="/img/m1_pts.png"/></center>
+<center><img src="/img/m1_pts_cropped.png"/></center>
 </figure>
 
 We define a few rules to help us home in on true traveling speeds via bicycle:
@@ -50,12 +50,12 @@ Once we've applied these filters, speeds in both directions between any pair of 
 
 So how are we going to back into elevation coordinates for CitiBike stations from these speed comparisons? The key is to assume that there's some sort of positive relationship between going downhill and going faster, and then iteratively increase that correlation by adjusting the elevation data until we can no longer make any meaningful improvements. 
 
-In more technical terms, this is a high-dimensional optimization problem. Our unknown parameters are the 700 or so elevations of our CitiBike stations. The loss function is the goodness of fit (in our case, the average squared residual) for a linear model regressing the difference in average speed between stations on the difference in elevation implied by those input parameters.
+In more technical terms, this is a high-dimensional optimization problem. Our unknown parameters are the 700 or so elevations of our CitiBike stations. The loss function is the goodness of fit (in our case, the average squared residual) for a linear model regressing the difference in average speed between stations on the difference in elevation implied by those input parameters. 
 
 Here is a composite visualization of the optimization's first 200 iterations. From left to right, the elevations are updated, leading to an increasingly precise relationship between the elevation difference and net speed achieved between all pairs of stations, which drives down our assessment criteria and informs the algorithm how to further update the elevations.
 
 <figure>
-<center><img src="/img/combo.gif"/></center>
+<center><img src="/img/combo2.gif"/></center>
 </figure>
 
 After a thousand iterations and many hours of torching my processor with parallel computing, the optimization is complete, or at least good enough. The results are surprisingly accurate. Once you put the optimized parameters on the same scale as the actual CitiBike elevations (whch we can look up), 69% of our estimates are within five meters of the true figures, good for 87% correlation. 

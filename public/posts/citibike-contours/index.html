@@ -247,7 +247,7 @@ Built with <a href="https://gohugo.io">Hugo</a> ❤️ <a href="https://github.c
 <p>First, let’s examine an actual topographic map of Brooklyn overlaid with the locations of CitiBike stations. The aforementioned hill that peaks along the west side of Prospect Park is part of a larger ridge that starts in Sunset Park, extends northeast into Prospect Heights, and then turns east through Crown Heights. There are also more isolated patches of elevation in Carroll Gardens, Downtown Brooklyn, and Williamsburg. The map bottoms out along the waterfront and in the Gowanus region. Any elevation patterns in the southeast corner will not be recoverable in our experiment since there are no stations there.</p>
 <figure>
 <center>
-<img src="/img/m1_pts.png"/>
+<img src="/img/m1_pts_cropped.png"/>
 </center>
 </figure>
 <p>We define a few rules to help us home in on true traveling speeds via bicycle:</p>
@@ -269,7 +269,7 @@ Built with <a href="https://gohugo.io">Hugo</a> ❤️ <a href="https://github.c
 <p>Here is a composite visualization of the optimization’s first 200 iterations. From left to right, the elevations are updated, leading to an increasingly precise relationship between the elevation difference and net speed achieved between all pairs of stations, which drives down our assessment criteria and informs the algorithm how to further update the elevations.</p>
 <figure>
 <center>
-<img src="/img/combo.gif"/>
+<img src="/img/combo2.gif"/>
 </center>
 </figure>
 <p>After a thousand iterations and many hours of torching my processor with parallel computing, the optimization is complete, or at least good enough. The results are surprisingly accurate. Once you put the optimized parameters on the same scale as the actual CitiBike elevations (whch we can look up), 69% of our estimates are within five meters of the true figures, good for 87% correlation.</p>
