@@ -1,0 +1,64 @@
+---
+title: 'CitiBike Contours: Creating a Topographic of Brooklyn Using Biker Speed Data'
+author: Walker Harrison
+date: '2025-01-04'
+slug: citibike-contours
+categories: []
+tags: []
+lastmod: '2025-01-03T18:25:19-05:00'
+layout: post
+type: post
+summary: lorem ipsum
+highlight: yes
+---
+
+
+
+<p>Legend has it that mere moments after inventing the bicycle in 1817, Karl von Drais tried riding it up a steep hill and, after recognizing how miserable of a task he’d embarked upon, exclaimed “well this freakin’ sucks.”</p>
+<p>It’s possible von Drais didn’t actually say that, but I certainly thought it recently when I tried riding a CitiBike uphill in my hometown of Park Slope, a neigborhood quite literally named after the distinct descent that lies under it. I imagined how free and easy the opposite route would be – I could probably coast down the gradient from Prospect Park without even pedaling.</p>
+<p>Indeed if you query the data that CitiBike makes available, you’ll find that riders making my same arduous journey up two avenues along Third Street covered the 0.33 miles in about three and a half minutes for an effective speed of 5.8 mph, while riders going in the other direction between those two stations averaged well over 7 mph. It’s important to note that the actual GPS tracking of bicycles is not available, so we can only calculate “straight-line” speed using the distance between stations and the duration of the ride.</p>
+<figure>
+<center>
+<img src="/img/z1.png"/>
+</center>
+</figure>
+<p>How well does this idea scale though? If the hill between Prospect Park West and 7th Avenue leaves a signature in CitiBike data, is the difference in elevation between any two endpoints embedded in the net speed achieved by bikers riding between them? Nearly half of Brooklyn is covered in a dense lattice of over 700 CitiBike stations that accounted for X rides in 2024. Is that enough to reverse engineer a topographic map of the borough?</p>
+<p>First let’s examine an actual topographic map of Brooklyn overlaid with the locations of CitiBike stations. The aforementioned hill that peaks along the west side of Prospect park is part of a larger ledge that starts in Sunset Park, extends northeast into Prospect Heights, and then turns east through Crown Heights. There are also more isolated patches of elevation in Carroll Gardens, Downtown Brooklyn, and Williamsburg. The map bottoms out along the waterfront and in the Gowanus region. Any elevation patterns in the south east corner will not be recoverable in our experiment since there are no stations there.</p>
+<figure>
+<center>
+<img src="/img/m1_pts.png"/>
+</center>
+</figure>
+<p>We define a few rules to help us hone in on true traveling speed via bicycle.</p>
+<ol style="list-style-type: decimal">
+<li><p>Rides must be on manual bikes and not e-bikes for obvious reasons, and be taken by subscribers and not one-off renters under the assumption that the former is more likely to be using the bike for practical reasons while the latter might be a tourist looking for a leisurely, scenic ride.</p></li>
+<li><p>Distances between stations of at most a mile are considered, and only rides that achieved at least 3 MPH and at most 30 MPH are counted. If you are going slower than that, you’re likely not trying to get from Point A to Point B with any haste (in fact many renters return their bike at or near the starting point after meandering around the local area). If you’re going faster than that, the data is likely corrupt or you’re a world-class cyclist ripping through crowded urban areas – please slow down, sir.</p></li>
+</ol>
+<p>Below is a vector field of net speeds in Park Slope. As we would hope, they generally point down hill.</p>
+<figure>
+<center>
+<img src="/img/mps.png"/>
+</center>
+</figure>
+<p>So how are we going to back into elevation coordinates from these speed comparisons? The key is to assume that there’s some sort of positive relationship between going downhill and going faster, and then iteratively increase that correlation by adjusting the elevation data until we can no longer make any meaningful improvements.</p>
+<p>In more technical terms, this is a high-dimensional optimization problem. Our parameters are the 700 or so elevations of our CitiBike stations. The loss function is the goodness of fit (in our case, the average squared residual) for a linear model regressing the difference in average speed between stations on the difference in elevation implied by the input parameters.</p>
+<p>Here is a composite visualization of optimization’s first 200 iterations. From left to right, the elevations are updated, leading to an increasingly precise relationship between the elevation difference and net speed achieved between stations, which drives down our assessment criteria and informs the algorithm how to further update the elevations.</p>
+<figure>
+<center>
+<img src="/img/combo.gif"/>
+</center>
+</figure>
+<p>After a thousand iterations and many hours of torching my processor with parallel computing, the optimization is complete – or at least good enough. The results are surprisingly accurate. Once you put the optimized parameters on the same scale, 69% of our estimates are within five feet of their true elevations, good for 87% correlation.</p>
+<p>The big misses, such as the conspicuous one in the bottom right of the scatterpolot, are intriguing in their own right. The algorithm thinks the station on Johnson St. and Brooklyn Bridge Boulevard sits atop a 42-meter peak based on the high speed achieved by bikers riding away from it. But in reality, the routes leading into that station are simply much more indirect thanks to one-way streets, confusing the model into thinking they are uphill. Errors like this would be reduced if we had access to actual travelng speeds of the bikes instead of just trip durations.</p>
+<figure>
+<center>
+<img src="/img/c1.png"/>
+</center>
+</figure>
+<p>And finally, if we use these implied elevations to build a contour map, we get something that’s a good bit smoother than the actual topographic map, which makes sense when building something from a coarser data set, but still pretty similar to the original. Here are the two side-by-side.</p>
+<figure>
+<center>
+<img src="/img/comp_wide.png"/>
+</center>
+</figure>
+<p>Functionally there’s no use for this map when real elevations are readily available. But I find the idea that we could recreate a topographic map with just CitiBike data at once simple and also fascinating. The concept of gravity is so fundamental to any spatial analysis that … figure out ending…</p>
