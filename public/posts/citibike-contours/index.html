@@ -9,7 +9,7 @@
     <meta name="twitter:card" content="summary"/>
 <meta name="twitter:image" content="http://localhost:6849/img/site-feature-image.jpeg"/>
 
-<meta name="twitter:title" content="CitiBike Contours: Creating a Topographic of Brooklyn Using Biker Speed Data"/>
+<meta name="twitter:title" content="CitiBike Contours: Creating a Topographic Map of Brooklyn Using Biker Speed Data"/>
 <meta name="twitter:description" content="lorem ipsum"/>
 
     <meta charset="utf-8">
@@ -22,10 +22,10 @@
     
     
 
-<title>CitiBike Contours: Creating a Topographic of Brooklyn Using Biker Speed Data • Walker Harrison</title>
+<title>CitiBike Contours: Creating a Topographic Map of Brooklyn Using Biker Speed Data • Walker Harrison</title>
 
 
-<meta property="og:title" content="CitiBike Contours: Creating a Topographic of Brooklyn Using Biker Speed Data" />
+<meta property="og:title" content="CitiBike Contours: Creating a Topographic Map of Brooklyn Using Biker Speed Data" />
 <meta property="og:description" content="lorem ipsum" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="http://localhost:6849/posts/citibike-contours/" /><meta property="og:image" content="http://localhost:6849/img/site-feature-image.jpeg" /><meta property="article:section" content="posts" />
@@ -45,10 +45,10 @@
 
 
 
-<link rel="stylesheet" href="/scss/hyde-hyde.05ad18f81da385d507a64344cf827ca5ab46c1c965d54179b47974ddd12cfcc8.css" integrity="sha256-Ba0Y&#43;B2jhdUHpkNEz4J8patGwcll1UF5tHl03dEs/Mg=">
+<link rel="stylesheet" href="/scss/hyde-hyde.e121660d657eb7a3e9f875590f37286a437f3992c6db74e04d1170204945dd50.css" integrity="sha256-4SFmDWV&#43;t6Pp&#43;HVZDzcoakN/OZLG23TgTRFwIElF3VA=">
 
 
-<link rel="stylesheet" href="/scss/print.03403d6699c303fba50f9bbd95f2810b3b0d125e1d67b107e4aff69cec69a2d7.css" integrity="sha256-A0A9ZpnDA/ulD5u9lfKBCzsNEl4dZ7EH5K/2nOxpotc=" media="print">
+<link rel="stylesheet" href="/scss/print.2f225bcc8d05373a7e32f083e5a2c3b25348d1ce7b8b79d926198a4b91aa7706.css" integrity="sha256-LyJbzI0FNzp&#43;MvCD5aLDslNI0c57i3nZJhmKS5GqdwY=" media="print">
 
 
 
@@ -211,7 +211,7 @@ Built with <a href="https://gohugo.io">Hugo</a> ❤️ <a href="https://github.c
     
 <article>
   <header>
-    <h1>CitiBike Contours: Creating a Topographic of Brooklyn Using Biker Speed Data</h1>
+    <h1>CitiBike Contours: Creating a Topographic Map of Brooklyn Using Biker Speed Data</h1>
     
     
 <div class="post__meta">
@@ -224,7 +224,7 @@ Built with <a href="https://gohugo.io">Hugo</a> ❤️ <a href="https://github.c
     
     
     <br/>
-    <i class="fas fa-clock"></i> 5 min read
+    <i class="fas fa-clock"></i> 6 min read
 </div>
 
 
@@ -235,42 +235,45 @@ Built with <a href="https://gohugo.io">Hugo</a> ❤️ <a href="https://github.c
     
 
 
-<p>Legend has it that mere moments after inventing the bicycle in 1817, Karl von Drais tried riding it up a steep hill and, after recognizing how miserable of a task he’d embarked upon, exclaimed “well this freakin’ sucks.”</p>
-<p>It’s possible von Drais didn’t actually say that, but I certainly thought it recently when I tried riding a CitiBike uphill in my hometown of Park Slope, a neigborhood quite literally named after the distinct descent that lies under it. I imagined how free and easy the opposite route would be – I could probably coast down the gradient from Prospect Park without even pedaling.</p>
-<p>Indeed if you query the data that CitiBike makes available, you’ll find that riders making my same arduous journey up two avenues along Third Street covered the 0.33 miles in about three and a half minutes for an effective speed of 5.8 mph, while riders going in the other direction between those two stations averaged well over 7 mph. It’s important to note that the actual GPS tracking of bicycles is not available, so we can only calculate “straight-line” speed using the distance between stations and the duration of the ride.</p>
+<p>Legend has it that mere moments after inventing the bicycle in 1817, Karl von Drais tried riding it up a steep hill and, after recognizing how miserable a task he’d embarked upon, exclaimed, “Well, this freakin’ sucks.”</p>
+<p>It’s possible von Drais didn’t actually say that, but I certainly thought it recently when I tried riding a CitiBike uphill in my hometown of Park Slope, a neigborhood quite literally named after the distinct descent that characterizes it. I imagined how free and easy the opposite route would be – I could probably coast down the gradient from Prospect Park without even pedaling.</p>
+<p>Indeed, if you query the data that CitiBike makes available, you’ll find that riders making my same arduous journey up Third Street across three avenues did so in about three and a half minutes, while riders going in the other direction between those two stations took only about two and a half minutes on average. This data only provides ride duration and no actual time series of position or velocity, but we can still calculate effective “straight-line” speeds of 5.8 and 7.6 miles per hour, respectively, once we determine the stations are 0.33 miles apart.</p>
 <figure>
 <center>
 <img src="/img/z1.png"/>
 </center>
 </figure>
-<p>How well does this idea scale though? If the hill between Prospect Park West and 7th Avenue leaves a signature in CitiBike data, is the difference in elevation between any two endpoints embedded in the net speed achieved by bikers riding between them? Nearly half of Brooklyn is covered in a dense lattice of over 700 CitiBike stations that accounted for X rides in 2024. Is that enough to reverse engineer a topographic map of the borough?</p>
-<p>First let’s examine an actual topographic map of Brooklyn overlaid with the locations of CitiBike stations. The aforementioned hill that peaks along the west side of Prospect park is part of a larger ledge that starts in Sunset Park, extends northeast into Prospect Heights, and then turns east through Crown Heights. There are also more isolated patches of elevation in Carroll Gardens, Downtown Brooklyn, and Williamsburg. The map bottoms out along the waterfront and in the Gowanus region. Any elevation patterns in the south east corner will not be recoverable in our experiment since there are no stations there.</p>
+<p>How well does this idea scale, though? If the hill between Prospect Park West and 7th Avenue leaves a signature in CitiBike data, is the difference in elevation between any two endpoints embedded in the net speed achieved by bikers riding between them? Nearly half of Brooklyn is covered in a dense lattice of over 700 CitiBike stations that accounted for X rides in 2024. Is the data that system generates enough to reverse-engineer a topographic map of the borough?</p>
+<p>First, let’s examine an actual topographic map of Brooklyn overlaid with the locations of CitiBike stations. The aforementioned hill that peaks along the west side of Prospect Park is part of a larger ridge that starts in Sunset Park, extends northeast into Prospect Heights, and then turns east through Crown Heights. There are also more isolated patches of elevation in Carroll Gardens, Downtown Brooklyn, and Williamsburg. The map bottoms out along the waterfront and in the Gowanus region. Any elevation patterns in the southeast corner will not be recoverable in our experiment since there are no stations there.</p>
 <figure>
 <center>
 <img src="/img/m1_pts.png"/>
 </center>
 </figure>
-<p>We define a few rules to help us hone in on true traveling speed via bicycle.</p>
+<p>We define a few rules to help us home in on true traveling speeds via bicycle:</p>
 <ol style="list-style-type: decimal">
-<li><p>Rides must be on manual bikes and not e-bikes for obvious reasons, and be taken by subscribers and not one-off renters under the assumption that the former is more likely to be using the bike for practical reasons while the latter might be a tourist looking for a leisurely, scenic ride.</p></li>
-<li><p>Distances between stations of at most a mile are considered, and only rides that achieved at least 3 MPH and at most 30 MPH are counted. If you are going slower than that, you’re likely not trying to get from Point A to Point B with any haste (in fact many renters return their bike at or near the starting point after meandering around the local area). If you’re going faster than that, the data is likely corrupt or you’re a world-class cyclist ripping through crowded urban areas – please slow down, sir.</p></li>
+<li><p>As before, all speeds are expressed in “straight-line” terms, even though bikers obviously must use the roads available to them in lieu of crashing through residential homes or flying over them. The hope is that the effect of hills is strong enough to overcome our lack of precise tracking data or intuitive routing.</p></li>
+<li><p>Rides must be on the old-school manual bikes. The new, increasingly popular e-bikes make it much easier to resist the pull of gravity, which risks muting the very pattern we’re looking for.</p></li>
+<li><p>Rides must be taken by subscribers and not single-pass users. Repeat riders are more likely to be using the bike for practical reasons while the one-off renters might be tourists looking for a leisurely, scenic ride.</p></li>
+<li><p>Distances between stations cannot be longer than a mile. This constraint helps us reduce the data size and also likely protects us from longer journeys which could feature more indirect routes or less precise elevation changes.</p></li>
+<li><p>Rides must achieve a straight-line speed of at least 3 MPH and at most 30 MPH are counted. If you are going slower than that, you’re likely not trying to get from Point A to Point B with any haste (in fact many renters return their bike at or near the starting point after meandering around the local area). If you’re going faster than that, the data is likely corrupt or you’re a world-class cyclist ripping through crowded urban areas – please slow down, sir.</p></li>
 </ol>
-<p>Below is a vector field of net speeds in Park Slope. As we would hope, they generally point down hill.</p>
+<p>Below is a vector field of net speeds in Park Slope. The arrows point through the gridded streets instead of exclusively along them thanks to Rule # 1, which pretends that bikers ride “as the crow flies.” In any case, they generally point down hill, which is a good early sign.</p>
 <figure>
 <center>
 <img src="/img/mps.png"/>
 </center>
 </figure>
 <p>So how are we going to back into elevation coordinates from these speed comparisons? The key is to assume that there’s some sort of positive relationship between going downhill and going faster, and then iteratively increase that correlation by adjusting the elevation data until we can no longer make any meaningful improvements.</p>
-<p>In more technical terms, this is a high-dimensional optimization problem. Our parameters are the 700 or so elevations of our CitiBike stations. The loss function is the goodness of fit (in our case, the average squared residual) for a linear model regressing the difference in average speed between stations on the difference in elevation implied by the input parameters.</p>
-<p>Here is a composite visualization of optimization’s first 200 iterations. From left to right, the elevations are updated, leading to an increasingly precise relationship between the elevation difference and net speed achieved between stations, which drives down our assessment criteria and informs the algorithm how to further update the elevations.</p>
+<p>In more technical terms, this is a high-dimensional optimization problem. Our unknown parameters are the 700 or so elevations of our CitiBike stations. The loss function is the goodness of fit (in our case, the average squared residual) for a linear model regressing the difference in average speed between stations on the difference in elevation implied by those input parameters.</p>
+<p>Here is a composite visualization of the optimization’s first 200 iterations. From left to right, the elevations are updated, leading to an increasingly precise relationship between the elevation difference and net speed achieved between all pairs of stations, which drives down our assessment criteria and informs the algorithm how to further update the elevations.</p>
 <figure>
 <center>
 <img src="/img/combo.gif"/>
 </center>
 </figure>
-<p>After a thousand iterations and many hours of torching my processor with parallel computing, the optimization is complete – or at least good enough. The results are surprisingly accurate. Once you put the optimized parameters on the same scale, 69% of our estimates are within five feet of their true elevations, good for 87% correlation.</p>
-<p>The big misses, such as the conspicuous one in the bottom right of the scatterpolot, are intriguing in their own right. The algorithm thinks the station on Johnson St. and Brooklyn Bridge Boulevard sits atop a 42-meter peak based on the high speed achieved by bikers riding away from it. But in reality, the routes leading into that station are simply much more indirect thanks to one-way streets, confusing the model into thinking they are uphill. Errors like this would be reduced if we had access to actual travelng speeds of the bikes instead of just trip durations.</p>
+<p>After a thousand iterations and many hours of torching my processor with parallel computing, the optimization is complete, or at least good enough. The results are surprisingly accurate. Once you put the optimized parameters on the same scale as the actual figures, 69% of our estimates are within five feet of their true elevations, good for 87% correlation.</p>
+<p>The big misses, such as the conspicuous one in the bottom right of the scatterplot, are intriguing in their own right. The algorithm thinks the station on Johnson St. and Brooklyn Bridge Boulevard sits atop a 42-meter peak based on the high speed achieved by bikers riding away from it. But in reality, the routes leading into that station are simply much more indirect thanks to one-way streets, confusing the model into thinking they are uphill. Errors like this would be reduced if we had access to actual traveling speeds of the bikes instead of just trip durations.</p>
 <figure>
 <center>
 <img src="/img/c1.png"/>
@@ -282,7 +285,7 @@ Built with <a href="https://gohugo.io">Hugo</a> ❤️ <a href="https://github.c
 <img src="/img/comp_wide.png"/>
 </center>
 </figure>
-<p>Functionally there’s no use for this map when real elevations are readily available. But I find the idea that we could recreate a topographic map with just CitiBike data at once simple and also fascinating. The concept of gravity is so fundamental to any spatial analysis that … figure out ending…</p>
+<p>Functionally there’s no use for this map when real elevations are readily available. But I find the idea that we could recreate a topographic map with just CitiBike data at once simple and also fascinating. The concept of gravity is so fundamental that it’s actually hidden in a dataset that has no explicit definition of gradient or elevation. And so, CitiBike engineers, in an attempt to share a fun, useful log of a public transportation resource, have accidentally handed over a contour map of the city.</p>
 
   </div>
   
