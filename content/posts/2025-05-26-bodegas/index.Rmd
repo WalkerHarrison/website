@@ -1,0 +1,135 @@
+---
+title: 'Bodega Battles: Two Local Stores Compete For My Allegiance'
+author: Walker Harrison
+date: '2025-05-26'
+slug: bodegas
+categories: []
+tags: []
+lastmod: '2025-05-26T13:01:10-04:00'
+layout: post
+type: post
+summary: Loyalty is a two-way street. Especially if that street is just a single block that separates a man from his egg sandwich.
+highlight: yes
+---
+
+Early last year, [I put out a post](https://www.walker-harrison.com/posts/best_block/){target="_blank"} describing my enamoration with New York City blocks that were central to my basic needs: a coffee shop, a pizza place, a dive bar, a gym, a bodega, and perhaps a few more essentials. I didn't quite convey that such a place was not just a fantasy of mine -- that I had actually picked my current apartment largely on account of its close proximity to such core businesses.
+
+In particular, I have a bodega a mere block away that provides my necessities, from simple groceries like eggs and milk, to late night sandwiches, to cleaning products, and so on. In classic New York fashion, I cultivated a relationship with the guy at the counter, whose English is just good enough for him to always ask if I have a girlfriend yet. What's up, Ali!
+
+<figure>
+<center><img src="/img/bodega2.jpg"/></center>
+</figure>
+
+Unfortunately for Ali and his colleagues, another bodega opened up even closer to me. This one literally shares the same structure as my apartment building. If I somehow fell through the five floors below me, I'd land right on top of the grill (which is never off, by the way, for those who like to order egg sandwiches at 3 AM).
+
+I wanted to maintain my loyalty to the original bodega, but that one block can make a big difference. I'll roll out of bed in shorts and a hoodie, slide into some Crocs, and stumble into this new spot, bleary-eyed and bagel-minded, only having to endure the weather for about ten seconds. I felt myself rather quickly shifting allegiances, and wondered how clearly this change might be expressed in my spending habits.
+
+The idea here isn't too complicated, as I just need a way to log all my expenditures at both bodegas. I nearly always use the same credit card for these purchases, beamed into the point-of-sale terminal via my iPhone, but they aren't that easily accessible via my online banking app. The best it can offer is my monthly statement expressed as a poorly-designed CSV, which would need to be manually downloaded and cleaned. I wanted something with less friction.
+
+Luckily I set up email alerts for this credit card about a year ago in preparation for another blogpost that died somewhere between my idea board and the drafting process. Using the [`gmailr` package](https://gmailr.r-lib.org/){target="_blank"}, I can query my own email for spending alerts for the correct merchants and then parse and compile the results into a time-stamped dataset. The results are unambiguous: the new bodega opens in mid-September, and after a brief trial period during which I split my needs across the two businesses, by November I have more or less entirely abandoned the old bodega save an occasional visit every few weeks:
+
+<figure>
+<center><img src="/img/bodega_graph.png"/></center>
+</figure>
+
+
+A distant memory from the one economics class I took as an undergraduate is the concept of [substitute goods](https://en.wikipedia.org/wiki/Substitute_good){target="_blank"}, which describe two potential purchases similar enough "that having more of one good causes the consumer to desire less of the other good." Although a bodega is more like a marketplace than a singular good, that idea is still clearly at play in the above graph, as I have a pretty well-defined cap on my spend (typically around $50 per week), creating a zero-sum game between these stores that is quickly won by the closer of the two.
+
+Read further down on the linked Wikipedia page above, and you'll see that for these goods, substitution risk is higher when "customers have slight switching costs between two available substitutes." In this case, the switching cost would be zero or even *negative* if you consider the reduced time and effort to procure goods from the store right below my apartment.
+
+And so the local bodega economy has extended my obsession with proximity to its natural limit, providing me with an option that couldn't possibly be closer to my apartment. Unless of course my neighbor converts his unit into a bodega as well, in which case you will find me knocking at his door several times a week and perhaps blogging about it soon after.
+
+*All code used to analyze the data and display the results can be found below. Thanks for reading!*
+
+<details>
+<summary>Code</summary>
+```{r, eval = FALSE}
+
+library(tidyverse)
+library(gmailr)
+library(lubridate)
+options(dplyr.summarise.inform = FALSE)
+
+gm_auth_configure()
+
+old_bodega_thread <- "THIRD AVENUE GARDEN NEW YORK USA"
+new_bodega_thread <- "Third Ave Cafe & Deli New York USA"
+bank_thread <- "citi alerts"
+
+thread_to_price_df <- function(thread){
+  
+  results <- gm_threads(search = thread, num_results = 1000)
+  ids <- gm_id(results)
+  
+  messages <- ids %>%
+    map(gm_thread) %>%
+    map("messages")
+  
+  # messages %>% map_dbl(length) %>% `==`(1) %>% stopifnot("Multiple emails in a thread" = .)
+  
+  subjects <- messages %>%
+    unlist(recursive = FALSE) %>%
+    map(gm_subject)
+  
+  prices <- subjects %>%
+    str_extract("\\d{1,3}\\.\\d{2}") %>%
+    as.numeric()
+  
+  dates <- messages %>%
+    unlist(recursive = FALSE) %>%
+    map_chr(gm_date) %>%
+    dmy_hms()
+  
+  df <- tibble(
+    date = dates,
+    price = prices
+  )
+  
+}
+
+old_bodega_df <- thread_to_price_df(paste(bank_thread, old_bodega_thread)) %>% mutate(location = "old bodega (1 block away)")
+new_bodega_df <- thread_to_price_df(paste(bank_thread, new_bodega_thread)) %>% mutate(location = "new bodega (0 blocks away)")
+both_bodegas_df <- bind_rows(old_bodega_df, new_bodega_df) %>% mutate(date = as_date(date))
+
+both_bodegas_df_agg <- both_bodegas_df %>%
+  group_by(date, location) %>%
+  summarize(spend = sum(price)) %>%
+  ungroup() %>%
+  right_join(crossing(
+    location = unique(both_bodegas_df$location),
+    date = seq(min(both_bodegas_df$date), max(both_bodegas_df$date), by = 1),
+    spend0 = 0
+  ),
+  by = c("date", "location")) %>%
+  transmute(date, location, spend = coalesce(spend, spend0)) %>%
+  arrange(date, location)
+
+g1 <- both_bodegas_df_agg %>%
+  filter((year(date) == 2024 & month(date) >= 4) | year(date) == 2025) %>%
+  ggplot(aes(date, spend, col = location)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method="glm", method.args = list(family = "quasipoisson"), 
+              formula = y ~ splines::ns(x, 3), se = F) +
+  geom_vline(xintercept = as_date("2024-09-16"), linetype = "dashed") +
+  annotate(geom = "label", x = as_date("2024-09-16"), y = 37, 
+           label = "new bodega\n opens", size = 3) +
+  theme_bw() +
+  theme(legend.position = "bottom") +
+  theme(legend.title=element_blank()) +
+  labs(y = "daily spend")
+
+gg_green <- scales::hue_pal()(4)[2]
+
+g2 <- both_bodegas_df_agg %>% 
+  group_by(week(date)) %>%
+  summarize(s = sum(spend)) %>%
+  ungroup() %>%
+  {ggplot(data = ., aes(s)) +
+      geom_histogram(col = "black", fill = gg_green, breaks = seq(0, max(.$s), by = 10)) +
+      theme_bw() +
+      labs(x = "total weekly bodega spend")
+  }
+
+```
+
+</details>
