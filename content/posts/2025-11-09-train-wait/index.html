@@ -1,0 +1,227 @@
+---
+title: 'The Wrong Crowd: What Subway Data Can Tell Us About a Packed Platform'
+author: Walker Harrison
+date: '2025-11-09'
+slug: train-wait
+categories: []
+tags: []
+lastmod: '2025-11-09T14:45:46-05:00'
+layout: post
+type: post
+summary: In general, more passengers waiting on the platform implies shorter wait times for the next train. But does that relationship hold up at the extremes?
+highlight: yes
+---
+
+
+
+<style type="text/css">
+figure figcaption {
+  text-align: center;
+}
+</style>
+<p>If you arrived at a subway station hoping to board a train as soon as possible, how crowded would you want it to be?</p>
+<p>Most people to whom I’ve recently asked this question shared the same hypothesis that I’ve reached after years of taking the New York City subway. You don’t want to arrive to an empty platform, because that implies a train has just left and another one is not imminent. Rather, the more people you see, the longer it’s likely been since the previous train and the less time remains until the next one.</p>
+<figure>
+<center>
+<img src="/img/platform.jpg"/>
+</center>
+<figcaption>
+<i>An empty platform usually means longer waits.</i>
+</figcaption>
+</figure>
+<p>However, too large of a crowd might indicate that the subway system is in an unusual state of heavy delay that’s subject to longer, less predictable intervals between trains. Another way of thinking of this idea is that the relationship between platform crowdedness and expected wait time is non-linear and potentially even U-shaped: at some point, marginally more people implies longer wait times and not shorter ones. You stop “earning” time with more passengers and start actually giving it back.</p>
+<p>The shared beliefs of a grumpy mob of commuters doesn’t exactly qualify as legitimate proof of this theory, though. So I tried to substantiate the claim using the <a href="https://api.mta.info/#/subwayRealTimeFeeds" target="_blank">time-stamped data that the MTA publishes</a> for all of their trips. The data isn’t perfect and requires a lot of cleaning and a little bit of faith, but it seemed good enough to capture essential patterns. Here’s a daily course of 4-trains originating at Utica Avenue in Brooklyn, traversing the length of Manhattan, and terminating deep in the Bronx:</p>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p>The horizontal distances between adjacent threads at each of the stops listed are equivalent to the wait times between trains. Thankfully they look pretty consistent, besides for a period starting in the late afternoon at 138th Street where it looks like service was suspended for a few hours.</p>
+<p>If you apply this logic at scale to each train line, station, direction of travel, and hour of the day, you get a sense of the distribution of wait times that individual commuters experience. Visualized below are some of the busiest stations during rush hour on week days.</p>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<p>You’ll notice a few prominent features of these histograms. Most of them have single peaks somewhere between 2 and 4 minutes – these are the most likely wait times, but the average is dragged up in each instance by the characteristic right skew of a non-negative variable. It looks like the MTA can achieve much more consistent wait times at points of origin like the express 7 at Hudson Yards or the shuttle at Times Square.</p>
+<p>What these histograms don’t demonstrate are exceedingly long tails or even a second, smaller mode somewhere further down the X-axis, which I would think is required to observe the proposed U-shape between platform crowdedness and length of delay. In other words, in most cases I don’t think that there are enough major delays to validate our hypothesis.</p>
+<p>But that’s certainly not always the case. Check out the distribution of wait times at 7th Avenue in midtown for downtown B trains on weekday evenings. There is a small but noticeable mini-peak – in this scenario you’re more likely to wait for 15 minutes than you are for 14, and as likely to wait for 18 as you are for 13:</p>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<p>Is that little second bump enough to flip the relationship between platform crowdedness and wait times? You could probably fit some sort of flexible density function to the above histogram and come up with an “exact” answer to that question. But it’s much more fun to simulate, and even more fun to visualize that simulation.</p>
+<p>So let’s establish some rules for our simulation:</p>
+<ul>
+<li>
+there are short, exponential delays between each arriving passenger, which creates more or less a uniform incoming flow of people
+</li>
+<li>
+train delays are sampled from the empirical delays that created the bimodal distribution above
+</li>
+<li>
+when trains arrive they entirely clear the platform
+</li>
+<li>
+each passenger “remembers” how many people are on the platform when they arrive and how long it takes for the train to arrive
+</li>
+<li>
+once passengers board the train, that data point is recorded on a scatterplot
+</li>
+</ul>
+<p>Below such a simulation is visualized on the left along with a dynamic, updating scatterplot on the right. For those curious, it’s written in d3 – mostly using prompts I gave to ChatGPT– and <a href="https://observablehq.com/@wamanjr/good" target="_blank">hosted on Observable</a>.</p>
+<iframe src="https://observablehq.com/embed/@wamanjr/display?cells=viewof+app" style="width:100%; height:700px; border:10px;">
+</iframe>
+<p>If you let the simulation run for long enough (and using the speed multiplier certainly helps), a sufficient number of outlier delays occur to fill in some points on the far right of the graph. With such sparse data in that region, the red smoothed trendline is forced to bend up toward the longer wait times. In other words, there are certain degrees of crowdedness in this simulation that can only imply extreme wait times.</p>
+<figure>
+<center>
+<img src="/img/crowdcurve3.png"/>
+</center>
+</figure>
+<p>So according to a simplified model of a particular station at a specific time, yes it is possible that there’s such thing as “too many people” when you’re hoping for an imminent train. But overall I would not categorize these results as robust evidence of the phenomenon that I and many others assumed existed when it comes to subway delays.</p>
+<p>For that, you’ll just have to keep waiting…</p>
+<i>All code used to query the data and create the static graphs is below. Thanks for reading!</i>
+<details>
+<summary>
+Code
+</summary>
+<pre class="r"><code>library(archive)
+library(tidyverse)
+library(lubridate)
+library(furrr)
+
+# https://data.ny.gov/Transportation/MTA-Subway-Stations/39hk-dx4f/about_data
+post_dir &lt;- &quot;/Users/walkerharrison/Documents/GH2/website/content/posts/2025-11-09-train-wait&quot;
+stations &lt;- read_csv(paste0(post_dir, &quot;/MTA_Subway_Stations_20251109.csv&quot;))
+stations_lite &lt;- stations %&gt;% transmute(stop_id = as.character(`GTFS Stop ID`), stop = `Stop Name`)
+
+get_trains_by_date &lt;- function(date){
+  
+  link &lt;- paste0(&quot;https://subwaydata.nyc/data/subwaydatanyc_&quot;, date, &quot;_csv.tar.xz&quot;)
+  
+  td &lt;- tempdir()
+  tf &lt;- paste0(td, &quot;\\tmp.tar.xz&quot;)
+  
+  download.file(link, tf)
+  
+  archive_extract(tf, td)
+  allfiles &lt;- list.files(td, full.names = T)
+  stopfile &lt;- allfiles %&gt;% keep(~str_detect(.x, &quot;stop_times&quot;))
+  tripfile &lt;- allfiles %&gt;% keep(~str_detect(.x, &quot;trips&quot;))
+  
+  stops &lt;- read_csv(stopfile) %&gt;% suppressWarnings() %&gt;% suppressMessages()
+  trips &lt;- read_csv(tripfile) %&gt;% suppressWarnings() %&gt;% suppressMessages()
+  
+  stops &lt;- stops %&gt;% separate(stop_id, into = c(&quot;stop_id&quot;, &quot;stop_id_direction&quot;), sep = 3)
+  trips &lt;- trips %&gt;% select(-last_observed, -marked_past)
+  
+  stops_clean &lt;- stops %&gt;% distinct() %&gt;%
+    inner_join(trips, by = &quot;trip_uid&quot;) %&gt;%
+    mutate(departure_time = as.POSIXct(departure_time, origin=&quot;1970-01-01&quot;),
+           h = hour(departure_time),
+           wd = wday(departure_time),
+           weekend = !(wday(departure_time) %in% 2:6)
+    ) %&gt;%
+    filter(as.Date(departure_time) == date) %&gt;%
+    select(trip_uid, route_id, direction_id, stop_id, track, arrival_time, departure_time, h, wd, weekend) %&gt;%
+    arrange(departure_time) %&gt;%
+    group_by(stop_id, route_id) %&gt;%
+    mutate(last_departure = lag(departure_time),
+           wait = as.numeric(difftime(departure_time, last_departure, units = &quot;secs&quot;))/60) %&gt;%
+    filter(!is.na(wait), wait &gt; 0) %&gt;%
+    ungroup() %&gt;%
+    mutate(route_id = as.character(route_id))
+  
+  file.remove(allfiles)
+  
+  stops_clean
+  
+}
+
+dates &lt;- seq.Date(from = as.Date(&quot;2025/1/1&quot;), to = as.Date(&quot;2025/10/1&quot;), by = &quot;day&quot;)
+
+stops &lt;- get_trains_by_date(tail(dates, 1))
+
+g1 &lt;- stops %&gt;%
+  filter(route_id == &quot;4&quot;, direction_id == &quot;0&quot;, h &gt;=9) %&gt;%
+  inner_join(stations_lite, by = &quot;stop_id&quot;) %&gt;%
+  group_by(trip_uid) %&gt;% 
+  mutate(total_stops = n()) %&gt;%
+  filter(total_stops &gt; 20, sum(stop_id == 250) &gt; 0) %&gt;%
+  ungroup() %&gt;%
+  arrange(desc(total_stops), departure_time) %&gt;% #View()
+  mutate(stop = factor(stop, levels = unique(.$stop))) %&gt;%
+  # group_by(trip_uid) %&gt;%
+  # arrange(min(departure_time)) %&gt;%
+  # ungroup() %&gt;%
+  # filter(as.numeric(as.factor(trip_uid)) %in% 4:12) %&gt;%
+  {
+  ggplot(., aes(departure_time, as.numeric(stop), group = trip_uid)) + 
+  geom_point(col = &quot;#01AB4F&quot;) + geom_line(col = &quot;#01AB4F&quot;) +
+  theme_minimal() +
+  labs(x = &quot;&quot;, y = &quot;&quot;) +
+  scale_y_continuous(breaks = 1:length(levels(.$stop)), labels = levels(.$stop))
+  }
+
+plan(multisession, workers =  4)
+
+stops_all &lt;- future_map(dates, get_trains_by_date) %&gt;% bind_rows()
+
+rush_hour &lt;- stops_all %&gt;%
+  filter(h == 17, !weekend) %&gt;%
+  mutate(id = as.numeric(as.factor(paste0(route_id, direction_id, stop_id)))) %&gt;%
+  group_by(id) %&gt;%
+  mutate(n = n()) %&gt;%
+  ungroup() %&gt;%
+  mutate(n = n +  id/max(id)) %&gt;%
+  arrange(desc(n)) %&gt;%
+  group_by(route_id) %&gt;%
+  filter(stop_id == first(stop_id), direction_id == first(direction_id)) %&gt;%
+  ungroup() %&gt;%
+  filter(id %in% unique(.$id)[1:16]) %&gt;%
+  inner_join(stations_lite, by = &quot;stop_id&quot;)
+
+route_colors &lt;- tribble(
+  ~route_id, ~col,
+  &quot;1&quot;,  &quot;#EC352F&quot;,
+  &quot;2&quot;,  &quot;#EC352F&quot;,
+  &quot;3&quot;,  &quot;#EC352F&quot;,
+  &quot;4&quot;,  &quot;#01AB4F&quot;,
+  &quot;5&quot;,  &quot;#01AB4F&quot;,
+  &quot;6&quot;,  &quot;#01AB4F&quot;,
+  &quot;6X&quot;, &quot;#01AB4F&quot;,
+  &quot;7&quot;,  &quot;#B833AD&quot;,
+  &quot;7X&quot;, &quot;#B833AD&quot;,
+  &quot;A&quot;,  &quot;#2A51AE&quot;,
+  &quot;B&quot;,  &quot;#FF6318&quot;,
+  &quot;C&quot;,  &quot;#2A51AE&quot;,
+  &quot;D&quot;,  &quot;#FF6318&quot;,
+  &quot;E&quot;,  &quot;#2A51AE&quot;,
+  &quot;F&quot;,  &quot;#FF6318&quot;,
+  &quot;G&quot;,  &quot;#6CBD45&quot;,
+  &quot;J&quot;,  &quot;#996633&quot;,
+  &quot;L&quot;,  &quot;#A7A9AD&quot;,
+  &quot;M&quot;,  &quot;#FF6318&quot;,
+  &quot;N&quot;,  &quot;#FDCC0B&quot;,
+  &quot;Q&quot;,  &quot;#FDCC0B&quot;,
+  &quot;R&quot;,  &quot;#FDCC0B&quot;,
+  &quot;GS&quot;, &quot;#808283&quot;,
+  &quot;W&quot;,  &quot;#FDCC0B&quot;,
+  &quot;Z&quot;,  &quot;#996633&quot;
+)
+
+g2 &lt;- rush_hour %&gt;% 
+  filter(wait &gt; 1, wait &lt; 15) %&gt;%
+  mutate(stop = str_replace(stop, &quot; Bus Terminal&quot;, &quot;&quot;)) %&gt;%
+  ggplot(aes(wait)) +
+  geom_histogram(col = &quot;black&quot;, aes(fill = route_id)) +
+  theme_bw() +
+  facet_wrap(~paste0(route_id, &quot; at &quot;, stop), scales = &quot;free_y&quot;) +
+  labs(title = &quot;Rush hour wait distributions&quot;) +
+  theme(legend.position = &quot;none&quot;,
+        strip.text.x = element_text(size = 7)) +
+  scale_fill_manual(values = route_colors$col, breaks = route_colors$route_id)
+
+downtown_Bs &lt;- stops_all %&gt;% filter(route_id == &quot;B&quot;, direction_id == 1, stop_id == &quot;D14&quot;, h == 19, !weekend)
+
+g3 &lt;- downtown_Bs %&gt;%
+  filter(wait &gt; 1, wait &lt; 30) %&gt;%
+  ggplot(aes(wait)) +
+  geom_histogram(aes(fill = route_id), col = &quot;black&quot;, binwidth = 1) +
+  theme_bw() +
+  labs(title = &quot;Wait times for Downtown B trains at 7th Ave&quot;,
+       subtitle = &quot;Weekdays, 7PM - 8PM&quot;) +
+  theme(legend.position = &quot;none&quot;) +
+  scale_fill_manual(values = route_colors$col, breaks = route_colors$route_id)
+
+save(g1, g2, g3, file = paste0(post_dir, &quot;/graphs.Rdata&quot;))</code></pre>
+</details>

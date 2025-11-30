@@ -3,12 +3,18 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>http://localhost:4321/posts/</loc>
-    <lastmod>2025-01-03T18:25:19-05:00</lastmod>
+    <lastmod>2025-11-09T14:45:46-05:00</lastmod>
   </url><url>
-    <loc>http://localhost:4321/posts/citibike-contours/</loc>
-    <lastmod>2025-01-03T18:25:19-05:00</lastmod>
+    <loc>http://localhost:4321/posts/train-wait/</loc>
+    <lastmod>2025-11-09T14:45:46-05:00</lastmod>
   </url><url>
     <loc>http://localhost:4321/</loc>
+    <lastmod>2025-11-09T14:45:46-05:00</lastmod>
+  </url><url>
+    <loc>http://localhost:4321/posts/bodegas/</loc>
+    <lastmod>2025-05-26T13:01:10-04:00</lastmod>
+  </url><url>
+    <loc>http://localhost:4321/posts/citibike-contours/</loc>
     <lastmod>2025-01-03T18:25:19-05:00</lastmod>
   </url><url>
     <loc>http://localhost:4321/posts/best_block/</loc>

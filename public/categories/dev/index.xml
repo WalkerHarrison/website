@@ -2,18 +2,18 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Dev on Walker Harrison</title>
-    <link>http://localhost:6849/categories/dev/</link>
+    <link>http://localhost:4321/categories/dev/</link>
     <description>Recent content in Dev on Walker Harrison</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Fri, 03 Jan 2025 23:32:57 -0500</lastBuildDate>
-    <atom:link href="http://localhost:6849/categories/dev/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 09 Nov 2025 14:45:46 -0500</lastBuildDate>
+    <atom:link href="http://localhost:4321/categories/dev/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>2025 01 03 Citibike Contours</title>
-      <link>http://localhost:6849/posts/2025-01-03-citibike-contours/</link>
-      <pubDate>Fri, 03 Jan 2025 23:32:57 -0500</pubDate>
-      <guid>http://localhost:6849/posts/2025-01-03-citibike-contours/</guid>
-      <description>Insert Lead paragraph here.&#xA;A augue nunc lacus auctor efficitur tempor placerat, dictum volutpat mi vitae viverra porta non sem, himenaeos senectus vivamus potenti cubilia sollicitudin. Curae cursus inceptos tincidunt magna mi nibh ad enim etiam, molestie eu quis primis hendrerit taciti phasellus. Feugiat ultricies dictumst iaculis potenti odio laoreet urna at, ultrices curae leo accumsan proin sem lobortis.&#xA;Heading 2 Sollicitudin ornare odio blandit aenean enim lacus accumsan elementum vestibulum porta mauris lorem, ullamcorper class fermentum sem hendrerit ante augue penatibus scelerisque felis leo proin,ad nascetur venenatis sodales dignissim viverra suspendisse turpis convallis condimentum sapien.</description>
+      <title>trainztest</title>
+      <link>http://localhost:4321/posts/train-wait/</link>
+      <pubDate>Sun, 09 Nov 2025 00:00:00 +0000</pubDate>
+      <guid>http://localhost:4321/posts/train-wait/</guid>
+      <description> </description>
     </item>
   </channel>
 </rss>

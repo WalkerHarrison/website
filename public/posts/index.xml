@@ -6,8 +6,22 @@
     <description>Recent content in All Posts on Walker Harrison</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Fri, 03 Jan 2025 18:25:19 -0500</lastBuildDate>
+    <lastBuildDate>Sun, 09 Nov 2025 14:45:46 -0500</lastBuildDate>
     <atom:link href="http://localhost:4321/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>The Wrong Crowd: What  subway data can tell us about a packed platform</title>
+      <link>http://localhost:4321/posts/train-wait/</link>
+      <pubDate>Sun, 09 Nov 2025 00:00:00 +0000</pubDate>
+      <guid>http://localhost:4321/posts/train-wait/</guid>
+      <description>In general, more passengers waiting on the platorm implies shorter wait times for the next train. But does that relationship hold up at the extremes?</description>
+    </item>
+    <item>
+      <title>Bodega Battles: Two Local Stores Compete For My Allegiance</title>
+      <link>http://localhost:4321/posts/bodegas/</link>
+      <pubDate>Mon, 26 May 2025 00:00:00 +0000</pubDate>
+      <guid>http://localhost:4321/posts/bodegas/</guid>
+      <description>Loyalty is a two-way street. Especially if that street is just a single block that separates a man from his egg sandwich.</description>
+    </item>
     <item>
       <title>CitiBike Contours: Creating a Topographic Map of Brooklyn Using Biker Speed Data</title>
       <link>http://localhost:4321/posts/citibike-contours/</link>
