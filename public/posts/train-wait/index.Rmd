@@ -76,7 +76,7 @@ On the left, you'll see passengers filter in continuously and spread out until a
 
 <iframe
   src="https://observablehq.com/embed/@wamanjr/display?cells=viewof+app"
-  style="width:100%; height:700px; border:10px;">
+  style="width:100%; aspect-ratio: 9 / 8; border:10px;">
 </iframe>
 
 It does not take very many trains to establish the obvious pattern that describes most scenarios: as you increase the platform crowdedness from 0 to approximately 50, the average wait time for a train decreases. 
@@ -94,6 +94,7 @@ For that, you'll just have to keep waiting...
 <br>
 <br>
 <i>All code used to query the data and create the static graphs is below. Thanks for reading!</i>
+<br>
 <br>
 <details>
 <summary>Code</summary>
